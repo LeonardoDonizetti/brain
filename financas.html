@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Brain - Finanças</title>
 <link rel="stylesheet" href="base.css?v=m1">
-<meta name="theme-color" content="#3452e1">
+<meta name="theme-color" content="#0b5f73">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -23,7 +23,7 @@
   body { padding-bottom: calc(var(--nav-h) + 9rem); }
   li.g .data { color: var(--muted); font-size: .85rem; }
   li.g .desc small { display: block; color: var(--muted); font-size: .8rem; }
-  .grafico-sec { background: var(--surface); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem; margin-top: 1rem; }
+  .grafico-sec { background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; padding: 1rem; margin-top: 1rem; }
   .grafico-topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
   .grafico-topo h2 { margin: 0; }
   .alternar { display: flex; gap: .25rem; }
@@ -41,13 +41,13 @@
   /* ===== resumo, ritmo, limites, contas fixas, insights ===== */
   .total strong.neg { color: var(--danger); }
   .resumo { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin: 0 0 1rem; }
-  .resumo > div { background: var(--surface); border: 1px solid var(--line); border-radius: .9rem; padding: .7rem .9rem; }
-  .resumo small { display: block; color: var(--muted); font-size: .76rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .resumo > div { background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; padding: .7rem .9rem; }
+  .resumo small { display: block; color: var(--muted); font-size: .76rem; font-weight: 600;  }
   .resumo strong { font-size: 1.2rem; font-weight: 750; letter-spacing: -.02em; }
   .resumo .pos { color: var(--ok); } .resumo .neg { color: var(--danger); }
   .sec-topo { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
   .sec-topo button.link, button.link { background: none; border: 0; color: var(--accent); font-weight: 650; font-size: .85rem; padding: .3rem 0; min-height: 2rem; }
-  .bloco { background: var(--surface); border: 1px solid var(--line); border-radius: 1.1rem; box-shadow: var(--sombra); padding: 1rem 1.1rem; }
+  .bloco { background: var(--surface); border: 1px solid var(--line); border-radius: .55rem; box-shadow: var(--sombra); padding: 1rem 1.1rem; }
   .ritmo-linha { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .3rem 0; font-size: .92rem; }
   .ritmo-linha span:first-child { color: var(--muted); }
   .ritmo-linha b { font-variant-numeric: tabular-nums; }
@@ -70,9 +70,9 @@
   .fixa button.link { padding: 0; min-height: 1.6rem; font-size: .8rem; }
   .insight { display: grid; grid-template-columns: 6.2rem 1fr; gap: .6rem; padding: .45rem 0; font-size: .9rem; border-top: 1px solid var(--line); }
   .insight:first-child { border-top: 0; }
-  .insight span:first-child { color: var(--muted); font-size: .8rem; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; padding-top: .1rem; }
+  .insight span:first-child { color: var(--muted); font-size: .8rem; font-weight: 650;  padding-top: .1rem; }
   .busca-linha { display: flex; gap: .5rem; margin-bottom: .6rem; }
-  .busca-linha input { flex: 1; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; padding: .6rem .8rem; min-width: 0; }
+  .busca-linha input { flex: 1; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .55rem; padding: .6rem .8rem; min-width: 0; }
   .chips { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .5rem; margin-bottom: .2rem; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
   .chips button { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 1rem; padding: .3rem .75rem; font-size: .82rem; font-weight: 600; min-height: 2rem; }
@@ -102,8 +102,8 @@
   .an .legenda-i { display: flex; flex-wrap: wrap; gap: .3rem .9rem; margin: .5rem 0 0; font-size: .78rem; color: var(--muted); }
   .an .legenda-i span::before { content: ''; display: inline-block; width: .6rem; height: .6rem; border-radius: 3px; margin-right: .3rem; background: var(--c); vertical-align: -1px; }
   .an-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .8rem; }
-  .an-nums div { background: var(--bg); border-radius: .7rem; padding: .5rem .6rem; }
-  .an-nums small { display: block; color: var(--muted); font-size: .7rem; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
+  .an-nums div { background: var(--bg); border-radius: .5rem; padding: .5rem .6rem; }
+  .an-nums small { display: block; color: var(--muted); font-size: .7rem; font-weight: 650;  }
   .an-nums b { font-size: .95rem; font-variant-numeric: tabular-nums; }
   .top-g { list-style: none; padding: 0; margin: .5rem 0 0; border: 0; background: none; box-shadow: none; }
   .top-g li { display: flex; gap: .6rem; align-items: baseline; padding: .4rem 0; border: 0; border-top: 1px solid var(--line); font-size: .9rem; }

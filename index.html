@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Brain</title>
 <link rel="stylesheet" href="base.css?v=m1">
-<meta name="theme-color" content="#3452e1">
+<meta name="theme-color" content="#0b5f73">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -20,7 +20,7 @@
 <script src="coach.js"></script>
 <script src="nav.js" defer></script>
 <style>
-  .data-topo { margin: 0 0 .15rem; color: var(--muted); font-size: .9rem; text-transform: capitalize; }
+  .data-topo { margin: 0 0 .15rem; color: var(--muted); font-size: .9rem; }
   .sec-topo { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
   .sec-topo a { color: var(--accent); font-size: .85rem; font-weight: 650; text-decoration: none; white-space: nowrap; }
   .bloco { padding: 1rem 1.1rem; }
@@ -41,12 +41,12 @@
 
   /* destaque numérico + seletor de período */
   .destaque { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  .destaque strong { font-size: 2.1rem; font-weight: 750; letter-spacing: -.03em; line-height: 1; }
+  .destaque strong { font-size: 2.1rem; font-weight: 750; letter-spacing: -.01em; line-height: 1; }
   .destaque small { display: block; color: var(--muted); font-size: .82rem; margin-top: .25rem; }
   .delta { font-size: .8rem; font-weight: 650; padding: .15rem .5rem; border-radius: 1rem; background: var(--bg); color: var(--muted); white-space: nowrap; }
   .delta.up { background: var(--ok-soft); color: var(--ok); }
   .delta.down { background: var(--warm-soft); color: var(--warm); }
-  .periodo { display: inline-flex; background: var(--bg); border-radius: .7rem; padding: .15rem; gap: .1rem; }
+  .periodo { display: inline-flex; background: var(--bg); border-radius: .5rem; padding: .15rem; gap: .1rem; }
   .periodo button { border: 0; background: transparent; color: var(--muted); font-weight: 650; font-size: .82rem; padding: .3rem .65rem; border-radius: .55rem; min-height: 2rem; }
   .periodo button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
 
@@ -83,7 +83,7 @@
   .tabela-rolagem { overflow-x: auto; }
   table.tarefas { width: 100%; border-collapse: collapse; font-size: .92rem; }
   table.tarefas caption { text-align: left; }
-  table.tarefas thead th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 650; padding: .2rem .4rem .45rem; border-bottom: 1px solid var(--line); }
+  table.tarefas thead th { text-align: left; font-size: .72rem;  color: var(--muted); font-weight: 650; padding: .2rem .4rem .45rem; border-bottom: 1px solid var(--line); }
   table.tarefas th.col-h, table.tarefas td.col-h { width: 3.4rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   table.tarefas th.col-c, table.tarefas td.col-c { width: 2.6rem; text-align: right; }
   table.tarefas td { padding: .5rem .4rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
@@ -100,7 +100,7 @@
 
   /* gastos */
   .gastos-topo { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
-  .gastos-topo strong { font-size: 1.8rem; font-weight: 750; letter-spacing: -.03em; line-height: 1; }
+  .gastos-topo strong { font-size: 1.8rem; font-weight: 750; letter-spacing: -.01em; line-height: 1; }
   .gastos-topo small { display: block; color: var(--muted); font-size: .82rem; margin-top: .25rem; }
   .gcat { display: grid; grid-template-columns: 6.2rem 1fr auto; gap: .6rem; align-items: center; padding: .35rem 0; font-size: .88rem; }
   .gcat .b { height: .5rem; background: var(--bg); border-radius: 1rem; overflow: hidden; }

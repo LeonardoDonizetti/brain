@@ -19,22 +19,23 @@
     home: { aneis: true, barras: true, constancia: true, tabela: true, gastos: true },
   };
 
-  // [claro: destaque, suave, texto sobre destaque] [escuro: ...]
+  // [claro: destaque, suave, texto sobre destaque, (opcional) segunda cor do degradê] [escuro: ...]
+  // As chaves (azul, verde...) são antigas e mantidas para não perder a escolha salva; os nomes e as cores são novos.
   const CORES = {
-    azul:    { nome: 'Azul',    claro: null, escuro: null },
-    verde:   { nome: 'Verde',   claro: ['#1a7f53', '#e3f5ec', '#ffffff'], escuro: ['#4cc38a', '#17332a', '#08210f'] },
-    roxo:    { nome: 'Roxo',    claro: ['#7a45d1', '#f0e8fb', '#ffffff'], escuro: ['#b996f2', '#2b1f47', '#1a0f33'] },
-    laranja: { nome: 'Laranja', claro: ['#b84f08', '#fdeedd', '#ffffff'], escuro: ['#f0a060', '#3a2512', '#2a1505'] },
-    rosa:    { nome: 'Rosa',    claro: ['#c72c6b', '#fde8f0', '#ffffff'], escuro: ['#f27fa8', '#3d1a2a', '#2e0b1a'] },
-    grafite: { nome: 'Grafite', claro: ['#3a4656', '#e9edf2', '#ffffff'], escuro: ['#b8c4d4', '#263140', '#101820'] },
-    // gradientes: [destaque, suave, texto sobre destaque, segunda cor do degradê]
-    aurora:  { nome: 'Aurora',      grad: true, claro: ['#3452e1', '#e8ecfd', '#ffffff', '#8a3fd1'], escuro: ['#7b93ff', '#1f2547', '#0d1230', '#c08cf5'] },
-    sol:     { nome: 'Pôr do sol',  grad: true, claro: ['#d9480f', '#fdeedd', '#ffffff', '#c72c6b'], escuro: ['#ff9a5c', '#3a2512', '#2a1505', '#f27fa8'] },
-    oceano:  { nome: 'Oceano',      grad: true, claro: ['#0b7a9c', '#e1f3f8', '#ffffff', '#2d4fd6'], escuro: ['#4cc9e8', '#12303a', '#04202a', '#7e9bff'] },
-    floresta:{ nome: 'Floresta',    grad: true, claro: ['#1a7f53', '#e3f5ec', '#ffffff', '#0c7a8a'], escuro: ['#4cc38a', '#17332a', '#08210f', '#4cc9d0'] },
-    fogo:    { nome: 'Fogo',        grad: true, claro: ['#c0362c', '#fdeceb', '#ffffff', '#b8680a'], escuro: ['#ff8d6b', '#3a1f1d', '#2a0f08', '#ffc457'] },
-    vinho:   { nome: 'Vinho',       grad: true, claro: ['#a3245f', '#f6e6f0', '#ffffff', '#5b2aa8'], escuro: ['#f27fa8', '#3d1a2a', '#2e0b1a', '#b996f2'] },
-    noite:   { nome: 'Noite',       grad: true, claro: ['#3a4656', '#e9edf2', '#ffffff', '#2f3fa8'], escuro: ['#b8c4d4', '#263140', '#101820', '#8ea2ff'] },
+    azul:    { nome: 'Petróleo',  claro: null, escuro: null },
+    verde:   { nome: 'Pinheiro',  claro: ['#1b6b46', '#e4f1ea', '#ffffff'], escuro: ['#5cc08f', '#162b21', '#06200f'] },
+    roxo:    { nome: 'Ameixa',    claro: ['#5b3a7a', '#efe9f4', '#ffffff'], escuro: ['#c3a3dd', '#261a33', '#190d26'] },
+    laranja: { nome: 'Terracota', claro: ['#a8481f', '#f8ebe4', '#ffffff'], escuro: ['#f0a07a', '#35201a', '#2a1006'] },
+    rosa:    { nome: 'Rubi',      claro: ['#a31f45', '#f9e7ec', '#ffffff'], escuro: ['#f08aa4', '#381a24', '#2e0b17'] },
+    grafite: { nome: 'Grafite',   claro: ['#2f3a47', '#e7eaee', '#ffffff'], escuro: ['#c5ced9', '#23292f', '#101820'] },
+    // degradês discretos: a mesma cor em dois tons
+    aurora:  { nome: 'Cobalto',     grad: true, claro: ['#1f4fbf', '#e6ecf9', '#ffffff', '#173b94'], escuro: ['#7a9ae8', '#18233d', '#0a1530', '#5878c9'] },
+    sol:     { nome: 'Âmbar',       grad: true, claro: ['#b45309', '#f9eddc', '#ffffff', '#8a3d06'], escuro: ['#eab36a', '#32250f', '#241503', '#c98f45'] },
+    oceano:  { nome: 'Oceano',      grad: true, claro: ['#0a6a8a', '#e1eff4', '#ffffff', '#08425e'], escuro: ['#62bfdc', '#12282f', '#041c26', '#3c95b3'] },
+    floresta:{ nome: 'Floresta',    grad: true, claro: ['#1b6b46', '#e4f1ea', '#ffffff', '#124a30'], escuro: ['#5cc08f', '#162b21', '#06200f', '#3c9468'] },
+    fogo:    { nome: 'Bordô',       grad: true, claro: ['#9b1c31', '#f8e8eb', '#ffffff', '#6e1223'], escuro: ['#ee8c9b', '#361b20', '#2a0911', '#c76577'] },
+    vinho:   { nome: 'Berinjela',   grad: true, claro: ['#5b3a7a', '#efe9f4', '#ffffff', '#3d2554'], escuro: ['#c3a3dd', '#261a33', '#190d26', '#9b78bb'] },
+    noite:   { nome: 'Noite',       grad: true, claro: ['#2f3a47', '#e7eaee', '#ffffff', '#151b22'], escuro: ['#c5ced9', '#23292f', '#101820', '#8d98a6'] },
   };
 
   const inteiro = (v, min, max, padrao) => {
@@ -84,7 +85,7 @@
       for (const v of ['--accent', '--accent-soft', '--on-accent', '--accent-grad']) el.style.removeProperty(v);
       if (par) { el.style.setProperty('--accent', par[0]); el.style.setProperty('--accent-soft', par[1]); el.style.setProperty('--on-accent', par[2]); if (par[3]) el.style.setProperty('--accent-grad', `linear-gradient(135deg, ${par[0]}, ${par[3]})`); }
       let meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', escuro ? '#0e1319' : (par ? par[0] : '#3452e1'));
+      if (meta) meta.setAttribute('content', escuro ? '#101214' : (par ? par[0] : '#0b5f73'));
     }
     if (escuroSistema && escuroSistema.addEventListener) escuroSistema.addEventListener('change', aplicar);
 

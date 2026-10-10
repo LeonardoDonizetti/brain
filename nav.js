@@ -35,6 +35,9 @@
     { nome: 'Structured', url: 'https://structured.app', uso: 'Linha do tempo do dia com bloco atual em destaque e blocos coloridos.' },
     { nome: 'Google Agenda', url: 'https://calendar.google.com', uso: 'Visão semanal em colunas com linha do horário atual.' },
     { nome: 'Forest', url: 'https://www.forestapp.cc', uso: 'Anel de foco com contagem regressiva e registro das sessões.' },
+    { nome: 'IBM Plex Sans', url: 'https://github.com/IBM/plex', uso: 'Fonte de interface (licença livre OFL), com números alinhados para valores e horários.' },
+    { nome: 'Linear', url: 'https://linear.app', uso: 'Interface sóbria: contornos finos, cantos moderados, uma cor de destaque usada com economia.' },
+    { nome: 'The visible tells of AI design', url: 'https://impeccable.style/slop', uso: 'Lista do que evitar para o visual não parecer gerado por IA: degradês roxo e azul, brilhos, texto em degradê, rótulos em caixa alta.' },
     { nome: 'Modo Caverna', url: null, uso: 'Jornada por dias, avaliação diária, rotinas e renúncias (referência que você trouxe).' },
   ];
   const DIAS_LETRA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
@@ -50,16 +53,16 @@
     const estilo = document.createElement('style');
     estilo.textContent = `
       .topo-config { display: flex; padding: max(.5rem, env(safe-area-inset-top)) 1rem 0; }
-      .topo-config button.eng { width: 2.6rem; height: 2.6rem; border-radius: .8rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); display: grid; place-items: center; padding: 0; cursor: pointer; }
+      .topo-config button.eng { width: 2.6rem; height: 2.6rem; border-radius: .55rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); display: grid; place-items: center; padding: 0; cursor: pointer; }
       .topo-config button.eng:hover { border-color: var(--accent); }
       dialog.cfg { border: 0; background: var(--bg); color: var(--ink); padding: 0; width: 100%; max-width: 36rem; height: 100dvh; max-height: 100dvh; margin: 0 auto; overflow: hidden; }
       dialog.cfg[open] { display: flex; flex-direction: column; }
       dialog.cfg::backdrop { background: rgba(0,0,0,.5); }
       .cfg-topo { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: max(.8rem, env(safe-area-inset-top)) 1rem .8rem; background: var(--surface); border-bottom: 1px solid var(--line); }
       .cfg-topo h2 { margin: 0; font-size: 1.15rem; color: var(--ink); text-transform: none; letter-spacing: 0; font-weight: 750; }
-      .cfg-topo button { border: 1px solid var(--line); background: var(--bg); border-radius: .7rem; min-height: 2.4rem; padding: 0 .9rem; font-weight: 650; }
+      .cfg-topo button { border: 1px solid var(--line); background: var(--bg); border-radius: .5rem; min-height: 2.4rem; padding: 0 .9rem; font-weight: 650; }
       .cfg-corpo { overflow-y: auto; padding: .4rem 1rem calc(2rem + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
-      .cfg-corpo h3 { margin: 1.4rem 0 .5rem; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; font-weight: 650; }
+      .cfg-corpo h3 { margin: 1.4rem 0 .5rem; font-size: .78rem; color: var(--muted);  font-weight: 650; }
       .cfg-cartao { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; padding: .3rem 1rem; }
       .cfg-linha { padding: .8rem 0; border-bottom: 1px solid var(--line); }
       .cfg-linha:last-child { border-bottom: 0; }
@@ -67,7 +70,7 @@
       .cfg-linha .dica { color: var(--muted); font-size: .82rem; line-height: 1.35; margin: .15rem 0 0; }
       .cfg-linha.flex { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
       .cfg-linha .ctl { margin-top: .6rem; }
-      .seg { display: flex; background: var(--bg); border-radius: .75rem; padding: .2rem; gap: .15rem; }
+      .seg { display: flex; background: var(--bg); border-radius: .55rem; padding: .2rem; gap: .15rem; }
       .seg button { flex: 1; border: 0; background: transparent; color: var(--muted); font-weight: 650; font-size: .85rem; min-height: 2.3rem; border-radius: .6rem; padding: 0 .4rem; }
       .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
       .cores { display: flex; gap: .6rem; flex-wrap: wrap; }
@@ -75,7 +78,7 @@
       .cores button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink); }
       .cores svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
       .cores button[aria-pressed="true"] svg { opacity: 1; }
-      .passo { display: inline-flex; align-items: center; gap: .3rem; background: var(--bg); border-radius: .75rem; padding: .2rem; }
+      .passo { display: inline-flex; align-items: center; gap: .3rem; background: var(--bg); border-radius: .55rem; padding: .2rem; }
       .passo button { width: 2.3rem; height: 2.3rem; border: 0; border-radius: .6rem; background: var(--surface); font-size: 1.2rem; font-weight: 650; }
       .passo output { min-width: 2.6rem; text-align: center; font-weight: 750; font-variant-numeric: tabular-nums; }
       .dias { display: flex; gap: .35rem; }
@@ -89,7 +92,7 @@
       .chave input:checked + span::after { transform: translateX(1.2rem); }
       .chave input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
       .cfg-botoes { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .6rem; }
-      .cfg-botoes button { flex: 1 1 8rem; min-height: 2.7rem; border-radius: .75rem; border: 1px solid var(--line); background: var(--surface); font-weight: 650; }
+      .cfg-botoes button { flex: 1 1 8rem; min-height: 2.7rem; border-radius: .55rem; border: 1px solid var(--line); background: var(--surface); font-weight: 650; }
       .cfg-botoes button.principal { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
       .cfg-botoes button.perigo { color: var(--danger); border-color: var(--danger); }
       .cfg-msg { margin: .7rem 0 0; font-size: .88rem; min-height: 1.2rem; }
@@ -121,7 +124,7 @@
         <h3>Aparência</h3>
         <div class="cfg-cartao">
           <div class="cfg-linha"><div class="rot">Tema</div><div class="ctl">${seg('tema', [['auto', 'Automático'], ['claro', 'Claro'], ['escuro', 'Escuro']])}</div></div>
-          <div class="cfg-linha"><div class="rot">Cor de destaque</div><p class="dica">As últimas 7 são gradientes.</p><div class="ctl cores" id="cfg-cores">${cores.map(([k, c]) => `<button type="button" data-v="${k}" aria-pressed="false" aria-label="${c.nome}" style="background:${c.grad ? `linear-gradient(135deg, ${c.claro[0]}, ${c.claro[3]})` : (c.claro ? c.claro[0] : '#3452e1')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`).join('')}</div></div>
+          <div class="cfg-linha"><div class="rot">Cor de destaque</div><p class="dica">As 7 últimas são degradês discretos (a mesma cor em dois tons).</p><div class="ctl cores" id="cfg-cores">${cores.map(([k, c]) => `<button type="button" data-v="${k}" aria-pressed="false" aria-label="${c.nome}" style="background:${c.grad ? `linear-gradient(135deg, ${c.claro[0]}, ${c.claro[3]})` : (c.claro ? c.claro[0] : '#0b5f73')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`).join('')}</div></div>
         </div>
 
         <h3>Metas</h3>

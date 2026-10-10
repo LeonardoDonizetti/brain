@@ -1,34 +1,37 @@
 /* ===== Brain: visual compartilhado ===== */
+@font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/ibm-plex-sans-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 500; font-style: normal; font-display: swap; src: url(fonts/ibm-plex-sans-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 600; font-style: normal; font-display: swap; src: url(fonts/ibm-plex-sans-latin-600-normal.woff2) format("woff2"); }
 :root {
-  --bg: #f3f5f9; --surface: #ffffff; --ink: #141c26; --muted: #637082;
-  --line: #e2e7ee; --line-strong: #c9d2dd;
-  --accent: #3452e1; --accent-soft: #e8ecfd; --on-accent: #ffffff;
-  --ok: #1f9d6b; --ok-soft: #e3f5ec;
-  --danger: #c0362c; --danger-soft: #fdeceb;
-  --warm: #b4650f; --warm-soft: #fdf0df;
-  --sombra: 0 1px 2px rgba(20, 28, 38, .04), 0 4px 14px rgba(20, 28, 38, .035);
+  --bg: #f6f7f8; --surface: #ffffff; --ink: #16191d; --muted: #5d6671;
+  --line: #e3e6ea; --line-strong: #ccd1d8;
+  --accent: #0b5f73; --accent-soft: #e3eff2; --on-accent: #ffffff;
+  --ok: #1b6b46; --ok-soft: #e4f1ea;
+  --danger: #b3261e; --danger-soft: #fbe9e7;
+  --warm: #9a5b0b; --warm-soft: #faefdc;
+  --sombra: none;
   --larg: 40rem;
   --nav-h: calc(4rem + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
-    --bg: #0e1319; --surface: #172029; --ink: #e8edf3; --muted: #8d9db0;
-    --line: #243040; --line-strong: #35465a;
-    --accent: #8fa4ff; --accent-soft: #212b52; --on-accent: #0c1230;
-    --ok: #4cc38a; --ok-soft: #17332a;
-    --danger: #ff8d82; --danger-soft: #3a1f1d;
-    --warm: #f0b068; --warm-soft: #3a2c17;
+    --bg: #101214; --surface: #171a1d; --ink: #e9ecef; --muted: #939ca7;
+    --line: #262a2f; --line-strong: #373d44;
+    --accent: #5fb3c7; --accent-soft: #16292f; --on-accent: #04181d;
+    --ok: #5cc08f; --ok-soft: #162b21;
+    --danger: #f28b82; --danger-soft: #381e1c;
+    --warm: #e8b068; --warm-soft: #33291a;
     --sombra: none;
   }
 }
 :root[data-tema="escuro"] {
-    --bg: #0e1319; --surface: #172029; --ink: #e8edf3; --muted: #8d9db0;
-    --line: #243040; --line-strong: #35465a;
-    --accent: #8fa4ff; --accent-soft: #212b52; --on-accent: #0c1230;
-    --ok: #4cc38a; --ok-soft: #17332a;
-    --danger: #ff8d82; --danger-soft: #3a1f1d;
-    --warm: #f0b068; --warm-soft: #3a2c17;
+    --bg: #101214; --surface: #171a1d; --ink: #e9ecef; --muted: #939ca7;
+    --line: #262a2f; --line-strong: #373d44;
+    --accent: #5fb3c7; --accent-soft: #16292f; --on-accent: #04181d;
+    --ok: #5cc08f; --ok-soft: #162b21;
+    --danger: #f28b82; --danger-soft: #381e1c;
+    --warm: #e8b068; --warm-soft: #33291a;
     --sombra: none;
 }
 :root[data-tema="escuro"] { color-scheme: dark; }
@@ -36,7 +39,7 @@
 html, body { margin: 0; }
 body {
   background: var(--bg); color: var(--ink);
-  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 16px/1.5 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   padding-bottom: calc(var(--nav-h) + 6rem);
   -webkit-font-smoothing: antialiased;
 }
@@ -46,23 +49,23 @@ button { font: inherit; color: inherit; cursor: pointer; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
-h1 { font-size: 1.65rem; font-weight: 750; letter-spacing: -.025em; margin: 0; }
-h2 { font-size: .78rem; margin: 1.75rem 0 .6rem; color: var(--muted); font-weight: 650; text-transform: uppercase; letter-spacing: .07em; }
+h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -.012em; margin: 0; }
+h2 { font-size: .875rem; margin: 1.75rem 0 .6rem; color: var(--muted); font-weight: 600; }
 header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .mes { display: flex; align-items: center; gap: .25rem; }
-.mes span { min-width: 8.5rem; text-align: center; text-transform: capitalize; font-weight: 600; }
-.icon { background: var(--surface); border: 1px solid var(--line); border-radius: .75rem; width: 2.4rem; height: 2.4rem; display: grid; place-items: center; font-size: 1.1rem; }
+.mes span { min-width: 8.5rem; text-align: center; font-weight: 600; }
+.icon { background: var(--surface); border: 1px solid var(--line); border-radius: .55rem; width: 2.4rem; height: 2.4rem; display: grid; place-items: center; font-size: 1.1rem; }
 .icon:disabled { opacity: .35; cursor: default; }
 
 /* cartões */
 .cats, .grafico-sec, .cal, .cartao {
-  background: var(--surface); border: 1px solid var(--line); border-radius: 1.1rem; box-shadow: var(--sombra);
+  background: var(--surface); border: 1px solid var(--line); border-radius: .55rem; box-shadow: var(--sombra);
 }
 
 /* finanças: total e categorias */
 .total { margin: 1.5rem 0 1rem; }
 .total small { color: var(--muted); display: block; font-weight: 500; }
-.total strong { font-size: 2.4rem; font-weight: 750; letter-spacing: -.03em; }
+.total strong { font-size: 2.4rem; font-weight: 750; letter-spacing: -.01em; }
 .cats { padding: .5rem 1rem; }
 .cat { display: grid; grid-template-columns: 7rem 1fr auto; gap: .75rem; align-items: center; padding: .5rem 0; font-size: .95rem; }
 .cat .barra { height: .5rem; background: var(--bg); border-radius: 1rem; overflow: hidden; }
@@ -70,7 +73,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 @media (prefers-reduced-motion: no-preference) { .cat .barra i { transition: width .3s; } }
 
 /* listas */
-ul { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 1.1rem; overflow: hidden; box-shadow: var(--sombra); }
+ul { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: .55rem; overflow: hidden; box-shadow: var(--sombra); }
 li { display: grid; grid-template-columns: 3rem 1fr auto auto; gap: .6rem; align-items: center; padding: .75rem 1rem; }
 li + li { border-top: 1px solid var(--line); }
 li .data { color: var(--muted); font-size: .85rem; }
@@ -91,7 +94,7 @@ li .desc small { display: block; color: var(--muted); font-size: .8rem; }
 .composer form { max-width: var(--larg); margin: 0 auto; display: flex; gap: .5rem; }
 .composer input {
   flex: 1; min-width: 0; font: inherit; color: var(--ink);
-  background: var(--surface); border: 1px solid var(--line); border-radius: 1.6rem; padding: .8rem 1.1rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: .55rem; padding: .8rem 1.1rem;
 }
 .composer input::placeholder { color: var(--muted); }
 .composer button { border-radius: 50%; width: 3rem; height: 3rem; font-size: 1.15rem; background: var(--surface); border: 1px solid var(--line); flex: none; }
@@ -101,15 +104,15 @@ li .desc small { display: block; color: var(--muted); font-size: .8rem; }
 #status.erro { color: var(--danger); }
 
 /* diálogos de edição */
-dialog { border: 1px solid var(--line); border-radius: 1.2rem; background: var(--surface); color: var(--ink); padding: 1.4rem; width: min(92vw, 26rem); box-shadow: 0 20px 60px rgba(0, 0, 0, .25); }
+dialog { border: 1px solid var(--line); border-radius: .55rem; background: var(--surface); color: var(--ink); padding: 1.4rem; width: min(92vw, 26rem); box-shadow: 0 20px 60px rgba(0, 0, 0, .25); }
 dialog::backdrop { background: rgba(10, 14, 20, .5); }
 dialog h3 { margin: 0 0 .25rem; font-size: 1.1rem; }
 dialog label { display: block; font-size: .82rem; color: var(--muted); margin: .85rem 0 .3rem; font-weight: 600; }
-dialog input, dialog select, dialog textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: .7rem; padding: .6rem .75rem; }
+dialog input, dialog select, dialog textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; padding: .6rem .75rem; }
 dialog .dica { font-size: .8rem; color: var(--muted); margin: .4rem 0 0; }
 dialog textarea { resize: vertical; }
 .acoes { display: flex; gap: .5rem; margin-top: 1.4rem; }
-.acoes button { flex: 1; border: 1px solid var(--line); border-radius: .8rem; padding: .7rem; background: var(--bg); font-weight: 550; }
+.acoes button { flex: 1; border: 1px solid var(--line); border-radius: .55rem; padding: .7rem; background: var(--bg); font-weight: 550; }
 .acoes .primario { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 650; }
 .acoes .perigo { color: var(--danger); }
 
@@ -130,7 +133,7 @@ dialog textarea { resize: vertical; }
 .tabs a .ind { position: absolute; top: -1px; width: 2rem; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); view-transition-name: tab-ind; }
 
 /* ícone de lápis: editar um item da lista */
-.lapis { flex: none; width: 2.3rem; height: 2.3rem; border-radius: .75rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.lapis { flex: none; width: 2.3rem; height: 2.3rem; border-radius: .55rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); display: grid; place-items: center; padding: 0; cursor: pointer; }
 .lapis:hover { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
 .lapis svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -210,3 +213,14 @@ h1, h2, h3 { text-wrap: balance; }
 .acoes .primario, .composer button.enviar, .btn.primario, .alternar button[aria-pressed="true"], .chips button[aria-pressed="true"], .tipo button[aria-pressed="true"],
 .dia.sel, .cat .barra i, .limite:not(.aviso):not(.estourou) i, .progresso i, .barra-col i, .gcat .b i, .cfg-botoes button.principal, .dias button[aria-pressed="true"],
 .chave input:checked + span, .tabs a .ind, .cel.n4, .fab, .coach-btn.cheio { background-image: var(--accent-grad, none) !important; }
+
+/* ===== v3: visual sóbrio (sem degradê chamativo, sem brilho, contornos finos, cantos moderados) ===== */
+button, input, select, textarea { font-family: inherit; }
+body { font-feature-settings: "tnum" 0; }
+.num, .nums b, time { font-variant-numeric: tabular-nums; }
+.cats, .grafico-sec, .cal, .cartao, .es, .bloco { border-radius: .75rem; box-shadow: none; }
+.icon { border-radius: .55rem; }
+dialog { border-radius: .9rem; box-shadow: 0 8px 30px rgba(0, 0, 0, .18); }
+button.primario, .acoes .primario, .btn.primario, .btn2.pri, .composer button.enviar { border-radius: .55rem; }
+.acoes button, .btn, .btn2 { border-radius: .55rem; }
+.data-topo::first-letter, .mes span::first-letter { text-transform: uppercase; }

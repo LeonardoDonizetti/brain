@@ -185,7 +185,7 @@
     const hora = ctx && ctx.agora ? ctx.agora.getHours() : 12;
 
     if (!q || !/[a-z0-9]/.test(q.replace(/[^a-z0-9]/g, '') || '')) {
-      if (/[\u{1F300}-\u{1FAFF}❤\u{1F44D}]/u.test(String(pergunta))) return R('😊 Se quiser, me pergunte sobre suas tarefas, gastos, rotina ou jornada.', 'emoji', SUGESTOES);
+      if (/[\u{1F300}-\u{1FAFF}❤\u{1F44D}]/u.test(String(pergunta))) return R('Se quiser, me pergunte sobre suas tarefas, gastos, rotina ou jornada.', 'emoji', SUGESTOES);
       return R('Escreva sua pergunta ou toque em uma das sugestões abaixo.', 'vazio', SUGESTOES);
     }
     // 1) segurança vem antes de tudo
@@ -221,8 +221,8 @@
       return R(resumoTxt(a, 3) || 'Está tudo em ordem por aqui. Nada atrasado e nenhum alerta de gastos.', 'resumo', ['O que faço agora?']);
     }
     // 4) conversa social
-    if (tem(q, 'obrigad', 'valeu', 'vlw', 'thanks', 'brigad', 'agradec')) return R(pick(['Por nada! Conte comigo.', 'Disponha! Qualquer coisa é só chamar.', 'Tamo junto! 😊'], seed), 'agradecimento', SUGESTOES.slice(0, 2));
-    if (tem(q, 'tchau', 'ate mais', 'ate logo', 'flw', 'falou', 'ate amanha', 'fui ', 'bye')) return R('Até mais! Bom descanso e boa sorte com o que falta. 👋', 'despedida', []);
+    if (tem(q, 'obrigad', 'valeu', 'vlw', 'thanks', 'brigad', 'agradec')) return R(pick(['Por nada! Conte comigo.', 'Disponha! Qualquer coisa é só chamar.', 'Tamo junto!'], seed), 'agradecimento', SUGESTOES.slice(0, 2));
+    if (tem(q, 'tchau', 'ate mais', 'ate logo', 'flw', 'falou', 'ate amanha', 'fui ', 'bye')) return R('Até mais! Bom descanso e boa sorte com o que falta.', 'despedida', []);
     if (tem(q, 'quem e voce', 'quem voce e', 'quem e vc', 'voce e uma ia', 'voce e um robo', 'voce e humano', 'seu nome', 'como se chama', 'chatgpt', 'gpt', 'o que voce faz', 'o que voce sabe', 'o que vc faz', 'o que voce pode', 'ajuda', 'help', 'comandos', 'como funciona', 'para que serve')) {
       return R('Sou o coach do seu Brain. Funciono por regras que leem seus dados aqui no aparelho, sem internet e sem IA paga, então não sou um modelo de linguagem. Posso: resumir seu dia, sugerir por qual tarefa começar, avisar sobre gastos e limites, falar da rotina e da jornada, e dar um empurrão quando faltar vontade.', 'identidade', SUGESTOES);
     }
@@ -234,7 +234,7 @@
       const r = resumoTxt(a, 2);
       return R(`${saud}! ${r ? r : 'Tudo em ordem por aqui.'} Quer ajuda com algo?`, 'saudacao', ['O que faço agora?', 'Como estão meus gastos?']);
     }
-    if (tem(q, 'kkk', 'haha', 'rsrs', 'rs ', 'lol', 'kk')) return R('😄 Bom ver você de bom humor! Quer que eu mostre o que falta fazer hoje?', 'risada', ['O que faço agora?']);
+    if (tem(q, 'kkk', 'haha', 'rsrs', 'rs ', 'lol', 'kk')) return R('Bom ver você de bom humor! Quer que eu mostre o que falta fazer hoje?', 'risada', ['O que faço agora?']);
     if (tem(q, 'burro', 'inutil', 'lixo', 'ruim', 'idiota', 'odeio', 'nao serve', 'nao entende')) return R('Desculpe, ainda tenho limites: entendo bem tarefas, gastos, rotina e jornada. Me diga o que precisa dentro desses temas e eu tento de novo.', 'critica', SUGESTOES);
     if (/^(sim|s|nao|n|ok|beleza|blz|certo|tá|ta|talvez|entendi|show|massa|legal|boa|top|uhum|aham)\b/.test(q)) return R('Certo! Quer que eu mostre o que falta fazer ou como estão seus gastos?', 'confirmacao', ['O que faço agora?', 'Como estão meus gastos?']);
     // 5) fora do escopo: reconhece, explica o limite e oferece caminhos (nunca beco sem saída)
@@ -296,7 +296,7 @@
   .coach-rap { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .6rem; }
   .coach-rap button { font: inherit; font-size: .78rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: .35rem .7rem; cursor: pointer; }
   .coach-in { display: flex; gap: .5rem; } .coach-in input { flex: 1; }
-  .coach-in button { font: inherit; font-weight: 650; border: 0; background: var(--accent); color: var(--on-accent); border-radius: .7rem; padding: 0 1rem; cursor: pointer; }`;
+  .coach-in button { font: inherit; font-weight: 650; border: 0; background: var(--accent); color: var(--on-accent); border-radius: .5rem; padding: 0 1rem; cursor: pointer; }`;
   document.head.append(css);
 
   let dlg = null;

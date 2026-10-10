@@ -10,7 +10,7 @@
   const ORDEM_SEMANA = [1, 2, 3, 4, 5, 6, 0];
   const INTERVALOS = [1, 7, 30, 90]; // revisão espaçada: 1 dia, 1 semana, 1 mês, 3 meses
   const MOTIVOS = { nao_sabia: 'Não sabia o conteúdo', distracao: 'Distração', calculo: 'Erro de cálculo', interpretacao: 'Interpretação da questão', tempo: 'Falta de tempo', chute: 'Chutei' };
-  const CORES_MATERIA = ['#3452e1', '#1a7f53', '#c0362c', '#b4650f', '#7a45d1', '#0b7a9c', '#c72c6b', '#5f6b7a'];
+  const CORES_MATERIA = ['#2f5fb3', '#2e7d57', '#b3402f', '#b0701c', '#7a4f9e', '#1f7f95', '#b03a6a', '#5f6b7a'];
 
   const pad = (n) => String(n).padStart(2, '0');
   const ehData = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
