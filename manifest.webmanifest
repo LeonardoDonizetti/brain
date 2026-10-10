@@ -30,6 +30,11 @@
   ],
   "shortcuts": [
     {
+      "name": "Estudos",
+      "short_name": "Estudos",
+      "url": "./estudos.html"
+    },
+    {
       "name": "Tarefas",
       "short_name": "Tarefas",
       "url": "./tarefas.html"

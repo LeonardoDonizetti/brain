@@ -8,6 +8,8 @@
   const plural = (n, a, b) => (n === 1 ? a : b);
   const min = (c) => c.toLowerCase();
 
+  const ES = () => (typeof require === 'function' && typeof module === 'object' ? require('./estudos.js') : root.BrainEstudos);
+
   // Frases por tom. Princípios: foco no próximo passo pequeno, sem culpa, sem "zerar" progresso (Duolingo/Cleo/Habitica/Smashing).
   const TOM = {
     amigo: {
@@ -158,6 +160,7 @@
       if (!j.avaliacao_hoje && hora >= 20) add('jornada', 'info', tom.jor_avaliar(), 45);
       else add('jornada', 'info', tom.jor_dia(j.jornada.dia_atual, j.jornada.duracao), 8);
     }
+    if (ctx.estudos && ES()) { try { ES().mensagens({ e: ctx.estudos, hoje, agora: ctx.agora }).forEach((m) => saida.push(m)); } catch (e) { /* estudos indisponíveis: segue sem */ } }
     saida.sort((a, b) => b.prio - a.prio);
     return { mensagens: saida, alvo: alvo ? alvo.titulo : null, atrasadas: atrasadas.length, dehoje: dehoje.length };
   }
@@ -198,6 +201,10 @@
       return R('Sinto muito que o dia esteja pesado. Hoje não precisa ser perfeito: escolha uma coisa pequena, respire e faça só ela. Se esse peso estiver durando, vale conversar com alguém de confiança ou um profissional. Sou só um assistente de regras e não substituo isso.', 'sentimento', ['O que faço agora?', 'Estou sem vontade']);
     }
     // 3) domínios do app
+    if (ctx && ctx.estudos && ES()) {
+      let re = null; try { re = ES().responder(q, { e: ctx.estudos, hoje: ctx.hoje, agora: ctx.agora }); } catch (e) { re = null; }
+      if (re) return R(re, 'estudos', ['Como estou hoje?', 'O que faço agora?']);
+    }
     if (tem(q, 'gast', 'dinheiro', 'financ', 'alimenta', 'comida', 'ifood', 'mercado', 'limite', 'orcamento', 'economi', 'saldo', 'salario', 'contas', 'quanto gastei', 'categoria')) {
       const f = ctx && ctx.fin && ctx.fin.atual;
       if (!f || !f.total) return R('Ainda não tenho gastos deste mês para analisar. Registre alguns em Finanças e eu comento.', 'gastos', ['Como estou hoje?']);
@@ -258,15 +265,16 @@
     const agora = new Date();
     const mes = iso(agora).slice(0, 7);
     const ant = iso(new Date(agora.getFullYear(), agora.getMonth() - 1, 1)).slice(0, 7);
-    const [t, r, j, fa, fb] = await Promise.all([
+    const [t, r, j, fa, fb, es] = await Promise.all([
       get('/api/tarefas').catch(() => ({ tarefas: [] })),
       get('/api/rotina').catch(() => null),
       get('/api/jornada?dias=7').catch(() => null),
       get(`/api/financas/gastos?mes=${mes}`).catch(() => null),
       get(`/api/financas/gastos?mes=${ant}`).catch(() => null),
+      get('/api/estudos').catch(() => null),
     ]);
     const p = P() ? P().get() : { coach_tom: 'amigo', coach_alerta_pct: 40 };
-    return { agora, hoje: iso(agora), tarefas: t.tarefas, rotina: r, jornada: j, fin: { atual: fa, anterior: fb }, tom: p.coach_tom, limitePeso: p.coach_alerta_pct };
+    return { agora, hoje: iso(agora), tarefas: t.tarefas, rotina: r, jornada: j, fin: { atual: fa, anterior: fb }, estudos: es && es.estudos, tom: p.coach_tom, limitePeso: p.coach_alerta_pct };
   }
 
   function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -333,7 +341,7 @@
     let c;
     try { c = await coletar(); } catch (e) { alvo.hidden = true; return; }
     let msgs = analisar(c).mensagens;
-    if (foco === 'gasto') msgs = msgs.filter((m) => m.area === 'gasto');
+    if (foco === 'gasto' || foco === 'estudo') msgs = msgs.filter((m) => m.area === foco);
     else msgs = msgs.filter((m, i) => m.nivel !== 'bom' || i < 2);
     msgs = msgs.slice(0, max || 3);
     if (!msgs.length) { alvo.hidden = true; return; }

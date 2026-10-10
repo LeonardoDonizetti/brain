@@ -7,6 +7,7 @@
       href: 'rotina.html', nome: 'Rotina',
       icone: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
     },
+    { href: 'estudos.html', nome: 'Estudos', icone: svg('<path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 006.5 23H20v-5"/><path d="M9 8h7M9 12h5"/>') },
     { href: 'jornada.html', nome: 'Jornada', icone: svg('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>') },
     { href: 'tarefas.html', nome: 'Tarefas', icone: svg('<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>') },
     {
@@ -28,6 +29,9 @@
     { nome: 'Apple Fitness', url: 'https://www.apple.com/watch/', uso: 'Anéis de progresso diário.' },
     { nome: 'GitHub', url: 'https://github.com', uso: 'Mapa de quadradinhos de contribuições, usado na Constância.' },
     { nome: 'Streaks', url: 'https://www.streaksapp.com', uso: 'Sequência de dias seguidos como motivação dos hábitos.' },
+    { nome: 'Anki', url: 'https://apps.ankiweb.net', uso: 'Repetição espaçada: revisões agendadas em 1 dia, 1 semana, 1 mês e 3 meses.' },
+    { nome: 'Pomofocus', url: 'https://pomofocus.io', uso: 'Cronômetro de foco com presets e registro do tempo estudado.' },
+    { nome: 'Dunlosky et al. (2013)', url: 'https://www.aft.org/ae/fall2013/dunlosky_rawson_marsh_nathan_willingham', uso: 'Pesquisa sobre técnicas de estudo: recuperação ativa, prática espaçada e intercalada.' },
     { nome: 'Modo Caverna', url: null, uso: 'Jornada por dias, avaliação diária, rotinas e renúncias (referência que você trouxe).' },
   ];
   const DIAS_LETRA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];

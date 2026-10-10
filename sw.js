@@ -1,7 +1,7 @@
 /* Deixa o Brain abrir sem internet. Muda VERSAO sempre que atualizar os arquivos. */
-const VERSAO = 'brain-v9';
-const ARQUIVOS = ['./', 'index.html', 'financas.html', 'tarefas.html', 'rotina.html', 'jornada.html',
-  'base.css', 'nav.js', 'texto.js', 'prefs.js', 'coach.js', 'agenda.js', 'categorias.js', 'api-local.js', 'manifest.webmanifest',
+const VERSAO = 'brain-v10';
+const ARQUIVOS = ['./', 'index.html', 'financas.html', 'tarefas.html', 'rotina.html', 'jornada.html', 'estudos.html',
+  'base.css', 'nav.js', 'texto.js', 'prefs.js', 'coach.js', 'agenda.js', 'estudos.js', 'categorias.js', 'api-local.js', 'manifest.webmanifest',
   'icon-192.png', 'icon-512.png', 'icon-180.png'];
 
 self.addEventListener('install', (e) => {

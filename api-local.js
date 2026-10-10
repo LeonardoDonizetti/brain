@@ -9,6 +9,7 @@
   const T = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./texto.js') : root.BrainTexto;
   const P = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./prefs.js') : (root.BrainPrefs || root.BrainPrefsLib);
   const C = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./categorias.js') : root.BrainCategorias;
+  const ES = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./estudos.js') : root.BrainEstudos;
   const { iso, addDias, hojeData, deIso } = T;
 
   class ErroHTTP extends Error {
@@ -26,7 +27,7 @@
     return {
       versao: 1,
       gastos: [], orcamento: { total: 0, categorias: {} }, recorrentes: [], tarefas: [], rotina_itens: [], rotina_registros: [], avaliacoes: [],
-      config: {}, jornadas: [], preferencias: null, ultimo_backup: null,
+      config: {}, jornadas: [], estudos: null, preferencias: null, ultimo_backup: null,
     };
   }
 
@@ -588,6 +589,16 @@
 
 
   // =========================================================== preferências
+  async function estudosLer(estado) {
+    return { estudos: ES.sanitizar(estado.estudos) };
+  }
+  async function estudosSalvar(estado, ctx, q, corpo) {
+    if (!corpo || typeof corpo !== 'object' || typeof corpo.estudos !== 'object') erro(400, 'Dados de estudos inválidos.');
+    estado.estudos = ES.sanitizar(corpo.estudos);
+    ctx.salvar = true;
+    return { estudos: estado.estudos };
+  }
+
   async function prefsLer(estado) {
     return { salvo: !!estado.preferencias, preferencias: P.sanitizar(estado.preferencias) };
   }
@@ -621,6 +632,8 @@
     ['DELETE', `/api/rotina/itens/${id}`, rotinaApagar],
     ['PUT', '/api/rotina/marcar', rotinaMarcar],
     ['POST', '/api/rotina/modelo', rotinaModelo],
+    ['GET', '/api/estudos', estudosLer],
+    ['PUT', '/api/estudos', estudosSalvar],
     ['GET', '/api/preferencias', prefsLer],
     ['PUT', '/api/preferencias', prefsSalvar],
     ['GET', '/api/jornada', jornadaPainel],
@@ -654,7 +667,7 @@
     return {
       app: 'brain', versao: 1, exportado_em: new Date().toISOString(),
       gastos: estado.gastos, orcamento: estado.orcamento, recorrentes: estado.recorrentes, tarefas: estado.tarefas, rotina_itens: estado.rotina_itens,
-      rotina_registros: estado.rotina_registros, avaliacoes: estado.avaliacoes, config: estado.config, jornadas: estado.jornadas,
+      rotina_registros: estado.rotina_registros, avaliacoes: estado.avaliacoes, config: estado.config, jornadas: estado.jornadas, estudos: estado.estudos,
       preferencias: estado.preferencias,
     };
   }
@@ -732,6 +745,7 @@
       const duracao = Number(j.duracao);
       novo.jornadas.push({ id: novo.jornadas.length + 1, nome: texto(j.nome || 'Minha jornada').slice(0, 40), duracao: Number.isInteger(duracao) && duracao >= 7 && duracao <= 365 ? duracao : 30, inicio: j.inicio, fim: j.fim, dias_cumpridos: Math.max(0, Math.min(365, Number(j.dias_cumpridos) || 0)), status: j.status, motivo: texto(j.motivo).slice(0, 300) });
     }
+    if (obj.estudos && typeof obj.estudos === 'object') novo.estudos = ES.sanitizar(obj.estudos);
     if (obj.preferencias && typeof obj.preferencias === 'object') novo.preferencias = P.sanitizar(obj.preferencias);
     // ids ausentes ou repetidos ganham números novos
     for (const chave of ['gastos', 'tarefas']) {
