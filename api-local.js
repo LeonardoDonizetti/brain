@@ -188,7 +188,7 @@
     const lista = estado.tarefas.slice().sort((a, b) =>
       (a.feita - b.feita) || cmpNulo(a.data, b.data) || cmpTxt(a.data || '', b.data || '') ||
       cmpNulo(a.hora, b.hora) || cmpTxt(a.hora || '', b.hora || '') || (a.id - b.id));
-    return { tarefas: lista.map((t) => ({ id: t.id, titulo: t.titulo, data: t.data, hora: t.hora, feita: t.feita })) };
+    return { tarefas: lista.map((t) => ({ id: t.id, titulo: t.titulo, data: t.data, hora: t.hora, feita: t.feita, concluida_em: t.concluida_em || null })) };
   }
 
   function lerTarefa(corpo) {
@@ -209,7 +209,7 @@
     if (data || hora) titulo = lido.titulo;
     titulo = titulo.slice(0, 200);
     const id = proximoId(estado.tarefas);
-    estado.tarefas.push({ id, titulo, data, hora, feita: 0 });
+    estado.tarefas.push({ id, titulo, data, hora, feita: 0, concluida_em: null });
     ctx.salvar = true;
     return { id, titulo, data, hora };
   }
@@ -223,7 +223,7 @@
 
   async function tarefasAlternar(estado, ctx, q, corpo, params) {
     const t = estado.tarefas.find((x) => x.id === params.id);
-    if (t) { t.feita = 1 - t.feita; ctx.salvar = true; }
+    if (t) { t.feita = 1 - t.feita; t.concluida_em = t.feita ? iso(hojeData()) : null; ctx.salvar = true; }
     return { ok: true };
   }
 
@@ -549,7 +549,7 @@
     }
     for (const t of lista(obj.tarefas)) {
       if (!texto(t.titulo).trim()) continue;
-      novo.tarefas.push({ id: Number.isInteger(t.id) ? t.id : 0, titulo: texto(t.titulo).slice(0, 200), data: ehData(t.data) ? t.data : null, hora: /^([01]\d|2[0-3]):[0-5]\d$/.test(texto(t.hora)) ? t.hora : null, feita: t.feita ? 1 : 0 });
+      novo.tarefas.push({ id: Number.isInteger(t.id) ? t.id : 0, titulo: texto(t.titulo).slice(0, 200), data: ehData(t.data) ? t.data : null, hora: /^([01]\d|2[0-3]):[0-5]\d$/.test(texto(t.hora)) ? t.hora : null, feita: t.feita ? 1 : 0, concluida_em: t.feita && ehData(t.concluida_em) ? t.concluida_em : null });
     }
     for (const i of lista(obj.rotina_itens)) {
       if (!PERIODOS.includes(i.periodo) || !TIPOS.includes(i.tipo) || !texto(i.titulo).trim() || !Number.isInteger(i.id)) continue;
