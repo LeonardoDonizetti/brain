@@ -16,6 +16,7 @@
 <script src="texto.js"></script>
 <script src="categorias.js"></script>
 <script src="api-local.js"></script>
+<script src="agenda.js"></script>
 <script src="nav.js" defer></script>
 <style>
   body { padding-bottom: calc(var(--nav-h) + 12rem); }
@@ -72,6 +73,7 @@
     <input id="d-data" type="date">
     <label for="d-hora">Hora</label>
     <input id="d-hora" type="time">
+    <p class="dica"><button type="button" class="link" id="d-google" style="background:none;border:0;color:var(--accent);font-weight:650;padding:.2rem 0;cursor:pointer">+ Adicionar ao Google Agenda</button></p>
     <div class="acoes">
       <button type="button" class="perigo" id="d-apagar">Apagar</button>
       <button type="button" id="d-cancelar">Cancelar</button>
@@ -225,6 +227,12 @@ function mudarMes(delta) {
   selecionado = null;
   desenhar();
 }
+
+$('d-google').onclick = () => {
+  const url = BrainAgenda.googleUrl({ titulo: $('d-titulo').value, data: $('d-data').value, hora: $('d-hora').value });
+  if (!url) { aviso('Escolha uma data para adicionar ao Google Agenda.', true); return; }
+  window.open(url, '_blank', 'noopener');
+};
 
 function abrirDialogo(t) {
   editando = t;

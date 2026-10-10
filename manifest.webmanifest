@@ -9,8 +9,45 @@
   "background_color": "#f5f6fa",
   "theme_color": "#3452e1",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tarefas",
+      "short_name": "Tarefas",
+      "url": "./tarefas.html"
+    },
+    {
+      "name": "Registrar gasto",
+      "short_name": "Gasto",
+      "url": "./financas.html"
+    },
+    {
+      "name": "Rotina de hoje",
+      "short_name": "Rotina",
+      "url": "./rotina.html"
+    },
+    {
+      "name": "Jornada",
+      "short_name": "Jornada",
+      "url": "./jornada.html"
+    }
   ]
 }

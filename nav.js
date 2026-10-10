@@ -114,7 +114,7 @@
         <h3>Aparência</h3>
         <div class="cfg-cartao">
           <div class="cfg-linha"><div class="rot">Tema</div><div class="ctl">${seg('tema', [['auto', 'Automático'], ['claro', 'Claro'], ['escuro', 'Escuro']])}</div></div>
-          <div class="cfg-linha"><div class="rot">Cor de destaque</div><div class="ctl cores" id="cfg-cores">${cores.map(([k, c]) => `<button type="button" data-v="${k}" aria-pressed="false" aria-label="${c.nome}" style="background:${c.claro ? c.claro[0] : '#3452e1'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`).join('')}</div></div>
+          <div class="cfg-linha"><div class="rot">Cor de destaque</div><p class="dica">As últimas 7 são gradientes.</p><div class="ctl cores" id="cfg-cores">${cores.map(([k, c]) => `<button type="button" data-v="${k}" aria-pressed="false" aria-label="${c.nome}" style="background:${c.grad ? `linear-gradient(135deg, ${c.claro[0]}, ${c.claro[3]})` : (c.claro ? c.claro[0] : '#3452e1')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`).join('')}</div></div>
         </div>
 
         <h3>Metas</h3>
@@ -141,6 +141,13 @@
         <div class="cfg-cartao">
           ${BLOCOS.map(([k, t]) => `<div class="cfg-linha flex"><div class="rot">${t}</div><label class="chave"><input type="checkbox" data-home="${k}" aria-label="${t}"><span></span></label></div>`).join('')}
           <div class="cfg-linha"><div class="rot">Período do gráfico de barras</div><div class="ctl">${seg('periodo_grafico', [[7, '7 dias'], [14, '14 dias'], [30, '30 dias']])}</div></div>
+        </div>
+
+        <h3>Agenda (Google)</h3>
+        <div class="cfg-cartao">
+          <div class="cfg-linha"><div class="rot">Levar tarefas para o Google Agenda</div>
+            <p class="dica">De graça e sem login: baixe o arquivo .ics e abra no celular (o Google Agenda oferece adicionar) ou importe em calendar.google.com, Configurações, Importar. Entram as tarefas pendentes que têm data. Para uma tarefa só, use "Adicionar ao Google Agenda" na edição dela.</p>
+            <div class="cfg-botoes"><button type="button" class="principal" id="cfg-ics">Baixar agenda (.ics)</button></div></div>
         </div>
 
         <h3>Dados e backup</h3>
@@ -306,6 +313,17 @@
         msg(`Planilha de ${tipo} gerada (${tipo === 'tarefas' ? d.tarefas.length : d.gastos.length} linhas).`);
       } catch (e) { msg('Não consegui gerar a planilha.', true); }
     }
+    $('cfg-ics').addEventListener('click', async () => {
+      if (!L()) { msg('Isso só existe na versão do celular.'); return; }
+      try {
+        if (!window.BrainAgenda) await new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'agenda.js'; s.onload = ok; s.onerror = no; document.head.append(s); });
+        const d = await L().copia();
+        const r = window.BrainAgenda.ics(d.tarefas);
+        if (!r.eventos) { msg('Nenhuma tarefa pendente com data para exportar.', true); return; }
+        baixar(new Blob([r.texto], { type: 'text/calendar;charset=utf-8' }), `brain-agenda-${hojeIso()}.ics`);
+        msg(`Agenda gerada com ${r.eventos} ${r.eventos === 1 ? 'evento' : 'eventos'}.`);
+      } catch (e) { msg('Não consegui gerar a agenda.', true); }
+    });
     $('cfg-csv-tarefas').addEventListener('click', () => exportarCsv('tarefas'));
     $('cfg-csv-gastos').addEventListener('click', () => exportarCsv('gastos'));
 

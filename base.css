@@ -205,3 +205,8 @@ h1, h2, h3 { text-wrap: balance; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .esq { background: var(--line); }
 }
+
+/* Gradientes de destaque: só valem quando uma cor em degradê está escolhida (--accent-grad). */
+.acoes .primario, .composer button.enviar, .btn.primario, .alternar button[aria-pressed="true"], .chips button[aria-pressed="true"], .tipo button[aria-pressed="true"],
+.dia.sel, .cat .barra i, .limite:not(.aviso):not(.estourou) i, .progresso i, .barra-col i, .gcat .b i, .cfg-botoes button.principal, .dias button[aria-pressed="true"],
+.chave input:checked + span, .tabs a .ind, .cel.n4, .fab, .coach-btn.cheio { background-image: var(--accent-grad, none) !important; }

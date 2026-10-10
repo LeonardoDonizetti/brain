@@ -27,6 +27,14 @@
     laranja: { nome: 'Laranja', claro: ['#b84f08', '#fdeedd', '#ffffff'], escuro: ['#f0a060', '#3a2512', '#2a1505'] },
     rosa:    { nome: 'Rosa',    claro: ['#c72c6b', '#fde8f0', '#ffffff'], escuro: ['#f27fa8', '#3d1a2a', '#2e0b1a'] },
     grafite: { nome: 'Grafite', claro: ['#3a4656', '#e9edf2', '#ffffff'], escuro: ['#b8c4d4', '#263140', '#101820'] },
+    // gradientes: [destaque, suave, texto sobre destaque, segunda cor do degradê]
+    aurora:  { nome: 'Aurora',      grad: true, claro: ['#3452e1', '#e8ecfd', '#ffffff', '#8a3fd1'], escuro: ['#7b93ff', '#1f2547', '#0d1230', '#c08cf5'] },
+    sol:     { nome: 'Pôr do sol',  grad: true, claro: ['#d9480f', '#fdeedd', '#ffffff', '#c72c6b'], escuro: ['#ff9a5c', '#3a2512', '#2a1505', '#f27fa8'] },
+    oceano:  { nome: 'Oceano',      grad: true, claro: ['#0b7a9c', '#e1f3f8', '#ffffff', '#2d4fd6'], escuro: ['#4cc9e8', '#12303a', '#04202a', '#7e9bff'] },
+    floresta:{ nome: 'Floresta',    grad: true, claro: ['#1a7f53', '#e3f5ec', '#ffffff', '#0c7a8a'], escuro: ['#4cc38a', '#17332a', '#08210f', '#4cc9d0'] },
+    fogo:    { nome: 'Fogo',        grad: true, claro: ['#c0362c', '#fdeceb', '#ffffff', '#b8680a'], escuro: ['#ff8d6b', '#3a1f1d', '#2a0f08', '#ffc457'] },
+    vinho:   { nome: 'Vinho',       grad: true, claro: ['#a3245f', '#f6e6f0', '#ffffff', '#5b2aa8'], escuro: ['#f27fa8', '#3d1a2a', '#2e0b1a', '#b996f2'] },
+    noite:   { nome: 'Noite',       grad: true, claro: ['#3a4656', '#e9edf2', '#ffffff', '#2f3fa8'], escuro: ['#b8c4d4', '#263140', '#101820', '#8ea2ff'] },
   };
 
   const inteiro = (v, min, max, padrao) => {
@@ -73,8 +81,8 @@
       const escuro = atual.tema === 'escuro' || (atual.tema === 'auto' && escuroSistema && escuroSistema.matches);
       const c = CORES[atual.cor];
       const par = c && (escuro ? c.escuro : c.claro);
-      for (const v of ['--accent', '--accent-soft', '--on-accent']) el.style.removeProperty(v);
-      if (par) { el.style.setProperty('--accent', par[0]); el.style.setProperty('--accent-soft', par[1]); el.style.setProperty('--on-accent', par[2]); }
+      for (const v of ['--accent', '--accent-soft', '--on-accent', '--accent-grad']) el.style.removeProperty(v);
+      if (par) { el.style.setProperty('--accent', par[0]); el.style.setProperty('--accent-soft', par[1]); el.style.setProperty('--on-accent', par[2]); if (par[3]) el.style.setProperty('--accent-grad', `linear-gradient(135deg, ${par[0]}, ${par[3]})`); }
       let meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', escuro ? '#0e1319' : (par ? par[0] : '#3452e1'));
     }
