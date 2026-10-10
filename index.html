@@ -29,14 +29,6 @@
   .mini { height: .45rem; background: var(--bg); border-radius: 1rem; overflow: hidden; margin-top: .8rem; }
   .mini i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 1rem; }
   @media (prefers-reduced-motion: no-preference) { .mini i { transition: width .4s; } }
-  .backup { margin-top: 1.1rem; padding: 1.1rem 1.25rem; }
-  .backup h2 { margin: 0 0 .25rem; font-size: 1rem; }
-  .backup p { margin: .2rem 0 .8rem; color: var(--muted); font-size: .88rem; line-height: 1.4; }
-  .backup .linha { display: flex; gap: .6rem; flex-wrap: wrap; }
-  .backup button { flex: 1 1 8rem; min-height: 2.6rem; border-radius: .75rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 650; cursor: pointer; }
-  .backup button.principal { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-  .backup .aviso { color: #b45309; font-weight: 650; }
-  .backup .msg { margin: .7rem 0 0; font-size: .88rem; }
 </style>
 </head>
 <body>
@@ -67,16 +59,6 @@
       <span class="sub" id="f-sub">Gastos por texto ou voz</span>
     </a>
   </div>
-  <section class="card cartao backup" aria-labelledby="bk-t">
-    <h2 id="bk-t">Seus dados e backup</h2>
-    <p id="bk-info">Tudo fica guardado só neste aparelho.</p>
-    <div class="linha">
-      <button class="principal" id="bk-exportar" type="button">Salvar backup</button>
-      <button id="bk-importar" type="button">Restaurar backup</button>
-    </div>
-    <input type="file" id="bk-arquivo" accept=".json,application/json" hidden>
-    <p class="msg" id="bk-msg" role="status"></p>
-  </section>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -115,87 +97,6 @@ fetch('/api/financas/gastos').then((r) => r.json()).then((d) => {
   $('f-sub').textContent = `${d.gastos.length} lançamento${d.gastos.length === 1 ? '' : 's'} neste mês`;
 }).catch(() => {});
 
-// ---- backup (os dados ficam só neste aparelho) ----
-(function () {
-  const L = window.BrainLocal;
-  if (!L) return;
-  const info = $('bk-info'), msg = $('bk-msg');
-  async function atualizar() {
-    try {
-      const r = await L.resumo();
-      let t = 'Tudo fica guardado só neste aparelho.';
-      let aviso = false;
-      if (r.registros) {
-        if (!r.ultimo_backup) { t += ' Você ainda não fez backup.'; aviso = true; }
-        else {
-          const dias = Math.round((new Date(iso(agora) + 'T12:00') - new Date(r.ultimo_backup + 'T12:00')) / 86400000);
-          t += dias === 0 ? ' Último backup: hoje.' : ` Último backup: há ${dias} dia${dias > 1 ? 's' : ''}.`;
-          if (dias >= 14) aviso = true;
-        }
-      }
-      info.textContent = t;
-      info.className = aviso ? 'aviso' : '';
-    } catch (e) {}
-  }
-  function baixar(blob, nome) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = nome; a.rel = 'noopener';
-    document.body.append(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-  }
-  $('bk-exportar').addEventListener('click', async () => {
-    msg.textContent = '';
-    let texto;
-    try { texto = await L.exportar(); }
-    catch (e) { msg.textContent = 'Não consegui ler os dados do aparelho: ' + (e && e.message ? e.message : e); return; }
-    const nome = `brain-backup-${iso(agora)}.json`;
-    const blob = new Blob([texto], { type: 'application/json' });
-    let feito = false;
-    try {
-      const arquivo = new File([blob], nome, { type: 'application/json' });
-      if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
-        await navigator.share({ files: [arquivo], title: 'Backup do Brain' });
-        feito = true;
-      }
-    } catch (e) {
-      if (e && e.name === 'AbortError') { msg.textContent = 'Compartilhamento cancelado. Toque de novo em "Salvar backup".'; return; }
-    }
-    if (!feito) {
-      try { baixar(blob, nome); feito = true; } catch (e) {}
-    }
-    if (feito) {
-      msg.textContent = 'Backup gerado. Confira em Downloads/Arquivos e guarde uma cópia fora do celular (e-mail, nuvem).';
-      atualizar();
-    } else {
-      msg.textContent = 'Não consegui salvar o arquivo. Use o botão "Copiar texto do backup" abaixo.';
-    }
-    // plano C: copiar o texto do backup
-    let c = $('bk-copiar');
-    if (!c) {
-      c = document.createElement('button'); c.id = 'bk-copiar'; c.type = 'button'; c.textContent = 'Copiar texto do backup';
-      c.style.cssText = 'margin-top:.6rem;width:100%;min-height:2.6rem;border-radius:.75rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:650;cursor:pointer';
-      msg.after(c);
-    }
-    c.onclick = async () => {
-      try { await navigator.clipboard.writeText(texto); msg.textContent = 'Texto copiado. Cole em uma nota ou e-mail para você mesmo.'; }
-      catch (e) { msg.textContent = 'O navegador não deixou copiar.'; }
-    };
-  });
-  $('bk-importar').addEventListener('click', () => $('bk-arquivo').click());
-  $('bk-arquivo').addEventListener('change', async (ev) => {
-    const f = ev.target.files[0];
-    ev.target.value = '';
-    if (!f) return;
-    if (!confirm('Restaurar vai SUBSTITUIR tudo o que está neste aparelho pelo conteúdo do arquivo. Continuar?')) return;
-    try {
-      const r = await L.importar(await f.text());
-      msg.textContent = `Restaurado: ${r.gastos} gastos, ${r.tarefas} tarefas, ${r.itens} itens de rotina, ${r.avaliacoes} avaliações.`;
-      location.reload();
-    } catch (e) { msg.textContent = e.message || 'Não consegui restaurar esse arquivo.'; }
-  });
-  L.persistir();
-  atualizar();
-})();
 </script>
 </body>
 </html>
