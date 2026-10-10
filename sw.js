@@ -1,5 +1,5 @@
 /* Deixa o Brain abrir sem internet. Muda VERSAO sempre que atualizar os arquivos. */
-const VERSAO = 'brain-v4';
+const VERSAO = 'brain-v5';
 const ARQUIVOS = ['./', 'index.html', 'financas.html', 'tarefas.html', 'rotina.html', 'jornada.html',
   'base.css', 'nav.js', 'texto.js', 'prefs.js', 'categorias.js', 'api-local.js', 'manifest.webmanifest',
   'icon-192.png', 'icon-512.png', 'icon-180.png'];

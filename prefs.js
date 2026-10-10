@@ -81,7 +81,9 @@
       /** Muda algumas preferências (ex.: set({ tema: 'escuro' })), aplica na hora e guarda no aparelho. */
       set(parcial) {
         const novo = sanitizar(Object.assign({}, atual, parcial, parcial && parcial.home ? { home: Object.assign({}, atual.home, parcial.home) } : {}));
+        const mudouVisual = novo.tema !== atual.tema || novo.cor !== atual.cor;
         atual = novo;
+        if (mudouVisual) { document.documentElement.classList.add('troca-tema'); clearTimeout(api._tt); api._tt = setTimeout(() => document.documentElement.classList.remove('troca-tema'), 400); }
         aplicar(); guardarLocal();
         if (root.BrainLocal) root.BrainLocal.chamar('PUT', '/api/preferencias', '', novo).catch(() => {});
         ouvintes.forEach((f) => { try { f(api.get()); } catch (e) {} });

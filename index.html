@@ -35,7 +35,7 @@
   .anel .centro b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.05rem; font-weight: 750; letter-spacing: -.02em; }
   .anel .nome { font-size: .8rem; font-weight: 650; margin-top: .45rem; }
   .anel .sub { font-size: .76rem; color: var(--muted); }
-  @media (prefers-reduced-motion: no-preference) { .anel .valor { transition: stroke-dashoffset .6s; } }
+  @media (prefers-reduced-motion: no-preference) { .anel .valor { transition: stroke-dashoffset 700ms var(--ease), stroke 200ms ease; } }
 
   /* destaque numérico + seletor de período */
   .destaque { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
@@ -111,6 +111,18 @@
   .meta-linha { position: absolute; left: 1.4rem; right: 0; border-top: 2px dashed var(--warm); pointer-events: none; }
   .meta-linha::after { content: "meta"; position: absolute; right: 0; top: -1.05rem; font-size: .66rem; color: var(--warm); font-weight: 700; }
   .meta-txt { margin: .7rem 0 0; font-size: .82rem; color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes cresce { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+    @keyframes surge { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+    .barras.anim .barra-col i { transform-origin: bottom; animation: cresce 420ms var(--ease) backwards; animation-delay: calc(var(--i) * 18ms); }
+    .mapa.anim .cel { animation: surge 300ms var(--ease) backwards; animation-delay: calc(var(--c) * 14ms); }
+    @keyframes estala { 0% { transform: scale(.82); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+    .check.estala { animation: estala 260ms var(--ease); }
+    table.tarefas tr.saindo td { opacity: .45; transition: opacity 200ms ease; }
+    .barra-col i { transition: height 320ms var(--ease); }
+    #dica { transform: scale(.96); transition: opacity 125ms ease-out, transform 125ms ease-out; }
+    #dica.on { transform: none; }
+  }
   .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
@@ -163,7 +175,7 @@
   <div data-bloco="tabela">
   <div class="sec-topo"><h2>Próximas tarefas</h2><a href="tarefas.html">Gerenciar</a></div>
   <section class="cartao bloco" aria-label="Tarefas por dia">
-    <div class="tabela-rolagem" id="tabela-area"></div>
+    <div class="tabela-rolagem" id="tabela-area"><div class="esq" style="width:40%"></div><div class="esq"></div><div class="esq" style="width:85%"></div><div class="esq" style="width:60%"></div></div>
     <div class="mais"><button type="button" id="alt-feitas" aria-pressed="false">Mostrar concluídas</button><span class="vazio" id="tab-total"></span></div>
   </section>
   </div>
@@ -172,7 +184,7 @@
   <div class="sec-topo"><h2>Gastos do mês</h2><a href="financas.html">Ver gastos</a></div>
   <section class="cartao bloco" aria-label="Gastos do mês">
     <div class="gastos-topo"><div><strong class="num" id="f-total">-</strong><small id="f-sub"></small></div><span class="delta" id="f-delta"></span></div>
-    <div id="f-cats" style="margin-top:.8rem"></div>
+    <div id="f-cats" style="margin-top:.8rem"><div class="esq"></div><div class="esq" style="width:70%"></div></div>
   </section>
   </div>
 </main>
@@ -218,7 +230,15 @@ function ligarDica(el, texto) {
 function anel(el, { nome, frac, centro, sub, ok }) {
   const R = 40, C = 2 * Math.PI * R;
   const f = Math.max(0, Math.min(1, frac || 0));
-  el.innerHTML = `<div class="centro"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="trilho" cx="50" cy="50" r="${R}" fill="none" stroke-width="10"/><circle class="valor ${ok ? 'ok' : ''}" cx="50" cy="50" r="${R}" fill="none" stroke-width="10" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - f)).toFixed(1)}"/></svg><b class="num">${centro}</b></div><div class="nome">${nome}</div><div class="sub">${sub}</div>`;
+  if (!el.firstElementChild) {
+    el.innerHTML = `<div class="centro"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="trilho" cx="50" cy="50" r="${R}" fill="none" stroke-width="10"/><circle class="valor" cx="50" cy="50" r="${R}" fill="none" stroke-width="10" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/></svg><b class="num"></b></div><div class="nome"></div><div class="sub"></div>`;
+    el.offsetWidth; // força o início em "vazio" para o anel preencher com animação
+  }
+  el.querySelector('.valor').style.strokeDashoffset = (C * (1 - f)).toFixed(1);
+  el.querySelector('.valor').classList.toggle('ok', !!ok);
+  el.querySelector('b').textContent = centro;
+  el.querySelector('.nome').textContent = nome;
+  el.querySelector('.sub').textContent = sub;
   el.setAttribute('aria-label', `${nome}: ${centro}. ${sub}`);
 }
 anel($('a-rotina'), { nome: 'Rotina', frac: 0, centro: '-', sub: '' });
@@ -231,6 +251,7 @@ let periodo = PF().periodo_grafico;
 let mostrarFeitas = false;
 
 // ---- barras ----
+let animarBarras = true;
 function desenharBarras() {
   const hojeD = doIso(HOJE);
   const dias = Array.from({ length: periodo }, (_, i) => iso(somar(hojeD, i - (periodo - 1))));
@@ -250,6 +271,8 @@ function desenharBarras() {
   const max = Math.max(1, metaD, ...v);
   const topo = max <= 4 ? max : Math.ceil(max / 2) * 2;
   const caixa = $('barras');
+  caixa.classList.toggle('anim', animarBarras);
+  animarBarras = false;
   caixa.innerHTML = `<span class="eixo" style="top:0">${topo}</span><span class="eixo" style="top:calc(50% - .35rem)">${topo / 2 % 1 ? '' : topo / 2}</span><span class="eixo" style="bottom:0">0</span>`;
   if (metaD) caixa.insertAdjacentHTML('beforeend', `<span class="meta-linha" style="bottom:${(metaD / topo) * 100}%" aria-hidden="true"></span>`);
   const rot = $('rotulos');
@@ -260,6 +283,7 @@ function desenharBarras() {
     b.type = 'button';
     b.className = 'barra-col' + (k === HOJE ? ' hoje' : '');
     b.dataset.v = v[i];
+    b.style.setProperty('--i', i);
     b.innerHTML = `<i style="height:${(v[i] / topo) * 100}%"></i>`;
     const txt = `${fmtCurto(k)}: ${v[i]} ${plural(v[i], 'tarefa', 'tarefas')}`;
     b.setAttribute('aria-label', txt);
@@ -301,14 +325,18 @@ document.querySelectorAll('.periodo button').forEach((b) => b.addEventListener('
   periodo = Number(b.dataset.d);
   document.querySelectorAll('.periodo button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
   esconderDica();
+  animarBarras = true;
   desenharBarras();
   textoMeta();
 }));
 
 // ---- mapa de constância ----
 function marcarPeriodo() { document.querySelectorAll('.periodo button').forEach((x) => x.setAttribute('aria-pressed', String(Number(x.dataset.d) === periodo))); }
+let animarMapa = true;
 function desenharMapa(dias) {
   const mapa = $('mapa');
+  mapa.classList.toggle('anim', animarMapa);
+  animarMapa = false;
   mapa.innerHTML = '';
   const porData = new Map(dias.map((d) => [d.data, d]));
   const hojeD = doIso(HOJE);
@@ -320,6 +348,7 @@ function desenharMapa(dias) {
     const k = iso(d);
     const c = document.createElement('button');
     c.type = 'button';
+    c.style.setProperty('--c', Math.floor(i / 7));
     if (d > hojeD) { c.className = 'cel vazio-dia'; c.tabIndex = -1; c.setAttribute('aria-hidden', 'true'); mapa.append(c); continue; }
     const info = porData.get(k);
     const cump = info ? info.cumprimento : null;
@@ -374,9 +403,20 @@ function desenharTabela() {
   const celulas = area.querySelectorAll('td.col-t');
   linhas.forEach(([t, extra], i) => { celulas[i].textContent = t.titulo; if (extra) celulas[i].insertAdjacentHTML('beforeend', extra); });
   area.querySelectorAll('.check').forEach((b) => b.addEventListener('click', async () => {
+    if (b.disabled) return;
     b.disabled = true;
-    try { await fetch(`/api/tarefas/${b.dataset.id}/alternar`, { method: 'PATCH' }); await carregarTarefas(); carregarAneis(); }
-    catch (e) { b.disabled = false; }
+    const vaiFicarFeita = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', String(vaiFicarFeita));
+    b.classList.add('estala');
+    const linha = b.closest('tr');
+    linha.classList.toggle('feita', vaiFicarFeita);
+    if (vaiFicarFeita && !mostrarFeitas) linha.classList.add('saindo');
+    try {
+      await fetch(`/api/tarefas/${b.dataset.id}/alternar`, { method: 'PATCH' });
+      await new Promise((r) => setTimeout(r, 380)); // deixa o gesto terminar antes de redesenhar
+      await carregarTarefas();
+      carregarAneis();
+    } catch (e) { b.disabled = false; }
   }));
 }
 $('alt-feitas').addEventListener('click', (e) => {

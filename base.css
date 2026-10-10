@@ -6,7 +6,7 @@
   --ok: #1f9d6b; --ok-soft: #e3f5ec;
   --danger: #c0362c; --danger-soft: #fdeceb;
   --warm: #b4650f; --warm-soft: #fdf0df;
-  --sombra: 0 1px 2px rgba(20, 28, 38, .05), 0 6px 20px rgba(20, 28, 38, .05);
+  --sombra: 0 1px 2px rgba(20, 28, 38, .04), 0 4px 14px rgba(20, 28, 38, .035);
   --larg: 40rem;
   --nav-h: calc(4rem + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
@@ -127,9 +127,81 @@ dialog textarea { resize: vertical; }
 .tabs a svg { width: 1.5rem; height: 1.5rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tabs a:hover { color: var(--ink); }
 .tabs a[aria-current="page"] { color: var(--accent); }
-.tabs a[aria-current="page"]::before { content: ""; position: absolute; top: -1px; width: 2rem; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); }
+.tabs a .ind { position: absolute; top: -1px; width: 2rem; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); view-transition-name: tab-ind; }
 
 /* ícone de lápis: editar um item da lista */
 .lapis { flex: none; width: 2.3rem; height: 2.3rem; border-radius: .75rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); display: grid; place-items: center; padding: 0; cursor: pointer; }
 .lapis:hover { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
 .lapis svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ===== Movimento e acabamento =====
+   Regras (Emil Kowalski, Josh Comeau, Notion, Vercel): só transform/opacity, curvas ease-out fortes,
+   menos de 300ms, resposta ao toque em 120ms, nada de "transition: all", e tudo desligado para
+   quem pede menos movimento. */
+:root {
+  --ease: cubic-bezier(.23, 1, .32, 1);        /* entra rápido e assenta devagar */
+  --ease-io: cubic-bezier(.77, 0, .175, 1);    /* para o que se move dentro da tela */
+  --t-toque: 120ms; --t-ui: 200ms; --t-entrada: 320ms;
+}
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { text-rendering: optimizeLegibility; font-synthesis: none; -webkit-tap-highlight-color: transparent; }
+button, a, input, select, textarea, summary { touch-action: manipulation; }
+h1, h2, h3 { text-wrap: balance; }
+::selection { background: var(--accent-soft); }
+
+/* barra de abas com vidro fosco (Vercel) */
+.tabbar { background: color-mix(in srgb, var(--surface) 86%, transparent); -webkit-backdrop-filter: saturate(1.5) blur(14px); backdrop-filter: saturate(1.5) blur(14px); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* resposta ao toque */
+  button, .tabs a, a.anel, a.card, .lapis, .icon, .check, .barra-col, .cel {
+    transition: transform var(--t-toque) var(--ease), background-color var(--t-ui) ease, border-color var(--t-ui) ease, color var(--t-ui) ease, opacity var(--t-ui) ease;
+  }
+  button:active, .tabs a:active, a.anel:active, a.card:active, .lapis:active, .icon:active, .check:active { transform: scale(.96); }
+  .cel:active { transform: scale(.85); }
+  @media (hover: hover) {
+    a.anel:hover, a.card:hover { transform: translateY(-1px); }
+    .cel:hover { transform: scale(1.25); }
+  }
+
+  /* entrada suave dos blocos de cada página (uma vez, ao abrir) */
+  @keyframes sobe { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  main > * { animation: sobe var(--t-entrada) var(--ease) backwards; }
+  main > *:nth-child(2) { animation-delay: 40ms; }
+  main > *:nth-child(3) { animation-delay: 80ms; }
+  main > *:nth-child(4) { animation-delay: 120ms; }
+  main > *:nth-child(5) { animation-delay: 160ms; }
+  main > *:nth-child(n+6) { animation-delay: 200ms; }
+
+  /* janelas (dialog): sobem e esmaecem; saem mais rápido do que entram */
+  dialog { opacity: 0; transform: translateY(14px) scale(.97); transition: opacity 160ms ease-out, transform 220ms var(--ease), overlay 220ms allow-discrete, display 220ms allow-discrete; }
+  dialog[open] { opacity: 1; transform: none; }
+  @starting-style { dialog[open] { opacity: 0; transform: translateY(14px) scale(.97); } }
+  dialog::backdrop { background-color: rgba(10, 14, 20, 0); transition: background-color 220ms ease-out, overlay 220ms allow-discrete, display 220ms allow-discrete; }
+  dialog[open]::backdrop { background-color: rgba(10, 14, 20, .5); }
+  @starting-style { dialog[open]::backdrop { background-color: rgba(10, 14, 20, 0); } }
+
+  /* troca de tema/cor sem "piscar" */
+  html.troca-tema *, html.troca-tema *::before, html.troca-tema *::after {
+    transition: background-color .28s ease, color .28s ease, border-color .28s ease, fill .28s ease, stroke .28s ease !important;
+  }
+
+  /* esqueleto de carregamento */
+  @keyframes brilho { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  .esq { height: 1rem; border-radius: .5rem; margin: .7rem 0; background: linear-gradient(90deg, var(--line) 25%, var(--bg) 50%, var(--line) 75%); background-size: 200% 100%; animation: brilho 1.4s linear infinite; }
+
+  /* transição suave entre páginas (Chrome/Edge 126+, Safari 18.2+) */
+  @view-transition { navigation: auto; }
+  .tabbar { view-transition-name: tabbar; }
+  ::view-transition-group(root) { animation-duration: 220ms; animation-timing-function: var(--ease); }
+  ::view-transition-old(root) { animation: 120ms ease-out both vt-sai; }
+  ::view-transition-new(root) { animation: 220ms var(--ease) both vt-entra; }
+  ::view-transition-group(tab-ind) { animation-duration: 260ms; animation-timing-function: var(--ease); }
+  @keyframes vt-sai { to { opacity: 0; } }
+  @keyframes vt-entra { from { opacity: 0; transform: translateY(6px); } }
+  html { scroll-behavior: smooth; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .esq { background: var(--line); }
+}

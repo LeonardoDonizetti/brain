@@ -328,7 +328,7 @@
       a.href = aba.href;
       a.innerHTML = aba.icone + '<span></span>';
       a.querySelector('span').textContent = aba.nome;
-      if (aba.href === atual) a.setAttribute('aria-current', 'page');
+      if (aba.href === atual) { a.setAttribute('aria-current', 'page'); a.insertAdjacentHTML('afterbegin', '<i class="ind" aria-hidden="true"></i>'); }
       caixa.append(a);
     });
     nav.append(caixa);
