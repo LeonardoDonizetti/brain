@@ -164,36 +164,87 @@
 
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-  /** Responde a uma pergunta livre por palavras-chave. */
-  function responder(pergunta, ctx) {
-    const q = norm(pergunta);
-    const a = analisar(ctx);
-    const pela = (area) => a.mensagens.filter((m) => m.area === area).map((m) => m.texto);
-    const tem = (...p) => p.some((x) => q.includes(x));
-    const juntar = (l, vazio) => (l.length ? l.slice(0, 3).join(' ') : vazio);
-    if (tem('sem vontade', 'preguica', 'desanim', 'cansad', 'procrastin', 'motiva', 'nao consigo', 'travad', 'ajuda')) {
+  // Termos casam com o INÍCIO de uma palavra (ex.: "obrigad" pega obrigado/obrigada) no texto sem acentos.
+  const tem = (q, ...termos) => termos.some((t) => new RegExp('(^|[^a-z0-9])' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(q));
+  const SUGESTOES = ['Como estou hoje?', 'O que faço agora?', 'Como estão meus gastos?', 'Estou sem vontade'];
+  const resumoTxt = (a, n) => a.mensagens.filter((m) => m.nivel !== 'bom').slice(0, n).map((m) => m.texto).join(' ');
+  const pelaArea = (a, area) => a.mensagens.filter((m) => m.area === area).slice(0, 3).map((m) => m.texto).join(' ');
+  const pick = (l, seed) => l[Math.abs(seed) % l.length];
+
+  /** Entende a mensagem e devolve { texto, sugestoes, intencao }. Nunca lança erro e nunca devolve vazio. */
+  function conversar(pergunta, ctx, estado) {
+    estado = estado || {};
+    let q = norm(pergunta).replace(/\s+/g, ' ').trim();
+    const seed = q.length + (ctx && ctx.agora ? ctx.agora.getMinutes() : 0);
+    let a;
+    try { a = analisar(ctx || { agora: new Date(), hoje: '', tarefas: [], fin: {} }); } catch (e) { a = { mensagens: [], alvo: null }; }
+    const R = (texto, intencao, sugestoes) => ({ texto, intencao, sugestoes: sugestoes || [] });
+    const hora = ctx && ctx.agora ? ctx.agora.getHours() : 12;
+
+    if (!q || !/[a-z0-9]/.test(q.replace(/[^a-z0-9]/g, '') || '')) {
+      if (/[\u{1F300}-\u{1FAFF}❤\u{1F44D}]/u.test(String(pergunta))) return R('😊 Se quiser, me pergunte sobre suas tarefas, gastos, rotina ou jornada.', 'emoji', SUGESTOES);
+      return R('Escreva sua pergunta ou toque em uma das sugestões abaixo.', 'vazio', SUGESTOES);
+    }
+    // 1) segurança vem antes de tudo
+    if (tem(q, 'suicid', 'me matar', 'quero morrer', 'nao quero mais viver', 'me machucar', 'automutil')) {
+      return R('Sinto muito que você esteja se sentindo assim. Você não precisa passar por isso sozinho. No Brasil, o CVV atende 24 horas pelo telefone 188 (ligação gratuita) ou em cvv.org.br. Se estiver em perigo agora, ligue 192 (SAMU). Se puder, fale também com alguém de confiança perto de você.', 'crise', []);
+    }
+    // 2) assuntos do Brasil: motivação / sentimentos
+    if (tem(q, 'sem vontade', 'preguica', 'desanim', 'procrastin', 'motiva', 'nao consigo', 'travad', 'sem energia', 'nao estou afim', 'nao to afim', 'me ajuda', 'me ajude')) {
       const t = a.alvo ? `"${a.alvo}"` : 'a menor tarefa que você tiver';
-      return `Quando falta vontade, ajuda diminuir o passo: abra ${t} e trabalhe só 2 minutos, sem prometer terminar. Começar costuma ser a parte mais difícil. Se depois de 2 minutos quiser parar, tudo bem, já valeu. Depois eu te mostro o próximo.`;
+      return R(`Quando falta vontade, ajuda diminuir o passo: abra ${t} e trabalhe só 2 minutos, sem prometer terminar. Começar costuma ser a parte mais difícil. Se depois de 2 minutos quiser parar, tudo bem, já valeu.`, 'motivacao', ['O que faço agora?', 'Como estou hoje?']);
     }
-    if (tem('gasto', 'gastando', 'dinheiro', 'financ', 'alimenta', 'comida', 'ifood', 'mercado', 'limite', 'orcamento', 'economi')) {
-      const f = ctx.fin && ctx.fin.atual;
-      if (!f || !f.total) return 'Ainda não tenho gastos deste mês para analisar. Registre alguns em Finanças e eu comento.';
+    if (tem(q, 'triste', 'ansios', 'estressad', 'cansad', 'sobrecarreg', 'esgotad', 'deprimid', 'mal hoje', 'dia ruim', 'desesper')) {
+      return R('Sinto muito que o dia esteja pesado. Hoje não precisa ser perfeito: escolha uma coisa pequena, respire e faça só ela. Se esse peso estiver durando, vale conversar com alguém de confiança ou um profissional. Sou só um assistente de regras e não substituo isso.', 'sentimento', ['O que faço agora?', 'Estou sem vontade']);
+    }
+    // 3) domínios do app
+    if (tem(q, 'gast', 'dinheiro', 'financ', 'alimenta', 'comida', 'ifood', 'mercado', 'limite', 'orcamento', 'economi', 'saldo', 'salario', 'contas', 'quanto gastei', 'categoria')) {
+      const f = ctx && ctx.fin && ctx.fin.atual;
+      if (!f || !f.total) return R('Ainda não tenho gastos deste mês para analisar. Registre alguns em Finanças e eu comento.', 'gastos', ['Como estou hoje?']);
       const top = (f.por_categoria || []).slice(0, 3).map((c) => `${c.categoria} ${BRL(c.valor)}`).join(', ');
-      return `${juntar(pela('gasto').filter((_, i) => i < 3), '')} No mês você gastou ${BRL(f.total)}. Maiores categorias: ${top}.`.trim();
+      return R(`${pelaArea(a, 'gasto')} No mês você gastou ${BRL(f.total)}${f.entradas ? ` e recebeu ${BRL(f.entradas)}` : ''}. Maiores categorias: ${top}.`.trim(), 'gastos', ['O que faço agora?']);
     }
-    if (tem('tarefa', 'fazer', 'hoje', 'pendente', 'atrasad', 'prioridade', 'comecar')) {
-      const l = pela('tarefa');
-      return juntar(l, 'Nenhuma tarefa pendente agora.') + (a.alvo ? ` Sugestão de começo: "${a.alvo}".` : '');
+    if (tem(q, 'tarefa', 'afazer', 'pendente', 'atrasad', 'prioridade', 'o que faco', 'o que fazer', 'por onde comec', 'agora', 'proxim')) {
+      const l = pelaArea(a, 'tarefa');
+      return R((l || 'Nenhuma tarefa pendente agora.') + (a.alvo ? ` Sugestão de começo: "${a.alvo}".` : ''), 'tarefas', ['Estou sem vontade', 'Como estão meus gastos?']);
     }
-    if (tem('rotina', 'habito')) return juntar(pela('rotina'), 'Sua rotina está em dia por enquanto.');
-    if (tem('jornada', 'dia ', 'caverna')) return juntar(pela('jornada'), 'Você não tem uma jornada em andamento. Dá para começar uma na aba Jornada.');
-    if (tem('resumo', 'como estou', 'como vou', 'status', 'oi', 'ola', 'bom dia', 'boa tarde', 'boa noite')) {
-      return juntar(a.mensagens.filter((m) => m.nivel !== 'bom' || a.mensagens.length < 3), 'Tudo tranquilo por aqui.');
+    if (tem(q, 'rotina', 'habito', 'ritual')) return R(pelaArea(a, 'rotina') || 'Sua rotina está em dia por enquanto.', 'rotina', ['O que faço agora?']);
+    if (tem(q, 'jornada', 'caverna', 'desafio')) return R(pelaArea(a, 'jornada') || 'Você não tem uma jornada em andamento. Dá para começar uma na aba Jornada.', 'jornada', ['Como estou hoje?']);
+    if (tem(q, 'resumo', 'como estou', 'como vou', 'como to', 'status', 'situacao', 'panorama', 'balanco')) {
+      return R(resumoTxt(a, 3) || 'Está tudo em ordem por aqui. Nada atrasado e nenhum alerta de gastos.', 'resumo', ['O que faço agora?']);
     }
-    return 'Posso falar sobre suas tarefas de hoje, seus gastos do mês, rotina e jornada, ou dar um empurrão se estiver sem vontade. Sou um assistente de regras que roda só no seu aparelho, então pergunte sobre esses temas.';
+    // 4) conversa social
+    if (tem(q, 'obrigad', 'valeu', 'vlw', 'thanks', 'brigad', 'agradec')) return R(pick(['Por nada! Conte comigo.', 'Disponha! Qualquer coisa é só chamar.', 'Tamo junto! 😊'], seed), 'agradecimento', SUGESTOES.slice(0, 2));
+    if (tem(q, 'tchau', 'ate mais', 'ate logo', 'flw', 'falou', 'ate amanha', 'fui ', 'bye')) return R('Até mais! Bom descanso e boa sorte com o que falta. 👋', 'despedida', []);
+    if (tem(q, 'quem e voce', 'quem voce e', 'quem e vc', 'voce e uma ia', 'voce e um robo', 'voce e humano', 'seu nome', 'como se chama', 'chatgpt', 'gpt', 'o que voce faz', 'o que voce sabe', 'o que vc faz', 'o que voce pode', 'ajuda', 'help', 'comandos', 'como funciona', 'para que serve')) {
+      return R('Sou o coach do seu Brain. Funciono por regras que leem seus dados aqui no aparelho, sem internet e sem IA paga, então não sou um modelo de linguagem. Posso: resumir seu dia, sugerir por qual tarefa começar, avisar sobre gastos e limites, falar da rotina e da jornada, e dar um empurrão quando faltar vontade.', 'identidade', SUGESTOES);
+    }
+    if (tem(q, 'tudo bem', 'tudo bom', 'como vai', 'como voce esta', 'como esta voce', 'como vc ta', 'de boa', 'e voce', 'e vc')) {
+      return R('Por aqui tudo certo, obrigado por perguntar! E você, como está? Se quiser, vejo como está o seu dia.', 'bemestar', ['Como estou hoje?', 'O que faço agora?']);
+    }
+    if (tem(q, 'ola', 'oi', 'oie', 'oii', 'eai', 'e ai', 'opa', 'hey', 'hello', 'salve', 'fala ', 'bom dia', 'boa tarde', 'boa noite', 'iai', 'eae')) {
+      const saud = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+      const r = resumoTxt(a, 2);
+      return R(`${saud}! ${r ? r : 'Tudo em ordem por aqui.'} Quer ajuda com algo?`, 'saudacao', ['O que faço agora?', 'Como estão meus gastos?']);
+    }
+    if (tem(q, 'kkk', 'haha', 'rsrs', 'rs ', 'lol', 'kk')) return R('😄 Bom ver você de bom humor! Quer que eu mostre o que falta fazer hoje?', 'risada', ['O que faço agora?']);
+    if (tem(q, 'burro', 'inutil', 'lixo', 'ruim', 'idiota', 'odeio', 'nao serve', 'nao entende')) return R('Desculpe, ainda tenho limites: entendo bem tarefas, gastos, rotina e jornada. Me diga o que precisa dentro desses temas e eu tento de novo.', 'critica', SUGESTOES);
+    if (/^(sim|s|nao|n|ok|beleza|blz|certo|tá|ta|talvez|entendi|show|massa|legal|boa|top|uhum|aham)\b/.test(q)) return R('Certo! Quer que eu mostre o que falta fazer ou como estão seus gastos?', 'confirmacao', ['O que faço agora?', 'Como estão meus gastos?']);
+    // 5) fora do escopo: reconhece, explica o limite e oferece caminhos (nunca beco sem saída)
+    const f2 = (estado.falhas || 0) + 1; estado.falhas = f2;
+    if (tem(q, 'clima', 'tempo faz', 'previsao', 'piada', 'receita', 'noticia', 'futebol', 'jogo', 'musica', 'filme', 'quanto e ', 'quanto da ', 'calcul', 'traduz', 'o que e ', 'quem foi', 'capital', 'presidente', 'dolar', 'bitcoin', 'cotacao')) {
+      return R('Essa eu não sei responder: só conheço o que está no seu Brain (tarefas, gastos, rotina e jornada) e não tenho acesso à internet. Posso ajudar com algum desses?', 'fora_escopo', SUGESTOES);
+    }
+    if (f2 >= 2) return R('Ainda não entendi. Posso ajudar com: tarefas e prioridades, gastos e limites, rotina, jornada, ou motivação. Toque em uma das opções ou escreva algo como "como estão meus gastos?".', 'fallback2', SUGESTOES);
+    return R('Não tenho certeza se entendi. Posso falar sobre suas tarefas, seus gastos do mês, a rotina e a jornada, ou ajudar quando estiver sem vontade. Quer tentar um destes?', 'fallback', SUGESTOES);
   }
 
-  const api = { analisar, responder, TOM };
+  /** Compatível: devolve só o texto. */
+  function responder(pergunta, ctx, estado) {
+    try { return conversar(pergunta, ctx, estado).texto; } catch (e) { return 'Tive um problema para ler seus dados agora, mas continuo aqui. Tente de novo em instantes.'; }
+  }
+
+  const api = { analisar, responder, conversar, TOM };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
   root.BrainCoach = api;
 
@@ -252,14 +303,19 @@
       document.body.append(dlg);
       const log = dlg.querySelector('.coach-log');
       const bolha = (t, c) => { log.append(el('div', 'coach-b ' + c, t)); log.scrollTop = log.scrollHeight; };
+      const estado = { falhas: 0 };
+      const rap = () => dlg.querySelector('.coach-rap');
+      const sugerir = (l) => { rap().replaceChildren(); l.forEach((t) => { const b = el('button', null, t); b.type = 'button'; b.onclick = () => perguntar(t); rap().append(b); }); };
       const perguntar = async (t) => {
-        if (!t.trim()) return;
+        if (!t.trim()) { bolha('Escreva sua pergunta ou toque em uma sugestão.', 'c'); return; }
         bolha(t, 'u');
-        try { bolha(responder(t, await coletar()), 'c'); } catch (e) { bolha('Não consegui ler seus dados agora.', 'c'); }
+        let r;
+        try { r = conversar(t, await coletar(), estado); } catch (e) { r = { texto: 'Não consegui ler seus dados agora, mas continuo aqui. Tente de novo em instantes.', sugestoes: SUGESTOES, intencao: 'erro' }; }
+        if (!['fallback', 'fallback2', 'fora_escopo'].includes(r.intencao)) estado.falhas = 0;
+        bolha(r.texto, 'c');
+        sugerir(r.sugestoes && r.sugestoes.length ? r.sugestoes : SUGESTOES);
       };
-      ['Como estou hoje?', 'O que faço agora?', 'Como estão meus gastos?', 'Estou sem vontade'].forEach((t) => {
-        const b = el('button', null, t); b.type = 'button'; b.onclick = () => perguntar(t); dlg.querySelector('.coach-rap').append(b);
-      });
+      sugerir(SUGESTOES);
       const inp = dlg.querySelector('input');
       dlg.querySelector('form').onsubmit = (e) => { e.preventDefault(); const v = inp.value; inp.value = ''; perguntar(v); };
       dlg.querySelector('.fechar').onclick = () => dlg.close();
