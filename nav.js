@@ -32,6 +32,9 @@
     { nome: 'Anki', url: 'https://apps.ankiweb.net', uso: 'Repetição espaçada: revisões agendadas em 1 dia, 1 semana, 1 mês e 3 meses.' },
     { nome: 'Pomofocus', url: 'https://pomofocus.io', uso: 'Cronômetro de foco com presets e registro do tempo estudado.' },
     { nome: 'Dunlosky et al. (2013)', url: 'https://www.aft.org/ae/fall2013/dunlosky_rawson_marsh_nathan_willingham', uso: 'Pesquisa sobre técnicas de estudo: recuperação ativa, prática espaçada e intercalada.' },
+    { nome: 'Structured', url: 'https://structured.app', uso: 'Linha do tempo do dia com bloco atual em destaque e blocos coloridos.' },
+    { nome: 'Google Agenda', url: 'https://calendar.google.com', uso: 'Visão semanal em colunas com linha do horário atual.' },
+    { nome: 'Forest', url: 'https://www.forestapp.cc', uso: 'Anel de foco com contagem regressiva e registro das sessões.' },
     { nome: 'Modo Caverna', url: null, uso: 'Jornada por dias, avaliação diária, rotinas e renúncias (referência que você trouxe).' },
   ];
   const DIAS_LETRA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];

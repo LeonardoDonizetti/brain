@@ -92,6 +92,67 @@
   #dlg-foto .zoom { overflow: auto; max-height: 75vh; }
   #dlg-foto img { width: 100%; display: block; cursor: zoom-in; }
   #dlg-foto img.grande { width: 260%; max-width: none; cursor: zoom-out; }
+  /* ===== visual v2: herói, linha do tempo, grade semanal, anel de foco ===== */
+  .hero-es { position: relative; overflow: hidden; border-radius: 1.4rem; padding: 1.2rem 1.25rem; margin-bottom: .8rem; color: var(--on-accent);
+    background: var(--accent-grad, linear-gradient(135deg, var(--accent), var(--accent))); box-shadow: 0 10px 28px -12px var(--accent); }
+  .hero-es::after { content: ''; position: absolute; right: -2.5rem; top: -2.5rem; width: 9rem; height: 9rem; border-radius: 50%; background: rgba(255,255,255,.14); }
+  .hero-es .k { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .8; }
+  .hero-es .t { font-size: 1.7rem; font-weight: 780; letter-spacing: -.03em; line-height: 1.12; margin: .2rem 0 .1rem; position: relative; z-index: 1; }
+  .hero-es .r { font-size: .88rem; opacity: .88; position: relative; z-index: 1; }
+  .hero-es .bar { height: .45rem; background: rgba(255,255,255,.28); border-radius: 1rem; margin: .9rem 0 .2rem; overflow: hidden; position: relative; z-index: 1; }
+  .hero-es .bar i { display: block; height: 100%; background: currentColor; border-radius: 1rem; }
+  .hero-es button { position: relative; z-index: 1; margin-top: .8rem; font: inherit; font-weight: 700; border: 0; border-radius: .9rem; padding: .6rem 1.1rem; min-height: 2.6rem; background: rgba(255,255,255,.92); color: #1a2233; cursor: pointer; }
+  .hero-es .prox { margin: .8rem 0 0; font-size: .82rem; opacity: .85; position: relative; z-index: 1; }
+  .hero-neutro { background: var(--surface); color: var(--ink); box-shadow: var(--sombra); border: 1px solid var(--line); }
+  .hero-neutro::after { display: none; }
+  .nums div { position: relative; overflow: hidden; }
+  .nums b { font-size: 1.15rem; letter-spacing: -.02em; }
+  .tl { position: relative; padding-left: .2rem; }
+  .tl-i { display: grid; grid-template-columns: 3rem 1fr; gap: .7rem; position: relative; padding-bottom: .7rem; }
+  .tl-i::before { content: ''; position: absolute; left: 3.62rem; top: .95rem; bottom: -.1rem; width: 2px; background: var(--line); }
+  .tl-i:last-child::before { display: none; }
+  .tl-h { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: .7rem; text-align: right; line-height: 1.2; }
+  .tl-c { position: relative; background: var(--bg); border-radius: .9rem; padding: .6rem .8rem .6rem .9rem; margin-left: .7rem; border-left: 4px solid var(--c, var(--muted)); display: flex; align-items: center; gap: .6rem; justify-content: space-between; min-width: 0; }
+  .tl-c::before { content: ''; position: absolute; left: -1.38rem; top: .85rem; width: .7rem; height: .7rem; border-radius: 50%; background: var(--c, var(--muted)); border: 2px solid var(--surface); box-sizing: content-box; }
+  .tl-c b { display: block; font-size: .95rem; line-height: 1.25; }
+  .tl-c small { color: var(--muted); font-size: .76rem; }
+  .tl-i.agora .tl-c { background: var(--accent-soft); box-shadow: 0 0 0 1.5px var(--c, var(--accent)); }
+  .tl-i.passou { opacity: .5; }
+  .tl-c .btn2 { padding: .3rem .75rem; min-height: 2.1rem; font-size: .82rem; flex: none; }
+  .vest { display: flex; align-items: center; gap: 1rem; }
+  .vest .n { font-size: 2.6rem; font-weight: 800; letter-spacing: -.05em; line-height: 1; background: var(--accent-grad, linear-gradient(135deg, var(--accent), var(--accent))); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .vest .rg { flex: 1; min-width: 0; }
+  .vest .rg b { display: block; font-size: 1.05rem; }
+  .vest .prog { height: .4rem; background: var(--bg); border-radius: 1rem; margin-top: .55rem; overflow: hidden; }
+  .vest .prog i { display: block; height: 100%; background: var(--accent-grad, var(--accent)); border-radius: 1rem; }
+  .grade-sem { display: grid; grid-template-columns: 1.7rem repeat(7, 1fr); gap: 3px; height: 15rem; margin-top: .5rem; }
+  .gs-h { position: relative; font-size: .6rem; color: var(--muted); }
+  .gs-h span { position: absolute; right: .2rem; transform: translateY(-50%); font-variant-numeric: tabular-nums; }
+  .gs-d { position: relative; border-radius: .5rem; background: var(--bg); overflow: hidden; cursor: pointer; border: 0; padding: 0; }
+  .gs-d.sel { box-shadow: 0 0 0 2px var(--accent); }
+  .gs-d.hoje { background: var(--accent-soft); }
+  .gs-d i { position: absolute; left: 1px; right: 1px; border-radius: 3px; background: var(--c); opacity: .5; min-height: 2px; }
+  .gs-d i.e { opacity: 1; }
+  .gs-d u { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger); z-index: 2; }
+  .gs-cab { display: grid; grid-template-columns: 1.7rem repeat(7, 1fr); gap: 3px; margin-top: .4rem; font-size: .72rem; font-weight: 650; color: var(--muted); text-align: center; }
+  .gs-cab .h { color: var(--accent); }
+  .anel-f { position: relative; width: 14.5rem; height: 14.5rem; margin: .6rem auto; }
+  .anel-f svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .anel-f .tr { fill: none; stroke: var(--bg); stroke-width: 6; }
+  .anel-f .pg { fill: none; stroke: var(--c, var(--accent)); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 600ms linear; }
+  .anel-f .ct { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .anel-f .tempo { font-size: 3rem; margin: 0; }
+  .anel-f .ct small { color: var(--muted); font-size: .8rem; }
+  .chips-m { display: flex; gap: .4rem; overflow-x: auto; padding: .2rem 0 .4rem; scrollbar-width: none; justify-content: flex-start; }
+  .chips-m::-webkit-scrollbar { display: none; }
+  .chips-m button { flex: none; display: inline-flex; align-items: center; gap: .4rem; border: 1px solid var(--line); background: var(--bg); border-radius: 1rem; padding: .35rem .8rem; font-size: .84rem; font-weight: 650; min-height: 2.2rem; color: var(--ink); }
+  .chips-m button i { width: .6rem; height: .6rem; border-radius: 50%; background: var(--c, var(--muted)); }
+  .chips-m button[aria-pressed="true"] { border-color: var(--c, var(--accent)); box-shadow: inset 0 0 0 1px var(--c, var(--accent)); background: var(--surface); }
+  .abas button .bd { display: inline-block; min-width: 1.15rem; padding: 0 .3rem; margin-left: .35rem; border-radius: 1rem; font-size: .7rem; line-height: 1.15rem; background: var(--danger); color: #fff; }
+  .abas { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); margin-left: -1rem; margin-right: -1rem; padding: .5rem 1rem; }
+  .vazio-i { text-align: center; padding: 1.2rem .5rem; color: var(--muted); }
+  .vazio-i svg { width: 3rem; height: 3rem; stroke: var(--accent); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+  .vazio-i b { display: block; color: var(--ink); font-size: 1.05rem; margin: .4rem 0 .2rem; }
 </style>
 </head>
 <body>
@@ -223,6 +284,7 @@ const corDe = (b) => { const m = b.materia_id && mat(b.materia_id); return m ? E
 document.querySelectorAll('#abas button').forEach((b) => { b.onclick = () => { aba = b.dataset.aba; try { sessionStorage.setItem('estudos-aba', aba); } catch (e) {} desenhar(); }; });
 function desenhar() {
   document.querySelectorAll('#abas button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.aba === aba)));
+  const nrev = ES.revisoesDevidas(E, HOJE).length; const br = document.querySelector('#abas [data-aba=rev]'); br.innerHTML = 'Revisões' + (nrev ? `<span class="bd">${nrev}</span>` : '');
   const p = $('painel');
   p.replaceChildren();
   const w = document.createElement('div');
@@ -241,36 +303,48 @@ function blocoHtml(b, opcoes = {}) {
 }
 
 // =================================================================== HOJE
+const ICONE_LIVRO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 006.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg>';
+function tlHtml(b, o = {}) {
+  const m = b.materia_id && mat(b.materia_id);
+  return `<div class="tl-i ${o.agora ? 'agora' : ''} ${o.passou ? 'passou' : ''}" style="--c:${corDe(b)}"><div class="tl-h">${b.ini}<br>${b.fim}</div><div class="tl-c"><div style="min-width:0"><b>${esc(b.titulo)}</b><small>${ES.TIPOS[b.tipo]}${m && m.nome !== b.titulo ? ' · ' + esc(m.nome) : ''}</small></div>${o.foco ? `<button type="button" class="btn2" data-foco="${b.materia_id || ''}">Foco</button>` : ''}</div></div>`;
+}
 function abaHoje(w) {
   const now = new Date();
   const { atual, proximo, hoje } = ES.agoraProximo(E.blocos, now);
   const st = ES.estatisticas(E, HOJE);
   const dev = ES.revisoesDevidas(E, HOJE);
   const v = ES.proximoVestibular(E, HOJE);
+  const m = now.getHours() * 60 + now.getMinutes();
   if (!E.blocos.length) {
-    html(w, `<div class="es"><h3>Monte seu plano de estudos</h3><p class="sub">Você ainda não tem horários. Escreva como vai estudar, mande a foto da sua grade ou use o modelo.</p><div class="linhas"><button class="btn2 pri" data-ir="plano">Montar meu plano</button><button class="btn2" id="usar-modelo">Usar modelo da minha foto</button></div></div>`);
+    html(w, `<div class="es vazio-i">${ICONE_LIVRO}<b>Monte seu plano de estudos</b><p style="margin:0 0 .8rem">Escreva como vai estudar, leia a foto da sua grade ou comece pelo modelo.</p><div class="linhas" style="justify-content:center"><button class="btn2 pri" data-ir="plano">Montar meu plano</button><button class="btn2" id="usar-modelo">Usar modelo da minha foto</button></div></div>`);
+  } else if (atual) {
+    const ini = ES.minutos(atual.ini), fim = ES.minutos(atual.fim);
+    html(w, `<div class="hero-es"><div class="k">Agora · ${ES.TIPOS[atual.tipo]}</div><div class="t">${esc(atual.titulo)}</div><div class="r">${atual.ini} às ${atual.fim} · faltam ${ES.fmtMin(fim - m)}</div><div class="bar"><i style="width:${Math.max(3, Math.min(100, ((m - ini) / (fim - ini)) * 100))}%"></i></div>${atual.tipo === 'estudo' ? `<button type="button" data-foco="${atual.materia_id || ''}">Iniciar foco</button>` : ''}${proximo ? `<p class="prox">Depois: ${esc(proximo.titulo)} às ${proximo.ini}</p>` : ''}</div>`);
+  } else if (proximo) {
+    html(w, `<div class="hero-es hero-neutro"><div class="k" style="color:var(--muted)">Próximo</div><div class="t">${esc(proximo.titulo)}</div><div class="r" style="color:var(--muted)">às ${proximo.ini} · começa em ${ES.fmtMin(ES.minutos(proximo.ini) - m)}</div></div>`);
   } else {
-    const m = now.getHours() * 60 + now.getMinutes();
-    if (atual) {
-      const ini = ES.minutos(atual.ini), fim = ES.minutos(atual.fim);
-      html(w, `<div class="es"><p class="sub" style="margin:0">Agora</p><div class="agora-t">${esc(atual.titulo)}</div><div class="agora-r">${atual.ini} às ${atual.fim} · ${ES.TIPOS[atual.tipo]} · faltam ${ES.fmtMin(fim - m)}</div><div class="barra-f"><i style="width:${Math.max(2, Math.min(100, ((m - ini) / (fim - ini)) * 100))}%"></i></div>${atual.tipo === 'estudo' ? `<div class="linhas"><button class="btn2 pri" data-foco="${atual.materia_id || ''}">Iniciar foco</button></div>` : ''}${proximo ? `<p class="dica2" style="margin:.7rem 0 0">Depois: ${esc(proximo.titulo)} às ${proximo.ini}</p>` : ''}</div>`);
-    } else if (proximo) {
-      html(w, `<div class="es"><p class="sub" style="margin:0">Próximo</p><div class="agora-t">${esc(proximo.titulo)}</div><div class="agora-r">às ${proximo.ini} · começa em ${ES.fmtMin(ES.minutos(proximo.ini) - m)}</div></div>`);
-    } else {
-      html(w, `<div class="es"><h3>Sem mais compromissos hoje</h3><p class="sub">Aproveite para revisar ou descansar.</p></div>`);
-    }
+    html(w, `<div class="hero-es hero-neutro"><div class="k" style="color:var(--muted)">Hoje</div><div class="t">Sem mais compromissos</div><div class="r" style="color:var(--muted)">Boa hora para revisar ou descansar.</div></div>`);
   }
   html(w, `<div class="nums"><div><b>${ES.fmtMin(st.hoje)}</b><small>Hoje</small></div><div><b>${ES.fmtMin(st.semana)}</b><small>Semana</small></div><div><b>${st.sequencia}</b><small>Dias seguidos</small></div><div><b>${dev.length}</b><small>Revisões</small></div></div>`);
-  if (v) html(w, `<div class="es"><div class="es-topo"><div><h3>${esc(v.nome)}</h3><p class="sub" style="margin:0">${new Date(v.data + 'T12:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div><div style="text-align:right"><b style="font-size:1.8rem;letter-spacing:-.03em">${v.dias}</b><div class="sub" style="margin:0">dias</div></div></div></div>`);
+  if (v) {
+    const pct = Math.max(4, Math.min(100, 100 - (v.dias / 180) * 100));
+    html(w, `<div class="es vest"><div class="n">${v.dias}</div><div class="rg"><b>${v.dias === 1 ? 'dia' : 'dias'} para ${esc(v.nome)}</b><span class="sub" style="margin:0">${new Date(v.data + 'T12:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</span><div class="prog"><i style="width:${pct}%"></i></div></div></div>`);
+  }
   if (E.blocos.length) {
-    html(w, `<div class="es"><div class="es-topo"><h3>Agenda de hoje</h3><button class="linkb" data-ir="semana">Ver semana</button></div>${hoje.length ? hoje.map((b) => blocoHtml(b, { agora: atual && atual.id === b.id, passou: ES.minutos(b.fim) <= now.getHours() * 60 + now.getMinutes(), foco: b.tipo === 'estudo' })).join('') : '<p class="vazio">Nada planejado para hoje.</p>'}</div>`);
+    html(w, `<div class="es"><div class="es-topo"><h3>Agenda de hoje</h3><button class="linkb" data-ir="semana">Ver semana</button></div><div class="tl">${hoje.length ? hoje.map((b) => tlHtml(b, { agora: atual && atual.id === b.id, passou: ES.minutos(b.fim) <= m, foco: b.tipo === 'estudo' && ES.minutos(b.fim) > m })).join('') : '<p class="vazio">Nada planejado para hoje.</p>'}</div></div>`);
   }
   ligar(w);
 }
 
 // =================================================================== SEMANA
 function abaSemana(w) {
-  html(w, `<div class="dias" role="group" aria-label="Dia da semana">${ES.ORDEM_SEMANA.map((d) => `<button type="button" data-dia="${d}" aria-pressed="${d === diaSel}" class="${d === agora0.getDay() ? 'hoje' : ''}">${ES.DIAS_CURTO[d]}</button>`).join('')}</div>`);
+  const T0 = 5 * 60, T1 = 24 * 60, agoraMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const colunas = ES.ORDEM_SEMANA.map((d) => {
+    const blocos = E.blocos.filter((x) => x.dia === d).map((x) => { const i = Math.max(T0, ES.minutos(x.ini)), f = Math.min(T1, ES.minutos(x.fim)); return f > i ? `<i class="${x.tipo === 'estudo' ? 'e' : ''}" style="--c:${corDe(x)};top:${((i - T0) / (T1 - T0)) * 100}%;height:${((f - i) / (T1 - T0)) * 100}%"></i>` : ''; }).join('');
+    const linha = d === agora0.getDay() && agoraMin >= T0 ? `<u style="top:${((agoraMin - T0) / (T1 - T0)) * 100}%"></u>` : '';
+    return `<button type="button" class="gs-d ${d === agora0.getDay() ? 'hoje' : ''} ${d === diaSel ? 'sel' : ''}" data-dia="${d}" aria-label="${ES.DIAS[d]}">${blocos}${linha}</button>`;
+  }).join('');
+  html(w, `<div class="es"><div class="es-topo"><h3>Minha semana</h3><span class="sub" style="margin:0">toque num dia</span></div><div class="gs-cab"><span></span>${ES.ORDEM_SEMANA.map((d) => `<span class="${d === agora0.getDay() ? 'h' : ''}">${ES.DIAS_CURTO[d]}</span>`).join('')}</div><div class="grade-sem"><div class="gs-h">${[6, 9, 12, 15, 18, 21].map((h) => `<span style="top:${((h * 60 - T0) / (T1 - T0)) * 100}%">${h}h</span>`).join('')}</div>${colunas}</div><p class="dica2" style="margin:.5rem 0 0">Blocos de estudo em cores fortes; o resto, mais claro.</p></div>`);
   const lista = E.blocos.filter((b) => b.dia === diaSel).sort((a, b) => ES.minutos(a.ini) - ES.minutos(b.ini));
   const conf = ES.conflitos(E.blocos).filter(([a]) => a.dia === diaSel);
   html(w, `<div class="es"><div class="es-topo"><h3>${ES.DIAS[diaSel].charAt(0).toUpperCase() + ES.DIAS[diaSel].slice(1)}</h3><button class="linkb" id="novo-bloco">+ Novo bloco</button></div>${conf.length ? `<div class="aviso2">Há blocos que se sobrepõem neste dia (${esc(conf[0][0].titulo)} e ${esc(conf[0][1].titulo)}).</div>` : ''}${lista.length ? lista.map((b) => blocoHtml(b, { editar: true })).join('') : '<p class="vazio">Nenhum bloco neste dia.</p>'}</div>`);
@@ -356,21 +430,29 @@ function atualizarRelogio() {
   if (!f) { clearInterval(tick); tick = null; return; }
   const restante = f.restante != null ? f.restante : f.fim - Date.now();
   if (el) el.textContent = mmss(restante);
+  const pg = $('anel-pg'); if (pg) pg.setAttribute('stroke-dashoffset', CIRC * (1 - Math.max(0, Math.min(1, restante / (f.total * 60000)))));
   if (f.restante == null && restante <= 0) pararFoco(true);
 }
 
+const CIRC = 2 * Math.PI * 45;
+function chipsMat(sel) {
+  return `<div class="chips-m" role="group" aria-label="Matéria"><button type="button" data-m="" aria-pressed="${sel === ''}"><i></i>Livre</button>${E.materias.map((m) => `<button type="button" data-m="${m.id}" aria-pressed="${String(m.id) === sel}" style="--c:${ES.CORES_MATERIA[m.cor]}"><i></i>${esc(m.nome)}</button>`).join('')}</div>`;
+}
 function abaFoco(w) {
   const f = lerFoco();
   const opcoesMat = '<option value="">Sem matéria</option>' + E.materias.map((m) => `<option value="${m.id}">${esc(m.nome)}</option>`).join('');
   if (f) {
     const m = f.materia_id && mat(f.materia_id);
-    html(w, `<div class="es timer"><p class="sub" style="margin:0">${m ? esc(m.nome) : 'Foco'} · ${f.total} min</p><div class="tempo" id="relogio">${mmss(f.restante != null ? f.restante : f.fim - Date.now())}</div><p class="dica2">${f.restante != null ? 'Pausado' : 'Concentre-se numa coisa só. Celular longe.'}</p><div class="linhas" style="justify-content:center"><button class="btn2 pri" id="f-pausa">${f.restante != null ? 'Retomar' : 'Pausar'}</button><button class="btn2" id="f-parar">Parar e registrar</button></div></div>`);
+    const cor = m ? ES.CORES_MATERIA[m.cor] : 'var(--accent)';
+    const rest = f.restante != null ? f.restante : f.fim - Date.now();
+    html(w, `<div class="es timer"><p class="sub" style="margin:0">${m ? esc(m.nome) : 'Foco livre'} · ${f.total} min</p><div class="anel-f" style="--c:${cor}"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="45"/><circle class="pg" id="anel-pg" cx="50" cy="50" r="45" stroke-dasharray="${CIRC}" stroke-dashoffset="${CIRC * (1 - Math.max(0, Math.min(1, rest / (f.total * 60000))))}"/></svg><div class="ct"><div class="tempo" id="relogio">${mmss(rest)}</div><small>${f.restante != null ? 'Pausado' : 'Concentre-se. Celular longe.'}</small></div></div><div class="linhas" style="justify-content:center"><button class="btn2 pri" id="f-pausa">${f.restante != null ? 'Retomar' : 'Pausar'}</button><button class="btn2" id="f-parar">Parar e registrar</button></div></div>`);
     $('f-pausa').onclick = pausarFoco; $('f-parar').onclick = () => pararFoco(false);
     if (!tick) tick = setInterval(atualizarRelogio, 500);
   } else {
     if (!matSel) { const b = ES.agoraProximo(E.blocos, new Date()).atual; if (b && b.materia_id) matSel = String(b.materia_id); }
-    html(w, `<div class="es timer"><h3>Sessão de foco</h3><p class="sub">Estudar em blocos curtos com pausa ajuda a manter a atenção.</p><select id="f-mat" aria-label="Matéria">${opcoesMat}</select><div class="preset" role="group" aria-label="Duração">${[25, 50, 90].map((n) => `<button type="button" data-min="${n}" aria-pressed="${n === duracaoSel}">${n} min</button>`).join('')}</div><div class="tempo">${String(duracaoSel).padStart(2, '0')}:00</div><div class="linhas" style="justify-content:center"><button class="btn2 pri" id="f-ini">Iniciar</button></div></div>`);
-    $('f-mat').value = matSel; $('f-mat').onchange = () => { matSel = $('f-mat').value; };
+    const mSel = matSel && mat(Number(matSel));
+    html(w, `<div class="es timer"><h3>Sessão de foco</h3><p class="sub">Escolha a matéria e a duração. Blocos curtos com pausa mantêm a atenção.</p>${chipsMat(matSel)}<div class="anel-f" style="--c:${mSel ? ES.CORES_MATERIA[mSel.cor] : 'var(--accent)'}"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="45"/><circle class="pg" cx="50" cy="50" r="45" stroke-dasharray="${CIRC}" stroke-dashoffset="0"/></svg><div class="ct"><div class="tempo">${String(duracaoSel).padStart(2, '0')}:00</div><small>${mSel ? esc(mSel.nome) : 'sem matéria'}</small></div></div><div class="preset" role="group" aria-label="Duração">${[25, 50, 90].map((n) => `<button type="button" data-min="${n}" aria-pressed="${n === duracaoSel}">${n} min</button>`).join('')}</div><div class="linhas" style="justify-content:center"><button class="btn2 pri" id="f-ini" style="min-width:10rem">Iniciar</button></div></div>`);
+    w.querySelectorAll('[data-m]').forEach((b) => { b.onclick = () => { matSel = b.dataset.m; desenhar(); }; });
     w.querySelectorAll('[data-min]').forEach((b) => { b.onclick = () => { duracaoSel = Number(b.dataset.min); desenhar(); }; });
     $('f-ini').onclick = iniciarFoco;
   }
