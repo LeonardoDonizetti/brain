@@ -137,23 +137,49 @@ fetch('/api/financas/gastos').then((r) => r.json()).then((d) => {
       info.className = aviso ? 'aviso' : '';
     } catch (e) {}
   }
+  function baixar(blob, nome) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = nome; a.rel = 'noopener';
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  }
   $('bk-exportar').addEventListener('click', async () => {
+    msg.textContent = '';
+    let texto;
+    try { texto = await L.exportar(); }
+    catch (e) { msg.textContent = 'Não consegui ler os dados do aparelho: ' + (e && e.message ? e.message : e); return; }
+    const nome = `brain-backup-${iso(agora)}.json`;
+    const blob = new Blob([texto], { type: 'application/json' });
+    let feito = false;
     try {
-      const texto = await L.exportar();
-      const blob = new Blob([texto], { type: 'application/json' });
-      const nome = `brain-backup-${iso(agora)}.json`;
       const arquivo = new File([blob], nome, { type: 'application/json' });
       if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
-        try { await navigator.share({ files: [arquivo], title: 'Backup do Brain' }); }
-        catch (e) { if (e.name === 'AbortError') return; throw e; }
-      } else {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = nome; document.body.append(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        await navigator.share({ files: [arquivo], title: 'Backup do Brain' });
+        feito = true;
       }
-      msg.textContent = 'Backup salvo. Guarde o arquivo em um lugar seguro (nuvem, e-mail para você mesmo).';
+    } catch (e) {
+      if (e && e.name === 'AbortError') { msg.textContent = 'Compartilhamento cancelado. Toque de novo em "Salvar backup".'; return; }
+    }
+    if (!feito) {
+      try { baixar(blob, nome); feito = true; } catch (e) {}
+    }
+    if (feito) {
+      msg.textContent = 'Backup gerado. Confira em Downloads/Arquivos e guarde uma cópia fora do celular (e-mail, nuvem).';
       atualizar();
-    } catch (e) { msg.textContent = 'Não consegui gerar o backup.'; }
+    } else {
+      msg.textContent = 'Não consegui salvar o arquivo. Use o botão "Copiar texto do backup" abaixo.';
+    }
+    // plano C: copiar o texto do backup
+    let c = $('bk-copiar');
+    if (!c) {
+      c = document.createElement('button'); c.id = 'bk-copiar'; c.type = 'button'; c.textContent = 'Copiar texto do backup';
+      c.style.cssText = 'margin-top:.6rem;width:100%;min-height:2.6rem;border-radius:.75rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:650;cursor:pointer';
+      msg.after(c);
+    }
+    c.onclick = async () => {
+      try { await navigator.clipboard.writeText(texto); msg.textContent = 'Texto copiado. Cole em uma nota ou e-mail para você mesmo.'; }
+      catch (e) { msg.textContent = 'O navegador não deixou copiar.'; }
+    };
   });
   $('bk-importar').addEventListener('click', () => $('bk-arquivo').click());
   $('bk-arquivo').addEventListener('change', async (ev) => {
