@@ -7,6 +7,7 @@
   'use strict';
 
   const T = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./texto.js') : root.BrainTexto;
+  const P = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./prefs.js') : (root.BrainPrefs || root.BrainPrefsLib);
   const C = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./categorias.js') : root.BrainCategorias;
   const { iso, addDias, hojeData, deIso } = T;
 
@@ -25,7 +26,7 @@
     return {
       versao: 1,
       gastos: [], tarefas: [], rotina_itens: [], rotina_registros: [], avaliacoes: [],
-      config: {}, ultimo_backup: null,
+      config: {}, preferencias: null, ultimo_backup: null,
     };
   }
 
@@ -472,6 +473,17 @@
     return { ok: true };
   }
 
+
+  // =========================================================== preferências
+  async function prefsLer(estado) {
+    return { salvo: !!estado.preferencias, preferencias: P.sanitizar(estado.preferencias) };
+  }
+  async function prefsSalvar(estado, ctx, q, corpo) {
+    estado.preferencias = P.sanitizar(corpo);
+    ctx.salvar = true;
+    return { ok: true, preferencias: estado.preferencias };
+  }
+
   // =========================================================== roteador
   const id = '(\\d+)';
   const ROTAS = [
@@ -490,6 +502,8 @@
     ['DELETE', `/api/rotina/itens/${id}`, rotinaApagar],
     ['PUT', '/api/rotina/marcar', rotinaMarcar],
     ['POST', '/api/rotina/modelo', rotinaModelo],
+    ['GET', '/api/preferencias', prefsLer],
+    ['PUT', '/api/preferencias', prefsSalvar],
     ['GET', '/api/jornada', jornadaPainel],
     ['PUT', '/api/jornada/config', jornadaConfig],
     ['PUT', '/api/jornada/avaliacao', jornadaAvaliar],
@@ -521,6 +535,7 @@
       app: 'brain', versao: 1, exportado_em: new Date().toISOString(),
       gastos: estado.gastos, tarefas: estado.tarefas, rotina_itens: estado.rotina_itens,
       rotina_registros: estado.rotina_registros, avaliacoes: estado.avaliacoes, config: estado.config,
+      preferencias: estado.preferencias,
     };
   }
 
@@ -531,6 +546,11 @@
       ctx.salvar = true;
       return JSON.stringify(copiaLimpa(estado), null, 1);
     });
+  }
+
+  /** Cópia dos dados sem marcar como backup (usada nas planilhas). */
+  function copia() {
+    return executar(async (estado) => copiaLimpa(estado));
   }
 
   const ehData = (s) => typeof s === 'string' && !!deIso(s);
@@ -572,6 +592,7 @@
       const duracao = Number(c.duracao);
       novo.config = { nome: texto(c.nome || 'Minha jornada').slice(0, 40), duracao: Number.isInteger(duracao) && duracao >= 7 && duracao <= 365 ? duracao : 30, inicio: c.inicio };
     }
+    if (obj.preferencias && typeof obj.preferencias === 'object') novo.preferencias = P.sanitizar(obj.preferencias);
     // ids ausentes ou repetidos ganham números novos
     for (const chave of ['gastos', 'tarefas']) {
       const usados = new Set();
@@ -588,9 +609,21 @@
     let novo;
     try { novo = normalizarBackup(obj); } catch (e) { return Promise.reject(e); }
     return executar(async (estado, ctx) => {
-      Object.assign(estado, novo, { ultimo_backup: estado.ultimo_backup });
+      Object.assign(estado, novo, { ultimo_backup: estado.ultimo_backup, preferencias: novo.preferencias || estado.preferencias });
       ctx.salvar = true;
       return { gastos: novo.gastos.length, tarefas: novo.tarefas.length, itens: novo.rotina_itens.length, avaliacoes: novo.avaliacoes.length };
+    });
+  }
+
+
+  /** Apaga gastos, tarefas, rotina e jornada deste aparelho. Mantém as preferências. */
+  function apagarTudo() {
+    return executar(async (estado, ctx) => {
+      const prefs = estado.preferencias;
+      const ultimo = estado.ultimo_backup;
+      Object.assign(estado, estadoVazio(), { preferencias: prefs, ultimo_backup: ultimo });
+      ctx.salvar = true;
+      return { ok: true };
     });
   }
 
@@ -610,7 +643,7 @@
     return false;
   }
 
-  const api = { chamar, exportar, importar, resumo, persistir, normalizarBackup, sequencia, melhorSequencia, _armazem: Armazem, _executar: executar, ErroHTTP };
+  const api = { chamar, copia, exportar, importar, apagarTudo, resumo, persistir, normalizarBackup, sequencia, melhorSequencia, _armazem: Armazem, _executar: executar, ErroHTTP };
 
   // No navegador: responde às chamadas fetch('/api/...') com os dados locais.
   if (typeof window !== 'undefined' && typeof window.fetch === 'function' && typeof process === 'undefined') {

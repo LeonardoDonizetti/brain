@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Brain">
+<script src="prefs.js"></script>
 <script src="texto.js"></script>
 <script src="categorias.js"></script>
 <script src="api-local.js"></script>
@@ -106,6 +107,10 @@
   /* dica flutuante */
   #dica { position: fixed; z-index: 30; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .78rem; padding: .35rem .55rem; border-radius: .5rem; max-width: 14rem; opacity: 0; transition: opacity .12s; }
   #dica.on { opacity: 1; }
+  .ferias { display: inline-block; margin: .6rem 0 0; padding: .25rem .7rem; border-radius: 1rem; background: var(--warm-soft); color: var(--warm); font-size: .8rem; font-weight: 650; }
+  .meta-linha { position: absolute; left: 1.4rem; right: 0; border-top: 2px dashed var(--warm); pointer-events: none; }
+  .meta-linha::after { content: "meta"; position: absolute; right: 0; top: -1.05rem; font-size: .66rem; color: var(--warm); font-weight: 700; }
+  .meta-txt { margin: .7rem 0 0; font-size: .82rem; color: var(--muted); }
   .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
@@ -114,6 +119,8 @@
   <p class="data-topo" id="data-topo"></p>
   <h1 id="saudacao">Brain</h1>
 
+  <p class="ferias" id="ferias" hidden>Modo férias ligado: metas pausadas</p>
+  <div data-bloco="aneis">
   <h2>Hoje</h2>
   <section class="cartao bloco" aria-label="Resumo de hoje">
     <div class="aneis">
@@ -122,7 +129,9 @@
       <a class="anel" href="jornada.html" id="a-jornada"></a>
     </div>
   </section>
+  </div>
 
+  <div data-bloco="barras">
   <div class="sec-topo"><h2>Tarefas concluídas</h2><a href="tarefas.html">Ver tarefas</a></div>
   <section class="cartao bloco" aria-label="Tarefas concluídas por dia">
     <div class="destaque">
@@ -138,26 +147,34 @@
     </div>
     <div class="barras" id="barras" role="group" aria-label="Barras de tarefas concluídas por dia"></div>
     <div class="rotulos" id="rotulos" aria-hidden="true"></div>
+    <p class="meta-txt" id="g-meta"></p>
   </section>
+  </div>
 
+  <div data-bloco="constancia">
   <div class="sec-topo"><h2>Constância</h2><a href="jornada.html">Ver jornada</a></div>
   <section class="cartao bloco" aria-label="Constância da rotina nas últimas 12 semanas">
     <div class="mapa-rolagem" id="mapa-rolagem"><div class="mapa" id="mapa" role="group" aria-label="Cumprimento da rotina por dia"></div></div>
     <p class="mapa-info" id="mapa-info" aria-live="polite">Toque em um dia para ver o resultado.</p>
     <div class="legenda" aria-hidden="true"><span>Menos</span><i class="cel"></i><i class="cel n1"></i><i class="cel n2"></i><i class="cel n3"></i><i class="cel n4"></i><span>Mais</span></div>
   </section>
+  </div>
 
+  <div data-bloco="tabela">
   <div class="sec-topo"><h2>Próximas tarefas</h2><a href="tarefas.html">Gerenciar</a></div>
   <section class="cartao bloco" aria-label="Tarefas por dia">
     <div class="tabela-rolagem" id="tabela-area"></div>
     <div class="mais"><button type="button" id="alt-feitas" aria-pressed="false">Mostrar concluídas</button><span class="vazio" id="tab-total"></span></div>
   </section>
+  </div>
 
+  <div data-bloco="gastos">
   <div class="sec-topo"><h2>Gastos do mês</h2><a href="financas.html">Ver gastos</a></div>
   <section class="cartao bloco" aria-label="Gastos do mês">
     <div class="gastos-topo"><div><strong class="num" id="f-total">-</strong><small id="f-sub"></small></div><span class="delta" id="f-delta"></span></div>
     <div id="f-cats" style="margin-top:.8rem"></div>
   </section>
+  </div>
 </main>
 <div id="dica" role="status"></div>
 <script>
@@ -208,8 +225,9 @@ anel($('a-rotina'), { nome: 'Rotina', frac: 0, centro: '-', sub: '' });
 anel($('a-tarefas'), { nome: 'Tarefas', frac: 0, centro: '-', sub: '' });
 anel($('a-jornada'), { nome: 'Jornada', frac: 0, centro: '-', sub: '' });
 
+const PF = () => (window.BrainPrefs ? window.BrainPrefs.get() : { semana_inicio: 0, meta_diaria: 0, meta_semanal: 0, dias_folga: [], modo_ferias: false, periodo_grafico: 7, home: {} });
 let TAREFAS = [];
-let periodo = 7;
+let periodo = PF().periodo_grafico;
 let mostrarFeitas = false;
 
 // ---- barras ----
@@ -227,10 +245,13 @@ function desenharBarras() {
   const dif = total - totalAntes;
   dl.className = 'delta' + (dif > 0 ? ' up' : dif < 0 ? ' down' : '');
   dl.textContent = dif === 0 ? `igual aos ${periodo} dias anteriores` : `${dif > 0 ? '▲ +' : '▼ '}${dif} vs. ${periodo} dias anteriores`;
-  const max = Math.max(1, ...v);
+  const pf = PF();
+  const metaD = !pf.modo_ferias && pf.meta_diaria > 0 ? pf.meta_diaria : 0;
+  const max = Math.max(1, metaD, ...v);
   const topo = max <= 4 ? max : Math.ceil(max / 2) * 2;
   const caixa = $('barras');
   caixa.innerHTML = `<span class="eixo" style="top:0">${topo}</span><span class="eixo" style="top:calc(50% - .35rem)">${topo / 2 % 1 ? '' : topo / 2}</span><span class="eixo" style="bottom:0">0</span>`;
+  if (metaD) caixa.insertAdjacentHTML('beforeend', `<span class="meta-linha" style="bottom:${(metaD / topo) * 100}%" aria-hidden="true"></span>`);
   const rot = $('rotulos');
   rot.innerHTML = '';
   dias.forEach((k, i) => {
@@ -251,21 +272,49 @@ function desenharBarras() {
     rot.append(r);
   });
 }
+function textoMeta() {
+  const pf = PF();
+  const alvo = $('g-meta');
+  if (pf.modo_ferias || (!pf.meta_diaria && !pf.meta_semanal)) { alvo.textContent = pf.modo_ferias ? 'Metas pausadas (modo férias).' : ''; return; }
+  const partes = [];
+  const contar = (k) => TAREFAS.filter((t) => t.feita && (t.concluida_em || t.data) === k).length;
+  if (pf.meta_diaria) {
+    let uteis = 0, bateu = 0;
+    for (let i = 0; i < periodo; i++) {
+      const d = somar(doIso(HOJE), -i);
+      if (pf.dias_folga.includes(d.getDay())) continue;
+      uteis++;
+      if (contar(iso(d)) >= pf.meta_diaria) bateu++;
+    }
+    partes.push(`Meta diária ${pf.meta_diaria}: batida em ${bateu} de ${uteis} ${plural(uteis, 'dia', 'dias')}`);
+  }
+  if (pf.meta_semanal) {
+    const hojeD = doIso(HOJE);
+    const ini = somar(hojeD, -((hojeD.getDay() - pf.semana_inicio + 7) % 7));
+    let n = 0;
+    for (let d = ini; d <= hojeD; d = somar(d, 1)) n += contar(iso(d));
+    partes.push(`Semana: ${n} de ${pf.meta_semanal}`);
+  }
+  alvo.textContent = partes.join(' · ');
+}
 document.querySelectorAll('.periodo button').forEach((b) => b.addEventListener('click', () => {
   periodo = Number(b.dataset.d);
   document.querySelectorAll('.periodo button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
   esconderDica();
   desenharBarras();
+  textoMeta();
 }));
 
 // ---- mapa de constância ----
+function marcarPeriodo() { document.querySelectorAll('.periodo button').forEach((x) => x.setAttribute('aria-pressed', String(Number(x.dataset.d) === periodo))); }
 function desenharMapa(dias) {
   const mapa = $('mapa');
   mapa.innerHTML = '';
   const porData = new Map(dias.map((d) => [d.data, d]));
   const hojeD = doIso(HOJE);
   const semanas = 12;
-  const primeiro = somar(hojeD, -(hojeD.getDay() + 7 * (semanas - 1)));
+  const ini = PF().semana_inicio;
+  const primeiro = somar(hojeD, -(((hojeD.getDay() - ini + 7) % 7) + 7 * (semanas - 1)));
   for (let i = 0; i < semanas * 7; i++) {
     const d = somar(primeiro, i);
     const k = iso(d);
@@ -346,7 +395,12 @@ function desenharAneis() {
     const { feitos, total } = dadosRotina.progresso;
     anel($('a-rotina'), total ? { nome: 'Rotina', frac: feitos / total, centro: `${Math.round((feitos / total) * 100)}%`, sub: `${feitos} de ${total}`, ok: feitos === total } : { nome: 'Rotina', frac: 0, centro: '+', sub: 'Montar rotina' });
   }
-  anel($('a-tarefas'), hojeTar.length ? { nome: 'Tarefas', frac: feitasHoje / hojeTar.length, centro: `${feitasHoje}/${hojeTar.length}`, sub: 'de hoje', ok: feitasHoje === hojeTar.length } : { nome: 'Tarefas', frac: 0, centro: '0', sub: 'nada para hoje' });
+  const pf = PF();
+  const feitasData = TAREFAS.filter((t) => t.feita && (t.concluida_em || t.data) === HOJE).length;
+  const folgaHoje = pf.dias_folga.includes(agora.getDay());
+  if (pf.modo_ferias) anel($('a-tarefas'), { nome: 'Tarefas', frac: 0, centro: '☀', sub: 'modo férias' });
+  else if (pf.meta_diaria > 0) anel($('a-tarefas'), { nome: 'Tarefas', frac: feitasData / pf.meta_diaria, centro: `${feitasData}/${pf.meta_diaria}`, sub: folgaHoje ? 'dia de folga' : 'meta de hoje', ok: feitasData >= pf.meta_diaria });
+  else anel($('a-tarefas'), hojeTar.length ? { nome: 'Tarefas', frac: feitasHoje / hojeTar.length, centro: `${feitasHoje}/${hojeTar.length}`, sub: 'de hoje', ok: feitasHoje === hojeTar.length } : { nome: 'Tarefas', frac: 0, centro: '0', sub: 'nada para hoje' });
   if (dadosJornada) {
     const j = dadosJornada.jornada;
     anel($('a-jornada'), j.dia_atual ? { nome: 'Jornada', frac: Math.min(1, j.dia_atual / j.duracao), centro: j.dia_atual > j.duracao ? '✓' : `${j.dia_atual}`, sub: j.dia_atual > j.duracao ? 'concluída' : `de ${j.duracao} dias`, ok: j.dia_atual >= j.duracao } : { nome: 'Jornada', frac: 0, centro: '+', sub: 'Começar' });
@@ -356,8 +410,21 @@ function carregarAneis() {
   get(`/api/rotina?data=${HOJE}`).then((d) => { dadosRotina = d; desenharAneis(); }).catch(() => {});
 }
 function carregarTarefas() {
-  return get('/api/tarefas').then((d) => { TAREFAS = d.tarefas; desenharBarras(); desenharTabela(); desenharAneis(); }).catch(() => { $('tabela-area').innerHTML = '<p class="vazio">Não consegui carregar as tarefas.</p>'; });
+  return get('/api/tarefas').then((d) => { TAREFAS = d.tarefas; desenharBarras(); textoMeta(); desenharTabela(); desenharAneis(); }).catch(() => { $('tabela-area').innerHTML = '<p class="vazio">Não consegui carregar as tarefas.</p>'; });
 }
+function aplicarBlocos() {
+  const pf = PF();
+  document.querySelectorAll('[data-bloco]').forEach((el) => { el.hidden = pf.home && pf.home[el.dataset.bloco] === false; });
+  $('ferias').hidden = !pf.modo_ferias;
+}
+function redesenhar() {
+  aplicarBlocos();
+  desenharBarras(); textoMeta(); desenharTabela(); desenharAneis();
+  if (dadosJornada) desenharMapa(dadosJornada.dias);
+}
+aplicarBlocos();
+marcarPeriodo();
+if (window.BrainPrefs) window.BrainPrefs.aoMudar(() => { periodo = PF().periodo_grafico; marcarPeriodo(); redesenhar(); });
 carregarAneis();
 carregarTarefas();
 get('/api/jornada?dias=84').then((d) => { dadosJornada = d; desenharAneis(); desenharMapa(d.dias); }).catch(() => desenharMapa([]));
