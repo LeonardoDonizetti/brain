@@ -15,6 +15,7 @@
 <script src="prefs.js"></script>
 <script src="texto.js"></script>
 <script src="estudos.js"></script>
+<script src="leitor.js"></script>
 <script src="categorias.js"></script>
 <script src="api-local.js"></script>
 <script src="coach.js"></script>
@@ -421,7 +422,14 @@ function abaPlano(w) {
 
   html(w, `<div class="es"><h3>Meu horário (texto)</h3><p class="sub">Uma linha por compromisso. Eu entendo dias e horas e transformo em blocos da semana. Exemplos:</p><div class="previa" style="max-height:none;font-family:ui-monospace,monospace;font-size:.78rem">seg a sex 05:00-06:00 física<br>ter e qui das 14h às 16h30 matemática<br>sábado 14h por 3h ciclo de estudos<br>todos os dias 22:00-23:00 descanso</div><textarea id="txt-plano" rows="5" placeholder="Cole ou escreva aqui"></textarea><div class="linhas"><button class="btn2 pri" id="ler">Entender</button><button class="btn2" id="modelo">Usar modelo da minha foto</button></div><div id="previa"></div></div>`);
 
-  html(w, `<div class="es"><h3>Foto do meu horário</h3><p class="sub">Guarde a foto da sua grade aqui para consultar. O app não lê fotos sozinho (funciona sem internet e sem IA paga). Para virar blocos, mande a foto ao Claude pedindo "transcreva em linhas como: seg a sex 05:00-06:00 física" e cole o resultado na caixa acima.</p>${E.foto ? `<img class="foto" id="foto" src="${E.foto}" alt="Foto do meu horário de estudos">` : '<p class="vazio">Nenhuma foto guardada.</p>'}<div class="linhas"><label class="btn2" style="display:inline-flex;align-items:center;cursor:pointer">${E.foto ? 'Trocar foto' : 'Adicionar foto'}<input type="file" id="foto-in" accept="image/*" hidden></label>${E.foto ? '<button class="btn2 perigo" id="foto-del">Remover</button>' : ''}</div></div>`);
+  const chave = (() => { try { return localStorage.getItem('brain-gemini-key') || ''; } catch (e) { return ''; } })();
+  html(w, `<div class="es"><h3>Foto do meu horário</h3><p class="sub">Escolha a foto da sua grade, a IA lê e eu mostro os blocos para você conferir antes de adicionar.</p>
+${E.foto ? `<img class="foto" id="foto" src="${E.foto}" alt="Foto do meu horário de estudos">` : '<p class="vazio">Nenhuma foto guardada.</p>'}<div class="linhas"><label class="btn2" style="display:inline-flex;align-items:center;cursor:pointer">${E.foto ? 'Trocar foto' : 'Adicionar foto'}<input type="file" id="foto-in" accept="image/*" hidden></label>${E.foto ? '<button class="btn2 perigo" id="foto-del">Remover</button>' : ''}</div>
+    <div style="border-top:1px solid var(--line);margin-top:1rem;padding-top:.8rem"><h3 style="font-size:.95rem">Ler a foto com IA (grátis)</h3>
+    <p class="sub">Usa a API gratuita do Google Gemini com a sua própria chave, sem cartão. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:650">Pegar chave grátis</a>. A chave fica só neste aparelho e não entra no backup.</p>
+    <input id="ia-chave" type="password" autocomplete="off" placeholder="Cole sua chave (AIza...)" value="${esc(chave)}" aria-label="Chave da API do Google AI Studio">
+    <p class="dica2" style="margin:.5rem 0 0">Privacidade: a imagem é enviada ao Google para ser lida. No plano gratuito o Google pode usar o conteúdo para melhorar seus produtos. Mande só o horário, sem dados pessoais.</p>
+    <div class="linhas"><button class="btn2 pri" id="ia-ler">${E.foto ? 'Ler a foto guardada' : 'Escolher foto e ler'}</button></div><div id="ia-status" class="dica2" role="status" aria-live="polite"></div></div></div>`);
 
   html(w, `<div class="es"><div class="es-topo"><h3>Vestibulares e provas</h3><button class="linkb" id="nova-vest">+ Adicionar</button></div>${v.length ? v.map((x) => { const d = Math.round((new Date(x.data + 'T12:00') - new Date(HOJE + 'T12:00')) / 86400000); return `<div class="item"><div>${esc(x.nome)}${x.foco ? '<span class="chip">foco</span>' : ''}<small>${x.data.split('-').reverse().join('/')} · ${d < 0 ? 'já passou' : d === 0 ? 'hoje' : d + ' dias'}</small></div><button class="lapis2" data-vest="${x.id}" aria-label="Editar ${esc(x.nome)}">${LAPIS}</button></div>`; }).join('') : '<p class="vazio">Cadastre ENEM, UFSC, FUVEST ou qualquer prova para ter a contagem regressiva.</p>'}</div>`);
 
@@ -442,6 +450,19 @@ function abaPlano(w) {
   const foto = $('foto'); if (foto) foto.onclick = () => { $('foto-grande').src = E.foto; $('foto-grande').classList.remove('grande'); $('dlg-foto').showModal(); };
   $('foto-in').onchange = async (ev) => { const f = ev.target.files[0]; if (!f) return; try { E.foto = await reduzirFoto(f); await salvar(); aviso('Foto guardada.'); } catch (err) { aviso('Não consegui usar essa imagem.', true); } };
   const fd = $('foto-del'); if (fd) fd.onclick = async () => { E.foto = null; await salvar(); };
+  $('ia-chave').oninput = () => { try { localStorage.setItem('brain-gemini-key', $('ia-chave').value.trim()); } catch (e) {} };
+  $('ia-ler').onclick = async () => {
+    const st = $('ia-status'); const k = $('ia-chave').value.trim();
+    try { localStorage.setItem('brain-gemini-key', k); } catch (e) {}
+    if (!E.foto) { $('foto-in').click(); st.textContent = 'Escolha a foto; depois toque em "Ler a foto guardada".'; return; }
+    st.textContent = 'Lendo a foto... pode levar alguns segundos.'; $('ia-ler').disabled = true;
+    try {
+      const r = await BrainLeitor.lerFoto({ chave: k, imagem: E.foto, materias: E.materias });
+      previa = { blocos: r.blocos, ignoradas: r.ignoradas, origem: 'ia' }; mostrarPrevia();
+      st.textContent = r.blocos.length ? `Pronto: ${r.blocos.length} blocos lidos (modelo ${r.modelo}). Confira abaixo, em "Meu horário (texto)".` : 'A IA não encontrou blocos nessa foto.';
+      const el = $('previa'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (err) { st.textContent = err.message; } finally { $('ia-ler').disabled = false; }
+  };
   $('nova-vest').onclick = () => abrirVest(null);
   w.querySelectorAll('[data-vest]').forEach((b) => { b.onclick = () => abrirVest(E.vestibulares.find((x) => x.id === Number(b.dataset.vest))); });
   $('nova-mat').onclick = () => abrirMat(null);
@@ -457,7 +478,7 @@ function abaPlano(w) {
 function mostrarPrevia() {
   const el = $('previa'); if (!el || !previa) return;
   const n = previa.blocos.length;
-  el.innerHTML = `${n ? `<p class="sub" style="margin:.6rem 0 .2rem">Entendi ${n} ${n === 1 ? 'bloco' : 'blocos'}${previa.origem === 'modelo' ? ' (transcritos da sua foto; confira os horários, alguns podem estar aproximados)' : ''}:</p><div class="previa">${previa.blocos.slice(0, 80).map((b) => `<div>${ES.DIAS_CURTO[b.dia]} ${b.ini}-${b.fim} · ${esc(b.titulo)} <span class="chip">${ES.TIPOS[b.tipo]}</span></div>`).join('')}${n > 80 ? `<div>... e mais ${n - 80}</div>` : ''}</div>` : '<div class="aviso2">Não consegui entender nenhuma linha. Use o formato: dias, horário e atividade. Ex.: "seg a sex 05:00-06:00 física".</div>'}${previa.ignoradas.length ? `<div class="aviso2">Não entendi: ${previa.ignoradas.slice(0, 4).map(esc).join(' | ')}${previa.ignoradas.length > 4 ? ' ...' : ''}</div>` : ''}${n ? `<div class="linhas"><button class="btn2 pri" id="aplicar-add">Adicionar à semana</button>${E.blocos.length ? '<button class="btn2" id="aplicar-sub">Substituir tudo</button>' : ''}</div>` : ''}`;
+  el.innerHTML = `${n ? `<p class="sub" style="margin:.6rem 0 .2rem">Entendi ${n} ${n === 1 ? 'bloco' : 'blocos'}${previa.origem === 'modelo' ? ' (transcritos da sua foto; confira os horários, alguns podem estar aproximados)' : previa.origem === 'ia' ? ' (lidos por IA: confira horários e títulos antes de adicionar)' : ''}:</p><div class="previa">${previa.blocos.slice(0, 80).map((b) => `<div>${ES.DIAS_CURTO[b.dia]} ${b.ini}-${b.fim} · ${esc(b.titulo)} <span class="chip">${ES.TIPOS[b.tipo]}</span></div>`).join('')}${n > 80 ? `<div>... e mais ${n - 80}</div>` : ''}</div>` : '<div class="aviso2">Não consegui entender nenhuma linha. Use o formato: dias, horário e atividade. Ex.: "seg a sex 05:00-06:00 física".</div>'}${previa.ignoradas.length ? `<div class="aviso2">Não entendi: ${previa.ignoradas.slice(0, 4).map(esc).join(' | ')}${previa.ignoradas.length > 4 ? ' ...' : ''}</div>` : ''}${n ? `<div class="linhas"><button class="btn2 pri" id="aplicar-add">Adicionar à semana</button>${E.blocos.length ? '<button class="btn2" id="aplicar-sub">Substituir tudo</button>' : ''}</div>` : ''}`;
   const aplicar = async (substituir) => {
     if (substituir && !confirm('Substituir todos os blocos atuais pelos novos?')) return;
     if (previa.origem === 'modelo') { // traz também as matérias do modelo que ainda não existem
