@@ -16,6 +16,7 @@
 <script src="texto.js"></script>
 <script src="categorias.js"></script>
 <script src="api-local.js"></script>
+<script src="coach.js"></script>
 <script src="nav.js" defer></script>
 <style>
   .data-topo { margin: 0 0 .15rem; color: var(--muted); font-size: .9rem; text-transform: capitalize; }
@@ -130,6 +131,8 @@
 <main>
   <p class="data-topo" id="data-topo"></p>
   <h1 id="saudacao">Brain</h1>
+
+  <section class="cartao bloco" id="coach" aria-label="Coach" hidden style="margin-top:1rem"></section>
 
   <p class="ferias" id="ferias" hidden>Modo férias ligado: metas pausadas</p>
   <div data-bloco="aneis">
@@ -464,6 +467,7 @@ function redesenhar() {
 }
 aplicarBlocos();
 marcarPeriodo();
+if (window.BrainCoach) { const mc = () => window.BrainCoach.montar($('coach'), 'tudo', 3); mc(); document.addEventListener('visibilitychange', () => { if (!document.hidden) mc(); }); if (window.BrainPrefs) window.BrainPrefs.aoMudar(mc); }
 if (window.BrainPrefs) window.BrainPrefs.aoMudar(() => { periodo = PF().periodo_grafico; marcarPeriodo(); redesenhar(); });
 carregarAneis();
 carregarTarefas();
@@ -472,7 +476,8 @@ get('/api/jornada?dias=84').then((d) => { dadosJornada = d; desenharAneis(); des
 const mesAnterior = (() => { const d = new Date(agora.getFullYear(), agora.getMonth() - 1, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
 Promise.all([get('/api/financas/gastos'), get(`/api/financas/gastos?mes=${mesAnterior}`).catch(() => null)]).then(([g, ant]) => {
   $('f-total').textContent = BRL.format(g.total);
-  $('f-sub').textContent = `${g.gastos.length} ${plural(g.gastos.length, 'lançamento', 'lançamentos')} neste mês`;
+  const nDesp = g.gastos.filter((x) => x.tipo !== 'receita').length;
+  $('f-sub').textContent = `${nDesp} ${plural(nDesp, 'lançamento', 'lançamentos')} neste mês`;
   const dl = $('f-delta');
   if (ant && ant.total > 0) {
     const p = Math.round(((g.total - ant.total) / ant.total) * 100);

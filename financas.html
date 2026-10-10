@@ -16,6 +16,7 @@
 <script src="texto.js"></script>
 <script src="categorias.js"></script>
 <script src="api-local.js"></script>
+<script src="coach.js"></script>
 <script src="nav.js" defer></script>
 <style>
   body { padding-bottom: calc(var(--nav-h) + 9rem); }
@@ -35,12 +36,63 @@
   .legenda i { width: .8rem; height: .8rem; border-radius: 50%; flex: none; }
   .legenda .nome { flex: 1; }
   .legenda .valor { color: var(--muted); }
+
+  /* ===== resumo, ritmo, limites, contas fixas, insights ===== */
+  .total strong.neg { color: var(--danger); }
+  .resumo { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin: 0 0 1rem; }
+  .resumo > div { background: var(--surface); border: 1px solid var(--line); border-radius: .9rem; padding: .7rem .9rem; }
+  .resumo small { display: block; color: var(--muted); font-size: .76rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .resumo strong { font-size: 1.2rem; font-weight: 750; letter-spacing: -.02em; }
+  .resumo .pos { color: var(--ok); } .resumo .neg { color: var(--danger); }
+  .sec-topo { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+  .sec-topo button.link, button.link { background: none; border: 0; color: var(--accent); font-weight: 650; font-size: .85rem; padding: .3rem 0; min-height: 2rem; }
+  .bloco { background: var(--surface); border: 1px solid var(--line); border-radius: 1.1rem; box-shadow: var(--sombra); padding: 1rem 1.1rem; }
+  .ritmo-linha { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .3rem 0; font-size: .92rem; }
+  .ritmo-linha span:first-child { color: var(--muted); }
+  .ritmo-linha b { font-variant-numeric: tabular-nums; }
+  .delta { font-size: .78rem; font-weight: 650; padding: .1rem .45rem; border-radius: 1rem; background: var(--bg); color: var(--muted); margin-left: .4rem; white-space: nowrap; }
+  .delta.up { background: var(--ok-soft); color: var(--ok); }
+  .delta.down { background: var(--warm-soft); color: var(--warm); }
+  .limite { position: relative; height: .6rem; background: var(--bg); border-radius: 1rem; margin: .7rem 0 .35rem; overflow: hidden; }
+  .limite i { display: block; height: 100%; width: 0; border-radius: 1rem; background: var(--accent); transform-origin: left; }
+  .limite.aviso i { background: var(--warm); } .limite.estourou i { background: var(--danger); }
+  .limite-txt { font-size: .82rem; color: var(--muted); margin: 0; }
+  .limite-txt.aviso { color: var(--warm); font-weight: 650; } .limite-txt.estourou { color: var(--danger); font-weight: 650; }
+  .marcador { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); opacity: .55; }
+  .cat .lim { grid-column: 1 / -1; margin-top: -.15rem; }
+  .cats .cat { padding: .45rem 0; }
+  .fixa { grid-template-columns: 3.1rem 1fr auto auto; }
+  .fixa .dia { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fixa small { display: block; color: var(--muted); font-size: .8rem; }
+  .fixa small.venc { color: var(--warm); font-weight: 650; }
+  .fixa small.ok { color: var(--ok); font-weight: 650; }
+  .fixa button.link { padding: 0; min-height: 1.6rem; font-size: .8rem; }
+  .insight { display: grid; grid-template-columns: 6.2rem 1fr; gap: .6rem; padding: .45rem 0; font-size: .9rem; border-top: 1px solid var(--line); }
+  .insight:first-child { border-top: 0; }
+  .insight span:first-child { color: var(--muted); font-size: .8rem; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; padding-top: .1rem; }
+  .busca-linha { display: flex; gap: .5rem; margin-bottom: .6rem; }
+  .busca-linha input { flex: 1; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; padding: .6rem .8rem; min-width: 0; }
+  .chips { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .5rem; margin-bottom: .2rem; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips button { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 1rem; padding: .3rem .75rem; font-size: .82rem; font-weight: 600; min-height: 2rem; }
+  .chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  li.g .valor-in { color: var(--ok); font-weight: 650; }
+  .tipo { max-width: var(--larg); margin: 0 auto .5rem; display: flex; gap: .3rem; }
+  .tipo button { border: 1px solid var(--line); background: var(--surface); border-radius: 1rem; padding: .25rem .8rem; font-size: .8rem; font-weight: 650; width: auto; height: auto; min-height: 1.9rem; color: var(--muted); }
+  .tipo button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .grid-lim { display: grid; grid-template-columns: 1fr 7.5rem; gap: .5rem .8rem; align-items: center; margin-top: .6rem; }
+  .grid-lim label { margin: 0; }
+  .grid-lim input { margin: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .limite i { animation: preenche 600ms var(--ease) backwards; }
+    @keyframes preenche { from { transform: scaleX(0); } }
+  }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>Gastos</h1>
+    <h1>Finanças</h1>
     <div class="mes">
       <button class="icon" id="anterior" aria-label="Mês anterior">‹</button>
       <span id="mes-label"></span>
@@ -48,12 +100,32 @@
     </div>
   </header>
 
+  <section class="cartao" id="coach" aria-label="Coach" hidden style="margin:.8rem 0;padding:1rem"></section>
+
   <section class="total">
-    <small>Total do mês</small>
+    <small>Gastos do mês</small>
     <strong class="num" id="total">R$ 0,00</strong>
   </section>
 
+  <section class="resumo" id="resumo" aria-label="Entradas e saldo do mês">
+    <div><small>Entradas</small><strong class="num" id="r-entradas">R$ 0,00</strong></div>
+    <div><small>Saldo</small><strong class="num" id="r-saldo">R$ 0,00</strong></div>
+  </section>
+
+  <section class="bloco" id="ritmo" aria-label="Ritmo do mês" hidden>
+    <div id="ritmo-corpo"></div>
+  </section>
+
+  <div class="sec-topo"><h2>Por categoria</h2><button type="button" class="link" id="b-limites">Definir limites</button></div>
   <section class="cats" id="cats" aria-label="Gastos por categoria"></section>
+  <p class="dica-vazia" id="cats-vazio" hidden style="color:var(--muted);font-size:.9rem;margin:.2rem 0">Nenhum gasto neste mês.</p>
+
+  <div class="sec-topo"><h2>Contas fixas</h2><button type="button" class="link" id="b-nova-fixa">+ Nova conta fixa</button></div>
+  <ul id="fixas" aria-label="Contas fixas do mês"></ul>
+
+  <section class="bloco" id="insights-sec" aria-label="Destaques do mês" hidden style="margin-top:1.1rem">
+    <div id="insights"></div>
+  </section>
 
   <section class="grafico-sec" id="grafico-sec" hidden>
     <div class="grafico-topo">
@@ -66,19 +138,23 @@
     <div class="rosca" id="grafico"></div>
   </section>
 
-  <h2>Lançamentos <span style="font-weight:400">(toque no lápis para corrigir)</span></h2>
+  <h2>Lançamentos <span style="font-weight:400;text-transform:none;letter-spacing:0">(toque no lápis para corrigir)</span></h2>
+  <div class="busca-linha"><input type="search" id="busca" placeholder="Buscar lançamentos" aria-label="Buscar lançamentos" autocomplete="off"></div>
+  <div class="chips" id="chips" role="group" aria-label="Filtrar por categoria"></div>
   <ul id="lista"></ul>
 </main>
 
 <dialog id="dlg">
   <form id="dlg-form">
-    <h3>Corrigir gasto</h3>
+    <h3 id="d-titulo">Corrigir lançamento</h3>
     <label for="d-valor">Valor (R$)</label>
     <input id="d-valor" type="number" step="0.01" min="0.01" required>
     <label for="d-desc">Descrição</label>
     <input id="d-desc" type="text" maxlength="120" required>
-    <label for="d-cat">Categoria</label>
-    <select id="d-cat"></select>
+    <div id="d-cat-grupo">
+      <label for="d-cat">Categoria</label>
+      <select id="d-cat"></select>
+    </div>
     <label for="d-data">Data</label>
     <input id="d-data" type="date" required>
     <div class="acoes">
@@ -89,12 +165,49 @@
   </form>
 </dialog>
 
+<dialog id="dlg-lim">
+  <form id="lim-form">
+    <h3>Limites do mês</h3>
+    <p class="dica">Como no Organizze e no Mobills: defina quanto quer gastar. Deixe vazio para não limitar. Vale para todos os meses.</p>
+    <label for="l-total">Limite total do mês (R$)</label>
+    <input id="l-total" type="number" step="0.01" min="0" inputmode="decimal" placeholder="sem limite">
+    <div class="grid-lim" id="lim-cats"></div>
+    <div class="acoes" style="margin-top:1.1rem">
+      <button type="button" id="l-cancelar">Cancelar</button>
+      <button type="submit" class="primario">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-fixa">
+  <form id="fixa-form">
+    <h3 id="f-titulo">Nova conta fixa</h3>
+    <label for="f-desc">Nome</label>
+    <input id="f-desc" type="text" maxlength="120" placeholder="Ex.: Aluguel, Internet, Netflix" required>
+    <label for="f-valor">Valor (R$)</label>
+    <input id="f-valor" type="number" step="0.01" min="0.01" inputmode="decimal" required>
+    <label for="f-dia">Dia do vencimento</label>
+    <input id="f-dia" type="number" min="1" max="31" inputmode="numeric" required>
+    <label for="f-cat">Categoria</label>
+    <select id="f-cat"></select>
+    <div class="acoes">
+      <button type="button" class="perigo" id="f-apagar" hidden>Apagar</button>
+      <button type="button" id="f-cancelar">Cancelar</button>
+      <button type="submit" class="primario">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="composer">
+  <div class="tipo" role="group" aria-label="Tipo de lançamento">
+    <button type="button" data-t="despesa" aria-pressed="true">Gasto</button>
+    <button type="button" data-t="receita" aria-pressed="false">Entrada</button>
+  </div>
   <div id="status" role="status" aria-live="polite"></div>
   <form id="form">
-    <input id="texto" type="text" autocomplete="off" placeholder="Ex.: 32 no iFood ontem e 15 de Uber" aria-label="Descreva o gasto">
-    <button type="button" id="mic" aria-label="Falar o gasto" hidden>🎤</button>
-    <button type="submit" class="enviar" aria-label="Registrar gasto">↑</button>
+    <input id="texto" type="text" autocomplete="off" placeholder="Ex.: 32 no iFood ontem e 15 de Uber" aria-label="Descreva o lançamento">
+    <button type="button" id="mic" aria-label="Falar o lançamento" hidden>🎤</button>
+    <button type="submit" class="enviar" aria-label="Registrar lançamento">↑</button>
   </form>
 </div>
 
@@ -102,9 +215,22 @@
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const $ = (id) => document.getElementById(id);
 const hoje = new Date();
-let mes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+const isoDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const HOJE = isoDe(hoje);
+let mes = HOJE.slice(0, 7);
 let editando = null;
+let editandoFixa = null;
+let tipoNovo = 'despesa';
+let DADOS = null, ANT = null;
+let filtroCat = '';
+let busca = '';
 const LAPIS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/><path d="M14 7l3 3"/></svg>';
+const JSON_HDR = { 'Content-Type': 'application/json' };
+const norm = (t) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const plural = (n, a, b) => (n === 1 ? a : b);
+const diasDoMes = (m) => { const [a, mm] = m.split('-').map(Number); return new Date(a, mm, 0).getDate(); };
+const mesAnterior = (m) => { const [a, mm] = m.split('-').map(Number); const d = new Date(a, mm - 2, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+const curto = (s) => { const [, m, d] = s.split('-'); return `${d}/${m}`; };
 
 function aviso(msg, erro = false) {
   $('status').textContent = msg;
@@ -126,54 +252,298 @@ function mudarMes(delta) {
   const [a, m] = mes.split('-').map(Number);
   const d = new Date(a, m - 1 + delta, 1);
   mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  filtroCat = '';
   carregar();
 }
 
 async function carregar() {
-  let d;
   try {
-    d = await api(`/api/financas/gastos?mes=${mes}`);
+    const [d, ant] = await Promise.all([
+      api(`/api/financas/gastos?mes=${mes}`),
+      api(`/api/financas/gastos?mes=${mesAnterior(mes)}`).catch(() => null),
+    ]);
+    DADOS = d; ANT = ant;
   } catch (err) {
     aviso(err.message, true);
     return;
   }
+  desenharTudo();
+  if (window.BrainCoach) window.BrainCoach.montar(document.getElementById('coach'), 'gasto', 2);
+}
+
+function desenharTudo() {
+  const d = DADOS;
   const [a, m] = d.mes.split('-').map(Number);
   $('mes-label').textContent = new Date(a, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   $('total').textContent = BRL.format(d.total);
+  $('r-entradas').textContent = BRL.format(d.entradas);
+  const saldo = $('r-saldo');
+  saldo.textContent = BRL.format(d.saldo);
+  saldo.className = 'num ' + (d.saldo > 0 ? 'pos' : d.saldo < 0 ? 'neg' : '');
+  const sel = $('d-cat');
+  if (!sel.options.length) d.categorias.forEach((c) => sel.add(new Option(c, c)));
+  const selF = $('f-cat');
+  if (!selF.options.length) d.categorias.forEach((c) => selF.add(new Option(c, c)));
+  desenharRitmo();
+  desenharCategorias();
+  desenharFixas();
+  desenharInsights();
+  desenharGrafico(d.por_categoria);
+  desenharChips();
+  desenharLista();
+}
 
+// ---------- ritmo do mês (média, projeção e comparação com o mês anterior) ----------
+function desenharRitmo() {
+  const d = DADOS;
+  const sec = $('ritmo');
+  const hojeMes = HOJE.slice(0, 7);
+  if (d.mes > hojeMes || d.total === 0) { sec.hidden = true; return; }
+  sec.hidden = false;
+  const atual = d.mes === hojeMes;
+  const nDias = diasDoMes(d.mes);
+  const diaRef = atual ? hoje.getDate() : nDias;
+  const media = d.total / diaRef;
+  const proj = atual ? media * nDias : d.total;
+  const linhas = [];
+  linhas.push(`<div class="ritmo-linha"><span>Média por dia</span><b>${BRL.format(media)}</b></div>`);
+  if (atual) linhas.push(`<div class="ritmo-linha"><span>No ritmo atual, o mês fecha em</span><b>${BRL.format(proj)}</b></div>`);
+  if (atual && ANT) {
+    const ateDia = ANT.gastos.filter((g) => g.tipo !== 'receita' && Number(g.data.slice(8)) <= diaRef).reduce((s, g) => s + g.valor, 0);
+    if (ateDia > 0) {
+      const p = Math.round(((d.total - ateDia) / ateDia) * 100);
+      const cls = p > 0 ? 'down' : p < 0 ? 'up' : '';
+      linhas.push(`<div class="ritmo-linha"><span>Mês passado até o dia ${diaRef}</span><b>${BRL.format(ateDia)}<span class="delta ${cls}">${p === 0 ? 'igual' : (p > 0 ? '▲ +' : '▼ ') + p + '%'}</span></b></div>`);
+    }
+  }
+  const lim = d.orcamento.total;
+  let barra = '';
+  if (lim > 0) {
+    const uso = d.total / lim;
+    const estado = uso > 1 ? 'estourou' : uso >= 0.8 ? 'aviso' : '';
+    let txt;
+    if (uso > 1) txt = `Você passou ${BRL.format(d.total - lim)} do limite de ${BRL.format(lim)}.`;
+    else {
+      txt = `${Math.round(uso * 100)}% do limite de ${BRL.format(lim)} · restam ${BRL.format(lim - d.total)}.`;
+      if (atual && proj > lim) txt += ` No ritmo atual, passa em ${BRL.format(proj - lim)}.`;
+    }
+    const marca = atual && proj <= lim * 1.5 ? `<span class="marcador" style="left:${Math.min(100, (proj / lim) * 100)}%" title="Projeção"></span>` : '';
+    barra = `<div class="limite ${estado}" role="img" aria-label="${txt}"><i style="width:${Math.min(100, uso * 100)}%"></i>${marca}</div><p class="limite-txt ${estado}">${txt}</p>`;
+  }
+  $('ritmo-corpo').innerHTML = linhas.join('') + barra;
+}
+
+// ---------- categorias com limite ----------
+function desenharCategorias() {
+  const d = DADOS;
   const cats = $('cats');
   cats.replaceChildren();
-  const max = Math.max(...d.por_categoria.map((c) => c.valor), 1);
-  d.por_categoria.forEach((c) => {
+  const limites = d.orcamento.categorias;
+  const lista = d.por_categoria.map((c) => ({ ...c }));
+  for (const c of Object.keys(limites)) if (!lista.some((x) => x.categoria === c)) lista.push({ categoria: c, valor: 0, quantidade: 0 });
+  const max = Math.max(...lista.map((c) => c.valor), 1);
+  lista.forEach((c) => {
     const linha = document.createElement('div');
     linha.className = 'cat';
     linha.innerHTML = '<span></span><div class="barra"><i></i></div><span class="num"></span>';
     linha.children[0].textContent = c.categoria;
     linha.querySelector('i').style.width = `${(c.valor / max) * 100}%`;
     linha.children[2].textContent = BRL.format(c.valor);
+    const lim = limites[c.categoria];
+    if (lim) {
+      const uso = c.valor / lim;
+      const estado = uso > 1 ? 'estourou' : uso >= 0.8 ? 'aviso' : '';
+      const txt = uso > 1 ? `Passou ${BRL.format(c.valor - lim)} do limite de ${BRL.format(lim)}` : `${Math.round(uso * 100)}% de ${BRL.format(lim)} · restam ${BRL.format(lim - c.valor)}`;
+      const extra = document.createElement('div');
+      extra.className = 'lim';
+      extra.innerHTML = `<div class="limite ${estado}" style="margin:.1rem 0 .25rem" role="img"><i style="width:${Math.min(100, uso * 100)}%"></i></div><p class="limite-txt ${estado}"></p>`;
+      extra.querySelector('.limite').setAttribute('aria-label', txt);
+      extra.querySelector('p').textContent = txt;
+      linha.append(extra);
+    }
     cats.append(linha);
   });
-  cats.hidden = d.por_categoria.length === 0;
-  desenharGrafico(d.por_categoria);
+  cats.hidden = lista.length === 0;
+  $('cats-vazio').hidden = lista.length !== 0;
+}
 
-  const sel = $('d-cat');
-  if (!sel.options.length) {
-    d.categorias.forEach((c) => sel.add(new Option(c, c)));
+$('b-limites').onclick = () => {
+  const d = DADOS;
+  if (!d) return;
+  $('l-total').value = d.orcamento.total || '';
+  const box = $('lim-cats');
+  box.replaceChildren();
+  d.categorias.forEach((c, i) => {
+    const lab = document.createElement('label');
+    lab.htmlFor = `l-c${i}`; lab.textContent = c;
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.step = '0.01'; inp.min = '0'; inp.inputMode = 'decimal'; inp.placeholder = 'sem limite'; inp.id = `l-c${i}`; inp.dataset.cat = c;
+    inp.value = d.orcamento.categorias[c] || '';
+    box.append(lab, inp);
+  });
+  $('dlg-lim').showModal();
+};
+$('l-cancelar').onclick = () => $('dlg-lim').close();
+$('lim-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const categorias = {};
+  $('lim-cats').querySelectorAll('input').forEach((i) => { if (i.value !== '') categorias[i.dataset.cat] = parseFloat(i.value); });
+  try {
+    await api('/api/financas/orcamento', { method: 'PUT', headers: JSON_HDR, body: JSON.stringify({ total: $('l-total').value === '' ? 0 : parseFloat($('l-total').value), categorias }) });
+    $('dlg-lim').close();
+    aviso('Limites salvos.');
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+});
+
+// ---------- contas fixas ----------
+function desenharFixas() {
+  const d = DADOS;
+  const ul = $('fixas');
+  ul.replaceChildren();
+  if (!d.recorrentes.length) {
+    const vazio = document.createElement('li');
+    vazio.className = 'vazio';
+    vazio.textContent = 'Cadastre aluguel, internet, assinaturas... e lance cada uma com um toque todo mês.';
+    ul.append(vazio);
+    return;
   }
+  d.recorrentes.forEach((r) => {
+    const li = document.createElement('li');
+    li.className = 'fixa';
+    li.innerHTML = '<span class="dia"></span><span class="desc"><span class="nome"></span><small></small></span><span class="num"></span><button type="button" class="lapis" aria-label="Editar esta conta fixa">' + LAPIS + '</button>';
+    li.querySelector('.dia').textContent = `dia ${r.dia}`;
+    li.querySelector('.nome').textContent = r.descricao;
+    const peq = li.querySelector('small');
+    if (r.lancado) { peq.className = 'ok'; peq.textContent = `✓ lançada · ${r.categoria}`; }
+    else {
+      const venceu = d.mes === HOJE.slice(0, 7) && r.data_prevista < HOJE;
+      peq.className = venceu ? 'venc' : '';
+      peq.append(document.createTextNode(`${venceu ? 'Venceu em ' + curto(r.data_prevista) : r.categoria} · `));
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'link'; b.textContent = 'Lançar agora';
+      b.onclick = async () => {
+        b.disabled = true;
+        try { await api(`/api/financas/recorrentes/${r.id}/lancar`, { method: 'POST', headers: JSON_HDR, body: JSON.stringify({ mes: d.mes }) }); aviso(`${r.descricao} lançada em ${curto(r.data_prevista)}.`); carregar(); }
+        catch (err) { aviso(err.message, true); b.disabled = false; }
+      };
+      peq.append(b);
+    }
+    li.children[2].textContent = BRL.format(r.valor);
+    li.querySelector('.lapis').onclick = () => abrirFixa(r);
+    ul.append(li);
+  });
+}
+function abrirFixa(r) {
+  editandoFixa = r || null;
+  $('f-titulo').textContent = r ? 'Editar conta fixa' : 'Nova conta fixa';
+  $('f-desc').value = r ? r.descricao : '';
+  $('f-valor').value = r ? r.valor : '';
+  $('f-dia').value = r ? r.dia : '';
+  $('f-cat').value = r ? r.categoria : 'Assinaturas';
+  $('f-apagar').hidden = !r;
+  $('dlg-fixa').showModal();
+}
+$('b-nova-fixa').onclick = () => abrirFixa(null);
+$('f-cancelar').onclick = () => $('dlg-fixa').close();
+$('f-apagar').onclick = async () => {
+  if (!editandoFixa || !confirm('Apagar esta conta fixa? Lançamentos já feitos continuam.')) return;
+  try { await api(`/api/financas/recorrentes/${editandoFixa.id}`, { method: 'DELETE' }); $('dlg-fixa').close(); carregar(); }
+  catch (err) { aviso(err.message, true); }
+};
+$('fixa-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const corpo = JSON.stringify({ descricao: $('f-desc').value, valor: parseFloat($('f-valor').value), dia: parseInt($('f-dia').value, 10), categoria: $('f-cat').value });
+  try {
+    if (editandoFixa) await api(`/api/financas/recorrentes/${editandoFixa.id}`, { method: 'PUT', headers: JSON_HDR, body: corpo });
+    else await api('/api/financas/recorrentes', { method: 'POST', headers: JSON_HDR, body: corpo });
+    $('dlg-fixa').close();
+    aviso('Conta fixa salva.');
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+});
 
+// ---------- destaques do mês ----------
+const DIAS_NOME = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+function desenharInsights() {
+  const d = DADOS;
+  const desp = d.gastos.filter((g) => g.tipo !== 'receita');
+  const sec = $('insights-sec');
+  const itens = [];
+  if (desp.length >= 3) {
+    const maior = desp.reduce((a, b) => (b.valor > a.valor ? b : a));
+    itens.push(['Maior gasto', `${BRL.format(maior.valor)} em ${maior.descricao} (${curto(maior.data)})`]);
+  }
+  if (desp.length >= 6) {
+    const porDia = new Array(7).fill(0);
+    desp.forEach((g) => { const [a, m, dd] = g.data.split('-').map(Number); porDia[new Date(a, m - 1, dd).getDay()] += g.valor; });
+    const i = porDia.indexOf(Math.max(...porDia));
+    if (porDia.filter((v) => v > 0).length > 1) itens.push(['Dia mais caro', `${DIAS_NOME[i][0].toUpperCase() + DIAS_NOME[i].slice(1)}: ${BRL.format(porDia[i])} no mês`]);
+  }
+  if (ANT && ANT.por_categoria.length) {
+    let melhor = null;
+    d.por_categoria.forEach((c) => {
+      const antes = (ANT.por_categoria.find((x) => x.categoria === c.categoria) || { valor: 0 }).valor;
+      const dif = c.valor - antes;
+      if (dif > 0 && antes > 0 && (!melhor || dif > melhor.dif)) melhor = { c: c.categoria, dif, antes };
+    });
+    if (melhor) itens.push(['Maior alta', `${melhor.c}: +${BRL.format(melhor.dif)} em relação ao mês passado`]);
+  }
+  if (d.entradas > 0) {
+    if (d.saldo >= 0) itens.push(['Poupança', `Sobrou ${BRL.format(d.saldo)}, ${Math.round((d.saldo / d.entradas) * 100)}% do que entrou`]);
+    else itens.push(['Atenção', `Você gastou ${BRL.format(-d.saldo)} a mais do que entrou`]);
+  }
+  sec.hidden = itens.length === 0;
+  $('insights').replaceChildren(...itens.map(([r, t]) => {
+    const l = document.createElement('div');
+    l.className = 'insight';
+    l.innerHTML = '<span></span><span></span>';
+    l.children[0].textContent = r; l.children[1].textContent = t;
+    return l;
+  }));
+}
+
+// ---------- filtro, busca e lista ----------
+function desenharChips() {
+  const caixa = $('chips');
+  const cats = [...new Set(DADOS.gastos.map((g) => g.categoria))];
+  if (filtroCat && !cats.includes(filtroCat)) filtroCat = '';
+  caixa.replaceChildren();
+  caixa.hidden = cats.length < 2;
+  ['', ...cats].forEach((c) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = c || 'Todas';
+    b.setAttribute('aria-pressed', String(c === filtroCat));
+    b.onclick = () => { filtroCat = c; desenharChips(); desenharLista(); };
+    caixa.append(b);
+  });
+}
+$('busca').addEventListener('input', (e) => { busca = norm(e.target.value.trim()); desenharLista(); });
+
+function desenharLista() {
+  const d = DADOS;
   const lista = $('lista');
   lista.replaceChildren();
   if (!d.gastos.length) {
     const vazio = document.createElement('li');
     vazio.className = 'vazio';
-    vazio.textContent = 'Nenhum gasto neste mês. Digite ou fale o primeiro na barra de baixo.';
+    vazio.textContent = 'Nenhum lançamento neste mês. Digite ou fale o primeiro na barra de baixo.';
     lista.append(vazio);
     return;
   }
-  d.gastos.forEach((g) => {
+  const vis = d.gastos.filter((g) => (!filtroCat || g.categoria === filtroCat) && (!busca || norm(g.descricao + ' ' + g.categoria).includes(busca)));
+  if (!vis.length) {
+    const vazio = document.createElement('li');
+    vazio.className = 'vazio';
+    vazio.textContent = 'Nada encontrado com esse filtro.';
+    lista.append(vazio);
+    return;
+  }
+  vis.forEach((g) => {
     const li = document.createElement('li');
     li.className = 'g';
-    li.innerHTML = '<span class="data num"></span><span class="desc"></span><span class="num"></span><button type="button" class="lapis" aria-label="Editar este gasto">' + LAPIS + '</button>';
+    li.innerHTML = '<span class="data num"></span><span class="desc"></span><span class="num"></span><button type="button" class="lapis" aria-label="Editar este lançamento">' + LAPIS + '</button>';
     const [, mm, dd] = g.data.split('-');
     const cols = li.children;
     cols[0].textContent = `${dd}/${mm}`;
@@ -181,7 +551,8 @@ async function carregar() {
     const cat = document.createElement('small');
     cat.textContent = g.categoria;
     cols[1].append(cat);
-    cols[2].textContent = BRL.format(g.valor);
+    if (g.tipo === 'receita') { cols[2].textContent = '+ ' + BRL.format(g.valor); cols[2].classList.add('valor-in'); }
+    else cols[2].textContent = BRL.format(g.valor);
     li.querySelector('.lapis').onclick = () => abrirDialogo(g);
     lista.append(li);
   });
@@ -189,9 +560,12 @@ async function carregar() {
 
 function abrirDialogo(g) {
   editando = g;
+  const entrada = g.tipo === 'receita';
+  $('d-titulo').textContent = entrada ? 'Corrigir entrada' : 'Corrigir gasto';
+  $('d-cat-grupo').hidden = entrada;
   $('d-valor').value = g.valor;
   $('d-desc').value = g.descricao;
-  $('d-cat').value = g.categoria;
+  if (!entrada) $('d-cat').value = g.categoria;
   $('d-data').value = g.data;
   $('dlg').showModal();
 }
@@ -199,11 +573,11 @@ function abrirDialogo(g) {
 $('d-cancelar').onclick = () => $('dlg').close();
 
 $('d-apagar').onclick = async () => {
-  if (!editando || !confirm('Apagar este gasto?')) return;
+  if (!editando || !confirm('Apagar este lançamento?')) return;
   try {
     await api(`/api/financas/gastos/${editando.id}`, { method: 'DELETE' });
     $('dlg').close();
-    aviso('Gasto apagado.');
+    aviso('Lançamento apagado.');
     carregar();
   } catch (err) { aviso(err.message, true); }
 };
@@ -211,22 +585,22 @@ $('d-apagar').onclick = async () => {
 $('dlg-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!editando) return;
+  const corpo = { valor: parseFloat($('d-valor').value), descricao: $('d-desc').value, data: $('d-data').value };
+  if (editando.tipo !== 'receita') corpo.categoria = $('d-cat').value;
   try {
-    await api(`/api/financas/gastos/${editando.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        valor: parseFloat($('d-valor').value),
-        descricao: $('d-desc').value,
-        categoria: $('d-cat').value,
-        data: $('d-data').value,
-      }),
-    });
+    await api(`/api/financas/gastos/${editando.id}`, { method: 'PUT', headers: JSON_HDR, body: JSON.stringify(corpo) });
     $('dlg').close();
-    aviso('Corrigido. O modelo aprendeu com isso.');
+    aviso(editando.tipo === 'receita' ? 'Corrigido.' : 'Corrigido. O modelo aprendeu com isso.');
     carregar();
   } catch (err) { aviso(err.message, true); }
 });
+
+// tipo do próximo lançamento
+document.querySelectorAll('.tipo button').forEach((b) => b.addEventListener('click', () => {
+  tipoNovo = b.dataset.t;
+  document.querySelectorAll('.tipo button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  $('texto').placeholder = tipoNovo === 'receita' ? 'Ex.: 1500 de salário, ou 80 do freela' : 'Ex.: 32 no iFood ontem e 15 de Uber';
+}));
 
 $('form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -236,10 +610,10 @@ $('form').addEventListener('submit', async (e) => {
   try {
     const d = await api('/api/financas/gastos', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texto }),
+      headers: JSON_HDR,
+      body: JSON.stringify({ texto, tipo: tipoNovo }),
     });
-    let msg = 'Registrado: ' + d.registrados.map((g) => `${BRL.format(g.valor)} · ${g.descricao} (${g.categoria})`).join(' | ');
+    let msg = (tipoNovo === 'receita' ? 'Entrada registrada: ' : 'Registrado: ') + d.registrados.map((g) => `${BRL.format(g.valor)} · ${g.descricao}${tipoNovo === 'receita' ? '' : ` (${g.categoria})`}`).join(' | ');
     if (d.ignorados.length) msg += `. Sem valor, ignorei: ${d.ignorados.join(', ')}`;
     aviso(msg);
     $('texto').value = '';

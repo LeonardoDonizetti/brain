@@ -25,8 +25,8 @@
   function estadoVazio() {
     return {
       versao: 1,
-      gastos: [], tarefas: [], rotina_itens: [], rotina_registros: [], avaliacoes: [],
-      config: {}, preferencias: null, ultimo_backup: null,
+      gastos: [], orcamento: { total: 0, categorias: {} }, recorrentes: [], tarefas: [], rotina_itens: [], rotina_registros: [], avaliacoes: [],
+      config: {}, jornadas: [], preferencias: null, ultimo_backup: null,
     };
   }
 
@@ -116,45 +116,64 @@
   function retreinar(estado) {
     const hist = estado.gastos
       .slice()
+            .filter((g) => g.tipo !== 'receita')
       .sort((a, b) => (a.corrigido ? 1 : 0) - (b.corrigido ? 1 : 0) || a.id - b.id)
       .map((g) => ({ descricao: g.descricao, categoria: g.categoria, corrigido: !!g.corrigido }));
     C.classificador.treinar(hist);
   }
+
+  const CAT_ENTRADA = 'Entrada';
 
   async function financasRegistrar(estado, ctx, q, corpo) {
     const entrada = texto(corpo && corpo.texto).trim();
     if (!entrada) erro(400, 'Escreva ou fale um gasto.');
     const { itens, ignorados } = T.interpretarGastos(entrada);
     if (!itens.length) erro(422, 'Não achei o valor. Escreva algo como: 32 no ifood, ou: uber 15 reais ontem.');
-    retreinar(estado);
+    const tipo = corpo.tipo === 'receita' ? 'receita' : 'despesa';
+    if (tipo === 'despesa') retreinar(estado);
     let id = proximoId(estado.gastos);
     for (const item of itens) {
-      item.categoria = C.classificador.prever(item.descricao);
-      estado.gastos.push({ id: id++, valor: item.valor, categoria: item.categoria, descricao: item.descricao, data: item.data, texto_original: entrada, corrigido: 0 });
+      item.categoria = tipo === 'receita' ? CAT_ENTRADA : C.classificador.prever(item.descricao);
+      item.tipo = tipo;
+      estado.gastos.push({ id: id++, tipo, valor: item.valor, categoria: item.categoria, descricao: item.descricao, data: item.data, texto_original: entrada, corrigido: 0 });
     }
     ctx.salvar = true;
     return { registrados: itens, ignorados };
   }
 
+  const diasDoMes = (mes) => { const [a, m] = mes.split('-').map(Number); return new Date(a, m, 0).getDate(); };
+
   async function financasListar(estado, ctx, q) {
     const mes = q.get('mes') || iso(hojeData()).slice(0, 7);
     if (!mesValido(mes)) erro(400, 'Use o formato AAAA-MM.');
-    const gastos = estado.gastos
+    const doMes = estado.gastos
       .filter((g) => g.data.slice(0, 7) === mes)
-      .sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b.id - a.id))
-      .map((g) => ({ id: g.id, valor: g.valor, categoria: g.categoria, descricao: g.descricao, data: g.data }));
+      .sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b.id - a.id));
+    const gastos = doMes.map((g) => ({ id: g.id, tipo: g.tipo === 'receita' ? 'receita' : 'despesa', valor: g.valor, categoria: g.categoria, descricao: g.descricao, data: g.data }));
+    const despesas = gastos.filter((g) => g.tipo !== 'receita');
     const porCat = new Map();
-    for (const g of gastos) {
+    for (const g of despesas) {
       const i = porCat.get(g.categoria) || { valor: 0, quantidade: 0 };
       i.valor += g.valor; i.quantidade += 1;
       porCat.set(g.categoria, i);
     }
+    const total = r2(despesas.reduce((s, g) => s + g.valor, 0));
+    const entradas = r2(gastos.filter((g) => g.tipo === 'receita').reduce((s, g) => s + g.valor, 0));
+    const recorrentes = estado.recorrentes
+      .slice().sort((a, b) => a.dia - b.dia || a.id - b.id)
+      .map((r) => ({ id: r.id, descricao: r.descricao, valor: r.valor, dia: r.dia, categoria: r.categoria,
+        lancado: estado.gastos.some((g) => g.recorrente_id === r.id && g.data.slice(0, 7) === mes),
+        data_prevista: `${mes}-${String(Math.min(r.dia, diasDoMes(mes))).padStart(2, '0')}` }));
     return {
       mes,
-      total: r2(gastos.reduce((s, g) => s + g.valor, 0)),
+      total,
+      entradas,
+      saldo: r2(entradas - total),
       por_categoria: [...porCat.entries()].map(([categoria, i]) => ({ categoria, valor: r2(i.valor), quantidade: i.quantidade })).sort((a, b) => b.valor - a.valor),
       gastos,
       categorias: C.CATEGORIAS,
+      orcamento: { total: estado.orcamento.total || 0, categorias: Object.assign({}, estado.orcamento.categorias) },
+      recorrentes,
     };
   }
 
@@ -166,10 +185,11 @@
     if (!(valor > 0 && valor < 10000000)) erro(400, 'Valor inválido.');
     const descricao = corpo.descricao === undefined || corpo.descricao === null ? atual.descricao : texto(corpo.descricao).trim().slice(0, 120);
     if (!descricao) erro(400, 'A descrição não pode ficar vazia.');
-    const categoria = corpo.categoria === undefined || corpo.categoria === null ? atual.categoria : corpo.categoria;
-    if (!C.CATEGORIAS.includes(categoria)) erro(400, 'Categoria inválida.');
+    const ehEntrada = atual.tipo === 'receita';
+    const categoria = ehEntrada ? CAT_ENTRADA : (corpo.categoria === undefined || corpo.categoria === null ? atual.categoria : corpo.categoria);
+    if (!ehEntrada && !C.CATEGORIAS.includes(categoria)) erro(400, 'Categoria inválida.');
     const data = corpo.data === undefined || corpo.data === null ? atual.data : iso(validarData(corpo.data));
-    const corrigido = categoria !== atual.categoria || descricao !== atual.descricao ? 1 : atual.corrigido;
+    const corrigido = !ehEntrada && (categoria !== atual.categoria || descricao !== atual.descricao) ? 1 : atual.corrigido;
     Object.assign(atual, { valor, descricao, categoria, data, corrigido });
     ctx.salvar = true;
     return { ok: true };
@@ -179,6 +199,78 @@
     estado.gastos = estado.gastos.filter((g) => g.id !== params.id);
     ctx.salvar = true;
     return { ok: true };
+  }
+
+
+  // ---- limites por categoria (orçamento) ----
+  const valorLimite = (v) => {
+    const n = r2(Number(v));
+    if (!(n >= 0 && n < 10000000)) erro(400, 'Limite inválido.');
+    return n;
+  };
+  async function orcamentoLer(estado) {
+    return { total: estado.orcamento.total || 0, categorias: Object.assign({}, estado.orcamento.categorias) };
+  }
+  async function orcamentoSalvar(estado, ctx, q, corpo) {
+    corpo = corpo || {};
+    const total = corpo.total === undefined || corpo.total === null || corpo.total === '' ? 0 : valorLimite(corpo.total);
+    const categorias = {};
+    const entrada = corpo.categorias && typeof corpo.categorias === 'object' ? corpo.categorias : {};
+    for (const [cat, v] of Object.entries(entrada)) {
+      if (!C.CATEGORIAS.includes(cat)) erro(400, 'Categoria inválida.');
+      if (v === null || v === '' || v === undefined) continue;
+      const n = valorLimite(v);
+      if (n > 0) categorias[cat] = n;
+    }
+    estado.orcamento = { total, categorias };
+    ctx.salvar = true;
+    return { ok: true, orcamento: estado.orcamento };
+  }
+
+  // ---- contas fixas (recorrentes) ----
+  function lerRecorrente(corpo) {
+    corpo = corpo || {};
+    const descricao = texto(corpo.descricao).trim().slice(0, 120);
+    if (!descricao) erro(400, 'Dê um nome para a conta fixa.');
+    const valor = r2(Number(corpo.valor));
+    if (!(valor > 0 && valor < 10000000)) erro(400, 'Valor inválido.');
+    const dia = Number(corpo.dia);
+    if (!Number.isInteger(dia) || dia < 1 || dia > 31) erro(400, 'O dia deve ficar entre 1 e 31.');
+    const categoria = corpo.categoria === undefined || corpo.categoria === null || corpo.categoria === '' ? 'Outros' : corpo.categoria;
+    if (!C.CATEGORIAS.includes(categoria)) erro(400, 'Categoria inválida.');
+    return { descricao, valor, dia, categoria };
+  }
+  async function recorrenteCriar(estado, ctx, q, corpo) {
+    const r = lerRecorrente(corpo);
+    const id = proximoId(estado.recorrentes);
+    estado.recorrentes.push({ id, ...r });
+    ctx.salvar = true;
+    return { id };
+  }
+  async function recorrenteEditar(estado, ctx, q, corpo, params) {
+    const r = lerRecorrente(corpo);
+    const atual = estado.recorrentes.find((x) => x.id === params.id);
+    if (!atual) erro(404, 'Conta fixa não encontrada.');
+    Object.assign(atual, r);
+    ctx.salvar = true;
+    return { ok: true };
+  }
+  async function recorrenteApagar(estado, ctx, q, corpo, params) {
+    estado.recorrentes = estado.recorrentes.filter((x) => x.id !== params.id);
+    ctx.salvar = true;
+    return { ok: true };
+  }
+  async function recorrenteLancar(estado, ctx, q, corpo, params) {
+    const r = estado.recorrentes.find((x) => x.id === params.id);
+    if (!r) erro(404, 'Conta fixa não encontrada.');
+    const mes = texto(corpo && corpo.mes) || iso(hojeData()).slice(0, 7);
+    if (!mesValido(mes)) erro(400, 'Use o formato AAAA-MM.');
+    if (estado.gastos.some((g) => g.recorrente_id === r.id && g.data.slice(0, 7) === mes)) erro(409, 'Essa conta já foi lançada neste mês.');
+    const data = `${mes}-${String(Math.min(r.dia, diasDoMes(mes))).padStart(2, '0')}`;
+    const id = proximoId(estado.gastos);
+    estado.gastos.push({ id, tipo: 'despesa', valor: r.valor, categoria: r.categoria, descricao: r.descricao, data, texto_original: '', corrigido: 0, recorrente_id: r.id });
+    ctx.salvar = true;
+    return { id, data };
   }
 
   // =========================================================== tarefas
@@ -428,6 +520,7 @@
         dia_atual: inicio ? diasEntre(hoje, inicio) + 1 : null,
       },
       avaliacao_hoje: av || null,
+      historico: (estado.jornadas || []).slice().reverse().slice(0, 20),
       dias: lista,
       trilha,
       estatisticas: {
@@ -448,9 +541,29 @@
     if (!Number.isInteger(duracao) || duracao < 7 || duracao > 365) erro(400, 'A duração deve ficar entre 7 e 365 dias.');
     const inicio = corpo.inicio ? validarData(corpo.inicio, 'Data de início inválida.') : hojeData();
     if (inicio.getTime() > hojeData().getTime()) erro(400, 'O início não pode ser no futuro.');
-    estado.config = { ...estado.config, nome, duracao, inicio: iso(inicio) };
+    const anterior = estado.config || {};
+    if (anterior.inicio && Number(anterior.duracao) > 0 && diasEntre(hojeData(), deIso(anterior.inicio)) + 1 > Number(anterior.duracao)) {
+      estado.jornadas = estado.jornadas || [];
+      estado.jornadas.push({ id: proximoId(estado.jornadas), nome: anterior.nome || 'Minha jornada', duracao: Number(anterior.duracao), inicio: anterior.inicio, fim: iso(addDias(deIso(anterior.inicio), Number(anterior.duracao) - 1)), dias_cumpridos: Number(anterior.duracao), status: 'concluida', motivo: '' });
+    }
+    estado.config = { ...anterior, nome, duracao, inicio: iso(inicio) };
     ctx.salvar = true;
     return { ok: true };
+  }
+
+
+  async function jornadaAbandonar(estado, ctx, q, corpo) {
+    const cfg = estado.config || {};
+    if (!cfg.inicio) erro(409, 'Você não tem uma jornada em andamento.');
+    const duracao = Number(cfg.duracao) || 30;
+    const dia = diasEntre(hojeData(), deIso(cfg.inicio)) + 1;
+    if (dia > duracao) erro(409, 'Essa jornada já terminou. Comece uma nova.');
+    estado.jornadas = estado.jornadas || [];
+    const registro = { id: proximoId(estado.jornadas), nome: cfg.nome || 'Minha jornada', duracao, inicio: cfg.inicio, fim: iso(hojeData()), dias_cumpridos: Math.max(0, dia - 1), status: 'abandonada', motivo: texto(corpo && corpo.motivo).trim().slice(0, 300) };
+    estado.jornadas.push(registro);
+    estado.config = {};
+    ctx.salvar = true;
+    return { ok: true, jornada: registro };
   }
 
   async function jornadaAvaliar(estado, ctx, q, corpo) {
@@ -491,6 +604,12 @@
     ['GET', '/api/financas/gastos', financasListar],
     ['PUT', `/api/financas/gastos/${id}`, financasEditar],
     ['DELETE', `/api/financas/gastos/${id}`, financasApagar],
+    ['GET', '/api/financas/orcamento', orcamentoLer],
+    ['PUT', '/api/financas/orcamento', orcamentoSalvar],
+    ['POST', '/api/financas/recorrentes', recorrenteCriar],
+    ['PUT', `/api/financas/recorrentes/${id}`, recorrenteEditar],
+    ['DELETE', `/api/financas/recorrentes/${id}`, recorrenteApagar],
+    ['POST', `/api/financas/recorrentes/${id}/lancar`, recorrenteLancar],
     ['GET', '/api/tarefas', tarefasListar],
     ['POST', '/api/tarefas', tarefasCriar],
     ['PUT', `/api/tarefas/${id}`, tarefasEditar],
@@ -506,6 +625,7 @@
     ['PUT', '/api/preferencias', prefsSalvar],
     ['GET', '/api/jornada', jornadaPainel],
     ['PUT', '/api/jornada/config', jornadaConfig],
+    ['POST', '/api/jornada/abandonar', jornadaAbandonar],
     ['PUT', '/api/jornada/avaliacao', jornadaAvaliar],
     ['DELETE', '/api/jornada/avaliacao', jornadaRemover],
   ].map(([metodo, padrao, tratador]) => ({ metodo, re: new RegExp(`^${padrao}$`), tratador }));
@@ -533,8 +653,8 @@
   function copiaLimpa(estado) {
     return {
       app: 'brain', versao: 1, exportado_em: new Date().toISOString(),
-      gastos: estado.gastos, tarefas: estado.tarefas, rotina_itens: estado.rotina_itens,
-      rotina_registros: estado.rotina_registros, avaliacoes: estado.avaliacoes, config: estado.config,
+      gastos: estado.gastos, orcamento: estado.orcamento, recorrentes: estado.recorrentes, tarefas: estado.tarefas, rotina_itens: estado.rotina_itens,
+      rotina_registros: estado.rotina_registros, avaliacoes: estado.avaliacoes, config: estado.config, jornadas: estado.jornadas,
       preferencias: estado.preferencias,
     };
   }
@@ -562,10 +682,25 @@
     const novo = estadoVazio();
     const ids = new Set();
     for (const g of lista(obj.gastos)) {
-      if (!(g.valor > 0) || !ehData(g.data) || !C.CATEGORIAS.includes(g.categoria) || !texto(g.descricao).trim()) continue;
+      const tipo = g.tipo === 'receita' ? 'receita' : 'despesa';
+      const catOk = tipo === 'receita' ? g.categoria === CAT_ENTRADA : C.CATEGORIAS.includes(g.categoria);
+      if (!(g.valor > 0) || !ehData(g.data) || !catOk || !texto(g.descricao).trim()) continue;
       const id = Number.isInteger(g.id) && !ids.has('g' + g.id) ? g.id : 0;
-      novo.gastos.push({ id, valor: r2(Number(g.valor)), categoria: g.categoria, descricao: texto(g.descricao).slice(0, 120), data: g.data, texto_original: texto(g.texto_original), corrigido: g.corrigido ? 1 : 0 });
+      const item = { id, tipo, valor: r2(Number(g.valor)), categoria: g.categoria, descricao: texto(g.descricao).slice(0, 120), data: g.data, texto_original: texto(g.texto_original), corrigido: g.corrigido ? 1 : 0 };
+      if (Number.isInteger(g.recorrente_id)) item.recorrente_id = g.recorrente_id;
+      novo.gastos.push(item);
       if (id) ids.add('g' + id);
+    }
+    for (const r of lista(obj.recorrentes)) {
+      const valor = r2(Number(r.valor));
+      if (!Number.isInteger(r.id) || !texto(r.descricao).trim() || !(valor > 0) || !Number.isInteger(r.dia) || r.dia < 1 || r.dia > 31 || !C.CATEGORIAS.includes(r.categoria)) continue;
+      novo.recorrentes.push({ id: r.id, descricao: texto(r.descricao).slice(0, 120), valor, dia: r.dia, categoria: r.categoria });
+    }
+    if (obj.orcamento && typeof obj.orcamento === 'object') {
+      const o = obj.orcamento;
+      const cats = {};
+      if (o.categorias && typeof o.categorias === 'object') for (const [k, v] of Object.entries(o.categorias)) if (C.CATEGORIAS.includes(k) && Number(v) > 0 && Number(v) < 10000000) cats[k] = r2(Number(v));
+      novo.orcamento = { total: Number(o.total) > 0 && Number(o.total) < 10000000 ? r2(Number(o.total)) : 0, categorias: cats };
     }
     for (const t of lista(obj.tarefas)) {
       if (!texto(t.titulo).trim()) continue;
@@ -591,6 +726,11 @@
     if (ehData(c.inicio)) {
       const duracao = Number(c.duracao);
       novo.config = { nome: texto(c.nome || 'Minha jornada').slice(0, 40), duracao: Number.isInteger(duracao) && duracao >= 7 && duracao <= 365 ? duracao : 30, inicio: c.inicio };
+    }
+    for (const j of lista(obj.jornadas)) {
+      if (!ehData(j.inicio) || !ehData(j.fim) || !['abandonada', 'concluida'].includes(j.status)) continue;
+      const duracao = Number(j.duracao);
+      novo.jornadas.push({ id: novo.jornadas.length + 1, nome: texto(j.nome || 'Minha jornada').slice(0, 40), duracao: Number.isInteger(duracao) && duracao >= 7 && duracao <= 365 ? duracao : 30, inicio: j.inicio, fim: j.fim, dias_cumpridos: Math.max(0, Math.min(365, Number(j.dias_cumpridos) || 0)), status: j.status, motivo: texto(j.motivo).slice(0, 300) });
     }
     if (obj.preferencias && typeof obj.preferencias === 'object') novo.preferencias = P.sanitizar(obj.preferencias);
     // ids ausentes ou repetidos ganham números novos

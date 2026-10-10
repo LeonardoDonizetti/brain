@@ -125,6 +125,13 @@
           <div class="cfg-linha flex"><div><div class="rot">Modo férias</div><p class="dica">Pausa as metas sem cobrar nada.</p></div><label class="chave"><input type="checkbox" data-check="modo_ferias" aria-label="Modo férias"><span></span></label></div>
         </div>
 
+        <h3>Coach</h3>
+        <div class="cfg-cartao">
+          <div class="cfg-linha flex"><div><div class="rot">Coach ligado</div><p class="dica">Incentiva suas tarefas e avisa sobre gastos. Funciona por regras no seu aparelho, sem IA paga.</p></div><label class="chave"><input type="checkbox" data-check="coach" aria-label="Coach ligado"><span></span></label></div>
+          <div class="cfg-linha"><div class="rot">Tom de voz</div><div class="ctl">${seg('coach_tom', [['amigo', 'Amigo'], ['firme', 'Firme'], ['calmo', 'Calmo']])}</div></div>
+          <div class="cfg-linha"><div class="rot">Avisar quando uma categoria passar de</div><p class="dica">Percentual do total gasto no mês (ex.: Alimentação).</p><div class="ctl">${seg('coach_alerta_pct', [[30, '30%'], [40, '40%'], [50, '50%'], [60, '60%']])}</div></div>
+        </div>
+
         <h3>Calendário</h3>
         <div class="cfg-cartao">
           <div class="cfg-linha"><div class="rot">A semana começa em</div><div class="ctl">${seg('semana_inicio', [[0, 'Domingo'], [1, 'Segunda'], [6, 'Sábado']])}</div></div>
@@ -177,7 +184,7 @@
         const b = e.target.closest('button');
         if (!b) return;
         const g = b.closest('.seg');
-        if (g) { const v = g.dataset.pref === 'tema' ? b.dataset.v : Number(b.dataset.v); P.set({ [g.dataset.pref]: v }); marcar(); return; }
+        if (g) { const v = ['tema', 'coach_tom'].includes(g.dataset.pref) ? b.dataset.v : Number(b.dataset.v); P.set({ [g.dataset.pref]: v }); marcar(); return; }
         if (b.closest('#cfg-cores')) { P.set({ cor: b.dataset.v }); marcar(); return; }
         if (b.closest('#cfg-folgas')) {
           const d = Number(b.dataset.d); const atual = P.get().dias_folga;
@@ -294,7 +301,7 @@
         const nome = `brain-${tipo}-${hojeIso()}.csv`;
         const texto = tipo === 'tarefas'
           ? csv(['Dia', 'Hora', 'Tarefa', 'Concluída', 'Concluída em'], d.tarefas.slice().sort((a, b) => (a.data || '9999').localeCompare(b.data || '9999')).map((t) => [t.data, t.hora, t.titulo, t.feita ? 'sim' : 'não', t.concluida_em]))
-          : csv(['Data', 'Valor', 'Categoria', 'Descrição'], d.gastos.slice().sort((a, b) => a.data.localeCompare(b.data)).map((g) => [g.data, String(g.valor).replace('.', ','), g.categoria, g.descricao]));
+          : csv(['Data', 'Tipo', 'Valor', 'Categoria', 'Descrição'], d.gastos.slice().sort((a, b) => a.data.localeCompare(b.data)).map((g) => [g.data, g.tipo === 'receita' ? 'Entrada' : 'Gasto', String(g.valor).replace('.', ','), g.categoria, g.descricao]));
         baixar(new Blob([texto], { type: 'text/csv;charset=utf-8' }), nome);
         msg(`Planilha de ${tipo} gerada (${tipo === 'tarefas' ? d.tarefas.length : d.gastos.length} linhas).`);
       } catch (e) { msg('Não consegui gerar a planilha.', true); }

@@ -120,6 +120,11 @@
     </div>
   </section>
 
+  <section id="hist-sec" hidden>
+    <h2>Jornadas anteriores</h2>
+    <ul id="hist" style="list-style:none;padding:0;margin:0;display:grid;gap:.5rem"></ul>
+  </section>
+
   <h2>Reflexões recentes</h2>
   <ul id="reflexoes"></ul>
 </main>
@@ -154,10 +159,24 @@
     <input id="c-duracao" type="number" min="7" max="365" step="1" required>
     <label for="c-inicio">Data de início</label>
     <input id="c-inicio" type="date" required>
+    <button type="button" class="perigo" id="c-abandonar" hidden style="color:var(--danger);margin-bottom:.6rem">Abandonar jornada</button>
     <p class="dica">Mudar a data de início reinicia a contagem de dias. Suas avaliações antigas são mantidas.</p>
     <div class="acoes">
       <button type="button" id="c-cancelar">Cancelar</button>
       <button type="submit" class="primario">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-ab">
+  <form id="ab-form">
+    <h3>Pausar e encerrar esta jornada?</h3>
+    <p class="dica">Recomeçar faz parte do processo. Ela vai para "Jornadas anteriores" com os dias que você cumpriu, e suas avaliações são mantidas.</p>
+    <label for="ab-motivo">O que aconteceu? (opcional)</label>
+    <textarea id="ab-motivo" maxlength="300" rows="3" placeholder="Ex.: semana de provas, mudei de objetivo..."></textarea>
+    <div class="acoes">
+      <button type="button" id="ab-cancelar">Manter jornada</button>
+      <button type="submit" class="perigo">Abandonar</button>
     </div>
   </form>
 </dialog>
@@ -213,6 +232,7 @@ function desenhar() {
   desenharGrafico();
   desenharTrilha();
   desenharReflexoes();
+  desenharHistorico();
 }
 
 const EMBLEMA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8c1.4 1.8 2.8 2.7 2.8 4.5a2.8 2.8 0 01-5.6 0c0-1 .5-1.6 1.1-2.2.3.6.8.9 1.3.9-.2-1.1-.2-2.1.4-3.2z"/></svg>';
@@ -288,6 +308,27 @@ function desenharHero() {
     acoes.append(b);
   }
   hero.append(acoes);
+}
+
+function desenharHistorico() {
+  const h = dados.historico || [];
+  $('hist-sec').hidden = !h.length;
+  const ul = $('hist');
+  ul.replaceChildren();
+  h.forEach((x) => {
+    const li = document.createElement('li');
+    li.className = 'cartao';
+    li.style.padding = '.8rem 1rem';
+    const t = document.createElement('strong');
+    t.textContent = x.nome;
+    const st = document.createElement('span');
+    st.className = 'dica';
+    st.style.display = 'block';
+    st.textContent = `${x.status === 'concluida' ? 'Concluída' : 'Abandonada'} · ${x.dias_cumpridos}/${x.duracao} dias · ${curto(x.inicio)} a ${curto(x.fim)}`;
+    li.append(t, st);
+    if (x.motivo) { const m = document.createElement('span'); m.className = 'dica'; m.style.display = 'block'; m.textContent = `“${x.motivo}”`; li.append(m); }
+    ul.append(li);
+  });
 }
 
 function desenharStats() {
@@ -460,8 +501,21 @@ function abrirConfig() {
   $('c-duracao').value = j.duracao || 30;
   $('c-inicio').value = j.dia_atual && j.dia_atual <= j.duracao ? j.inicio : dados.hoje;
   $('c-inicio').max = dados.hoje;
+  const ativa = !!j.dia_atual && j.dia_atual <= j.duracao;
+  $('c-abandonar').hidden = !ativa;
   $('dlg-cfg').showModal();
 }
+$('c-abandonar').onclick = () => { $('dlg-cfg').close(); $('ab-motivo').value = ''; $('dlg-ab').showModal(); };
+$('ab-cancelar').onclick = () => $('dlg-ab').close();
+$('ab-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/jornada/abandonar', { method: 'POST', headers: JSON_HDR, body: JSON.stringify({ motivo: $('ab-motivo').value }) });
+    $('dlg-ab').close();
+    aviso('Jornada encerrada. Quando quiser, comece outra.');
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+});
 $('cfg').onclick = abrirConfig;
 $('c-cancelar').onclick = () => $('dlg-cfg').close();
 

@@ -13,6 +13,9 @@
     modo_ferias: false,      // pausa as metas sem "quebrar" nada
     periodo_grafico: 7,      // 7 | 14 | 30
     lembrete_backup: 14,     // dias; 0 = nunca lembrar
+    coach: true,             // mensagens do coach
+    coach_tom: 'amigo',      // amigo | firme | calmo
+    coach_alerta_pct: 40,    // avisa quando uma categoria passa disso % dos gastos
     home: { aneis: true, barras: true, constancia: true, tabela: true, gastos: true },
   };
 
@@ -48,6 +51,9 @@
       modo_ferias: p.modo_ferias === true,
       periodo_grafico: [7, 14, 30].includes(p.periodo_grafico) ? p.periodo_grafico : PADRAO.periodo_grafico,
       lembrete_backup: [0, 7, 14, 30].includes(p.lembrete_backup) ? p.lembrete_backup : PADRAO.lembrete_backup,
+      coach: p.coach !== false,
+      coach_tom: ['amigo', 'firme', 'calmo'].includes(p.coach_tom) ? p.coach_tom : PADRAO.coach_tom,
+      coach_alerta_pct: [30, 40, 50, 60].includes(p.coach_alerta_pct) ? p.coach_alerta_pct : PADRAO.coach_alerta_pct,
       home,
     };
   }
