@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brain - Finanças</title>
+<link rel="stylesheet" href="base.css?v=m1">
+<meta name="theme-color" content="#3452e1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Brain">
+<script src="texto.js"></script>
+<script src="categorias.js"></script>
+<script src="api-local.js"></script>
+<script src="nav.js" defer></script>
+<style>
+  body { padding-bottom: calc(var(--nav-h) + 9rem); }
+  li.g .data { color: var(--muted); font-size: .85rem; }
+  li.g .desc small { display: block; color: var(--muted); font-size: .8rem; }
+  .grafico-sec { background: var(--surface); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem; margin-top: 1rem; }
+  .grafico-topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
+  .grafico-topo h2 { margin: 0; }
+  .alternar { display: flex; gap: .25rem; }
+  .alternar button { border: 1px solid var(--line); background: var(--bg); border-radius: .6rem; padding: .35rem .7rem; font-size: .85rem; }
+  .alternar button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .rosca { display: flex; align-items: center; gap: 1rem; margin-top: .75rem; flex-wrap: wrap; }
+  .rosca svg { width: 11rem; height: 11rem; flex: none; }
+  .rosca text { fill: var(--ink); font-size: 4px; font-weight: 700; text-anchor: middle; }
+  .legenda { list-style: none; margin: 0; padding: 0; border: none; background: none; box-shadow: none; overflow: visible; flex: 1; min-width: 12rem; }
+  .legenda li { display: flex; align-items: center; gap: .5rem; padding: .25rem 0; font-size: .9rem; border: none; }
+  .legenda i { width: .8rem; height: .8rem; border-radius: 50%; flex: none; }
+  .legenda .nome { flex: 1; }
+  .legenda .valor { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Gastos</h1>
+    <div class="mes">
+      <button class="icon" id="anterior" aria-label="Mês anterior">‹</button>
+      <span id="mes-label"></span>
+      <button class="icon" id="proximo" aria-label="Próximo mês">›</button>
+    </div>
+  </header>
+
+  <section class="total">
+    <small>Total do mês</small>
+    <strong class="num" id="total">R$ 0,00</strong>
+  </section>
+
+  <section class="cats" id="cats" aria-label="Gastos por categoria"></section>
+
+  <section class="grafico-sec" id="grafico-sec" hidden>
+    <div class="grafico-topo">
+      <h2>Gráfico por categoria</h2>
+      <div class="alternar" role="group" aria-label="O que mostrar no gráfico">
+        <button type="button" id="g-valor" aria-pressed="true">Valor (R$)</button>
+        <button type="button" id="g-qtd" aria-pressed="false">Quantidade</button>
+      </div>
+    </div>
+    <div class="rosca" id="grafico"></div>
+  </section>
+
+  <h2>Lançamentos <span style="font-weight:400">(toque no lápis para corrigir)</span></h2>
+  <ul id="lista"></ul>
+</main>
+
+<dialog id="dlg">
+  <form id="dlg-form">
+    <h3>Corrigir gasto</h3>
+    <label for="d-valor">Valor (R$)</label>
+    <input id="d-valor" type="number" step="0.01" min="0.01" required>
+    <label for="d-desc">Descrição</label>
+    <input id="d-desc" type="text" maxlength="120" required>
+    <label for="d-cat">Categoria</label>
+    <select id="d-cat"></select>
+    <label for="d-data">Data</label>
+    <input id="d-data" type="date" required>
+    <div class="acoes">
+      <button type="button" class="perigo" id="d-apagar">Apagar</button>
+      <button type="button" id="d-cancelar">Cancelar</button>
+      <button type="submit" class="primario">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="composer">
+  <div id="status" role="status" aria-live="polite"></div>
+  <form id="form">
+    <input id="texto" type="text" autocomplete="off" placeholder="Ex.: 32 no iFood ontem e 15 de Uber" aria-label="Descreva o gasto">
+    <button type="button" id="mic" aria-label="Falar o gasto" hidden>🎤</button>
+    <button type="submit" class="enviar" aria-label="Registrar gasto">↑</button>
+  </form>
+</div>
+
+<script>
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const $ = (id) => document.getElementById(id);
+const hoje = new Date();
+let mes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+let editando = null;
+const LAPIS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/><path d="M14 7l3 3"/></svg>';
+
+function aviso(msg, erro = false) {
+  $('status').textContent = msg;
+  $('status').classList.toggle('erro', erro);
+}
+
+async function api(url, opcoes) {
+  const r = await fetch(url, opcoes);
+  let corpo = {};
+  try { corpo = await r.json(); } catch (e) { /* resposta sem JSON */ }
+  if (!r.ok) {
+    const detalhe = Array.isArray(corpo.detail) ? 'Dados inválidos.' : corpo.detail;
+    throw new Error(detalhe || 'Algo deu errado. Tente de novo.');
+  }
+  return corpo;
+}
+
+function mudarMes(delta) {
+  const [a, m] = mes.split('-').map(Number);
+  const d = new Date(a, m - 1 + delta, 1);
+  mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  carregar();
+}
+
+async function carregar() {
+  let d;
+  try {
+    d = await api(`/api/financas/gastos?mes=${mes}`);
+  } catch (err) {
+    aviso(err.message, true);
+    return;
+  }
+  const [a, m] = d.mes.split('-').map(Number);
+  $('mes-label').textContent = new Date(a, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  $('total').textContent = BRL.format(d.total);
+
+  const cats = $('cats');
+  cats.replaceChildren();
+  const max = Math.max(...d.por_categoria.map((c) => c.valor), 1);
+  d.por_categoria.forEach((c) => {
+    const linha = document.createElement('div');
+    linha.className = 'cat';
+    linha.innerHTML = '<span></span><div class="barra"><i></i></div><span class="num"></span>';
+    linha.children[0].textContent = c.categoria;
+    linha.querySelector('i').style.width = `${(c.valor / max) * 100}%`;
+    linha.children[2].textContent = BRL.format(c.valor);
+    cats.append(linha);
+  });
+  cats.hidden = d.por_categoria.length === 0;
+  desenharGrafico(d.por_categoria);
+
+  const sel = $('d-cat');
+  if (!sel.options.length) {
+    d.categorias.forEach((c) => sel.add(new Option(c, c)));
+  }
+
+  const lista = $('lista');
+  lista.replaceChildren();
+  if (!d.gastos.length) {
+    const vazio = document.createElement('li');
+    vazio.className = 'vazio';
+    vazio.textContent = 'Nenhum gasto neste mês. Digite ou fale o primeiro na barra de baixo.';
+    lista.append(vazio);
+    return;
+  }
+  d.gastos.forEach((g) => {
+    const li = document.createElement('li');
+    li.className = 'g';
+    li.innerHTML = '<span class="data num"></span><span class="desc"></span><span class="num"></span><button type="button" class="lapis" aria-label="Editar este gasto">' + LAPIS + '</button>';
+    const [, mm, dd] = g.data.split('-');
+    const cols = li.children;
+    cols[0].textContent = `${dd}/${mm}`;
+    cols[1].textContent = g.descricao;
+    const cat = document.createElement('small');
+    cat.textContent = g.categoria;
+    cols[1].append(cat);
+    cols[2].textContent = BRL.format(g.valor);
+    li.querySelector('.lapis').onclick = () => abrirDialogo(g);
+    lista.append(li);
+  });
+}
+
+function abrirDialogo(g) {
+  editando = g;
+  $('d-valor').value = g.valor;
+  $('d-desc').value = g.descricao;
+  $('d-cat').value = g.categoria;
+  $('d-data').value = g.data;
+  $('dlg').showModal();
+}
+
+$('d-cancelar').onclick = () => $('dlg').close();
+
+$('d-apagar').onclick = async () => {
+  if (!editando || !confirm('Apagar este gasto?')) return;
+  try {
+    await api(`/api/financas/gastos/${editando.id}`, { method: 'DELETE' });
+    $('dlg').close();
+    aviso('Gasto apagado.');
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+};
+
+$('dlg-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!editando) return;
+  try {
+    await api(`/api/financas/gastos/${editando.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        valor: parseFloat($('d-valor').value),
+        descricao: $('d-desc').value,
+        categoria: $('d-cat').value,
+        data: $('d-data').value,
+      }),
+    });
+    $('dlg').close();
+    aviso('Corrigido. O modelo aprendeu com isso.');
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+});
+
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const texto = $('texto').value.trim();
+  if (!texto) return;
+  aviso('Registrando…');
+  try {
+    const d = await api('/api/financas/gastos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto }),
+    });
+    let msg = 'Registrado: ' + d.registrados.map((g) => `${BRL.format(g.valor)} · ${g.descricao} (${g.categoria})`).join(' | ');
+    if (d.ignorados.length) msg += `. Sem valor, ignorei: ${d.ignorados.join(', ')}`;
+    aviso(msg);
+    $('texto').value = '';
+    const [a, m] = d.registrados[0].data.split('-');
+    mes = `${a}-${m}`;
+    carregar();
+  } catch (err) {
+    aviso(err.message, true);
+  }
+});
+
+$('anterior').onclick = () => mudarMes(-1);
+$('proximo').onclick = () => mudarMes(1);
+
+// ---------- Gráfico por categoria (rosca em SVG, sem bibliotecas) ----------
+let modoGrafico = 'valor'; // 'valor' ou 'quantidade'
+let dadosGrafico = [];
+const corCategoria = (i) => `hsl(${(i * 47 + 220) % 360} 60% 55%)`;
+
+function desenharGrafico(dados) {
+  dadosGrafico = dados;
+  const box = $('grafico');
+  box.replaceChildren();
+  const total = dados.reduce((soma, c) => soma + c[modoGrafico], 0);
+  $('grafico-sec').hidden = total === 0;
+  if (!total) return;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 42 42');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Gráfico de rosca dos gastos por categoria');
+  let acumulado = 0;
+  dados.forEach((c, i) => {
+    const pct = (c[modoGrafico] / total) * 100;
+    const arco = document.createElementNS(ns, 'circle');
+    arco.setAttribute('cx', '21');
+    arco.setAttribute('cy', '21');
+    arco.setAttribute('r', '15.9155');
+    arco.setAttribute('fill', 'none');
+    arco.setAttribute('stroke', corCategoria(i));
+    arco.setAttribute('stroke-width', '6');
+    arco.setAttribute('stroke-dasharray', `${pct} ${100 - pct}`);
+    arco.setAttribute('stroke-dashoffset', `${25 - acumulado}`);
+    svg.append(arco);
+    acumulado += pct;
+  });
+  const centro = document.createElementNS(ns, 'text');
+  centro.setAttribute('x', '21');
+  centro.setAttribute('y', '22.5');
+  centro.textContent = modoGrafico === 'valor' ? BRL.format(total) : `${total} gasto${total > 1 ? 's' : ''}`;
+  svg.append(centro);
+  box.append(svg);
+
+  const legenda = document.createElement('ul');
+  legenda.className = 'legenda';
+  dados.forEach((c, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<i></i><span class="nome"></span><span class="valor num"></span>';
+    li.querySelector('i').style.background = corCategoria(i);
+    li.querySelector('.nome').textContent = c.categoria;
+    const pct = Math.round((c[modoGrafico] / total) * 100);
+    const texto = modoGrafico === 'valor' ? BRL.format(c.valor) : `${c.quantidade}x`;
+    li.querySelector('.valor').textContent = `${texto} · ${pct}%`;
+    legenda.append(li);
+  });
+  box.append(legenda);
+}
+
+function escolherModo(modo) {
+  modoGrafico = modo;
+  $('g-valor').setAttribute('aria-pressed', String(modo === 'valor'));
+  $('g-qtd').setAttribute('aria-pressed', String(modo === 'quantidade'));
+  desenharGrafico(dadosGrafico);
+}
+$('g-valor').onclick = () => escolherModo('valor');
+$('g-qtd').onclick = () => escolherModo('quantidade');
+
+// Voz (Web Speech API; exige localhost ou HTTPS)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR) {
+  const mic = $('mic');
+  mic.hidden = false;
+  const rec = new SR();
+  rec.lang = 'pt-BR';
+  rec.interimResults = false;
+  rec.onstart = () => { mic.classList.add('ouvindo'); aviso('Ouvindo…'); };
+  rec.onend = () => mic.classList.remove('ouvindo');
+  rec.onerror = () => aviso('Não consegui ouvir. Verifique a permissão do microfone.', true);
+  rec.onresult = (ev) => {
+    $('texto').value = ev.results[0][0].transcript;
+    $('form').requestSubmit();
+  };
+  mic.onclick = () => { try { rec.start(); } catch (e) { /* já estava ouvindo */ } };
+}
+
+carregar();
+</script>
+</body>
+</html>

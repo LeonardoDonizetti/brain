@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brain - Tarefas</title>
+<link rel="stylesheet" href="base.css?v=m1">
+<meta name="theme-color" content="#3452e1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Brain">
+<script src="texto.js"></script>
+<script src="categorias.js"></script>
+<script src="api-local.js"></script>
+<script src="nav.js" defer></script>
+<style>
+  body { padding-bottom: calc(var(--nav-h) + 12rem); }
+  .cal { background: var(--surface); border: 1px solid var(--line); border-radius: .9rem; padding: .75rem; margin-top: 1rem; }
+  .grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: .25rem; }
+  .grade .sem { text-align: center; font-size: .75rem; color: var(--muted); padding: .25rem 0; }
+  .dia { position: relative; aspect-ratio: 1; border: 1px solid transparent; border-radius: .6rem; background: none; font-size: .95rem; display: grid; place-items: center; padding: 0; }
+  .dia:hover { background: var(--bg); }
+  .dia.hoje { border-color: var(--accent); }
+  .dia.sel { background: var(--accent); color: var(--on-accent); }
+  .dia .marca { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .dia.sel .marca { background: var(--on-accent); }
+  .dia .marca.feitas { opacity: .35; }
+  .barra-lista { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.5rem 0 .5rem; }
+  .barra-lista h2 { margin: 0; }
+  .barra-lista button { background: none; border: none; color: var(--accent); font-size: .9rem; padding: .25rem; }
+  li.t { display: grid; grid-template-columns: 1.6rem 1fr auto; gap: .6rem; align-items: center; padding: .7rem 1rem; }
+  li.t input[type=checkbox] { width: 1.3rem; height: 1.3rem; accent-color: var(--accent); }
+  li.t .texto { background: none; border: none; text-align: left; padding: 0; }
+  li.t.feita .texto { text-decoration: line-through; color: var(--muted); }
+  li.t .quando { display: block; color: var(--muted); font-size: .8rem; }
+  .composer .linha2 { max-width: 38rem; margin: .5rem auto 0; display: flex; gap: .5rem; }
+  .composer .linha2 input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; padding: .5rem .75rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Tarefas</h1>
+    <div class="mes">
+      <button class="icon" id="anterior" aria-label="Mês anterior">‹</button>
+      <span id="mes-label"></span>
+      <button class="icon" id="proximo" aria-label="Próximo mês">›</button>
+    </div>
+  </header>
+
+  <section class="cal" aria-label="Calendário">
+    <div class="grade" id="grade"></div>
+  </section>
+
+  <div class="barra-lista">
+    <h2 id="titulo-lista">Todas as tarefas</h2>
+    <button id="todas" hidden>Ver todas</button>
+  </div>
+  <ul id="lista"></ul>
+</main>
+
+<dialog id="dlg">
+  <form id="dlg-form">
+    <h3>Editar tarefa</h3>
+    <label for="d-titulo">Título</label>
+    <input id="d-titulo" type="text" maxlength="200" required>
+    <label for="d-data">Data</label>
+    <input id="d-data" type="date">
+    <label for="d-hora">Hora</label>
+    <input id="d-hora" type="time">
+    <div class="acoes">
+      <button type="button" class="perigo" id="d-apagar">Apagar</button>
+      <button type="button" id="d-cancelar">Cancelar</button>
+      <button type="submit" class="primario">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="composer">
+  <div id="status" role="status" aria-live="polite"></div>
+  <form id="form">
+    <input id="titulo" type="text" autocomplete="off" placeholder="Ex.: Prova de inglês sexta às 14h" aria-label="Título da tarefa">
+    <button type="submit" class="enviar" aria-label="Adicionar tarefa">↑</button>
+  </form>
+  <div class="linha2">
+    <input id="data" type="date" aria-label="Data (opcional)">
+    <input id="hora" type="time" aria-label="Hora (opcional)">
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const hoje = new Date();
+let mes = iso(hoje).slice(0, 7);
+let selecionado = iso(hoje);
+let tarefas = [];
+let editando = null;
+const LAPIS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/><path d="M14 7l3 3"/></svg>';
+
+function aviso(msg, erro = false) {
+  $('status').textContent = msg;
+  $('status').classList.toggle('erro', erro);
+}
+
+async function api(url, opcoes) {
+  const r = await fetch(url, opcoes);
+  let corpo = {};
+  try { corpo = await r.json(); } catch (e) { /* resposta sem JSON */ }
+  if (!r.ok) {
+    const detalhe = Array.isArray(corpo.detail) ? 'Dados inválidos.' : corpo.detail;
+    throw new Error(detalhe || 'Algo deu errado. Tente de novo.');
+  }
+  return corpo;
+}
+
+function formatarData(s) {
+  const [a, m, d] = s.split('-').map(Number);
+  return new Date(a, m - 1, d).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+}
+
+async function carregar() {
+  try {
+    tarefas = (await api('/api/tarefas')).tarefas;
+  } catch (err) {
+    aviso(err.message, true);
+    return;
+  }
+  desenhar();
+}
+
+function desenhar() {
+  desenharCalendario();
+  desenharLista();
+  $('data').value = selecionado || '';
+}
+
+function desenharCalendario() {
+  const [a, m] = mes.split('-').map(Number);
+  $('mes-label').textContent = new Date(a, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const grade = $('grade');
+  grade.replaceChildren();
+  ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].forEach((l) => {
+    const c = document.createElement('div');
+    c.className = 'sem';
+    c.setAttribute('aria-hidden', 'true');
+    c.textContent = l;
+    grade.append(c);
+  });
+  const porData = {};
+  tarefas.forEach((t) => {
+    if (!t.data) return;
+    porData[t.data] = porData[t.data] || { abertas: 0, feitas: 0 };
+    porData[t.data][t.feita ? 'feitas' : 'abertas']++;
+  });
+  const inicio = new Date(a, m - 1, 1).getDay();
+  const total = new Date(a, m, 0).getDate();
+  for (let i = 0; i < inicio; i++) grade.append(document.createElement('div'));
+  for (let dia = 1; dia <= total; dia++) {
+    const data = `${a}-${String(m).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dia' + (data === iso(hoje) ? ' hoje' : '') + (data === selecionado ? ' sel' : '');
+    b.textContent = dia;
+    const info = porData[data];
+    b.setAttribute('aria-label', `Dia ${dia}` + (info ? `, ${info.abertas} pendente(s)` : ''));
+    if (info) {
+      const marca = document.createElement('span');
+      marca.className = 'marca' + (info.abertas ? '' : ' feitas');
+      b.append(marca);
+    }
+    b.onclick = () => { selecionado = data === selecionado ? null : data; desenhar(); };
+    grade.append(b);
+  }
+}
+
+function desenharLista() {
+  const lista = $('lista');
+  lista.replaceChildren();
+  const visiveis = selecionado ? tarefas.filter((t) => t.data === selecionado) : tarefas;
+  $('titulo-lista').textContent = selecionado ? formatarData(selecionado) : 'Todas as tarefas';
+  $('todas').hidden = !selecionado;
+  if (!visiveis.length) {
+    const vazio = document.createElement('li');
+    vazio.className = 'vazio';
+    vazio.textContent = selecionado ? 'Nada marcado para este dia.' : 'Nenhuma tarefa ainda. Escreva a primeira na barra de baixo.';
+    lista.append(vazio);
+    return;
+  }
+  visiveis.forEach((t) => {
+    const li = document.createElement('li');
+    li.className = 't' + (t.feita ? ' feita' : '');
+    li.innerHTML = '<input type="checkbox" aria-label="Concluir"><div class="texto"></div><button type="button" class="lapis" aria-label="Editar tarefa">' + LAPIS + '</button>';
+    const check = li.querySelector('input');
+    check.checked = !!t.feita;
+    check.onchange = async () => {
+      try { await api(`/api/tarefas/${t.id}/alternar`, { method: 'PATCH' }); carregar(); }
+      catch (err) { aviso(err.message, true); check.checked = !check.checked; }
+    };
+    const botao = li.querySelector('.texto');
+    botao.append(document.createTextNode(t.titulo));
+    const quando = [];
+    if (!selecionado && t.data) quando.push(formatarData(t.data));
+    if (t.hora) quando.push(t.hora);
+    if (quando.length) {
+      const q = document.createElement('span');
+      q.className = 'quando num';
+      q.textContent = quando.join(' · ');
+      botao.append(q);
+    }
+    li.querySelector('.lapis').onclick = () => abrirDialogo(t);
+    lista.append(li);
+  });
+}
+
+function mudarMes(delta) {
+  const [a, m] = mes.split('-').map(Number);
+  const d = new Date(a, m - 1 + delta, 1);
+  mes = iso(d).slice(0, 7);
+  selecionado = null;
+  desenhar();
+}
+
+function abrirDialogo(t) {
+  editando = t;
+  $('d-titulo').value = t.titulo;
+  $('d-data').value = t.data || '';
+  $('d-hora').value = t.hora || '';
+  $('dlg').showModal();
+}
+
+$('d-cancelar').onclick = () => $('dlg').close();
+
+$('d-apagar').onclick = async () => {
+  if (!editando || !confirm('Apagar esta tarefa?')) return;
+  try {
+    await api(`/api/tarefas/${editando.id}`, { method: 'DELETE' });
+    $('dlg').close();
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+};
+
+$('dlg-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!editando) return;
+  try {
+    await api(`/api/tarefas/${editando.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titulo: $('d-titulo').value, data: $('d-data').value || null, hora: $('d-hora').value || null }),
+    });
+    $('dlg').close();
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+});
+
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const titulo = $('titulo').value.trim();
+  if (!titulo) return;
+  try {
+    const t = await api('/api/tarefas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titulo, data: $('data').value || null, hora: $('hora').value || null }),
+    });
+    $('titulo').value = '';
+    $('hora').value = '';
+    const quando = [t.data ? formatarData(t.data) : null, t.hora].filter(Boolean).join(' · ');
+    aviso(`Adicionada: ${t.titulo}${quando ? ' (' + quando + ')' : ''}`);
+    if (t.data) { selecionado = t.data; mes = t.data.slice(0, 7); }
+    carregar();
+  } catch (err) {
+    aviso(err.message, true);
+  }
+});
+
+$('todas').onclick = () => { selecionado = null; desenhar(); };
+$('anterior').onclick = () => mudarMes(-1);
+$('proximo').onclick = () => mudarMes(1);
+
+carregar();
+</script>
+</body>
+</html>

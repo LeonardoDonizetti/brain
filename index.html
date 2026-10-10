@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brain</title>
+<link rel="stylesheet" href="base.css?v=m1">
+<meta name="theme-color" content="#3452e1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Brain">
+<script src="texto.js"></script>
+<script src="categorias.js"></script>
+<script src="api-local.js"></script>
+<script src="nav.js" defer></script>
+<style>
+  .data-topo { margin: 0 0 .15rem; color: var(--muted); font-size: .9rem; text-transform: capitalize; }
+  .cards { display: grid; gap: .9rem; margin-top: 1.5rem; }
+  .card { display: block; text-decoration: none; color: inherit; padding: 1.1rem 1.25rem; }
+  .card:hover { border-color: var(--accent); }
+  .card-topo { display: flex; align-items: center; gap: .6rem; color: var(--muted); font-size: .85rem; font-weight: 650; }
+  .card-topo .ic { width: 2rem; height: 2rem; border-radius: .7rem; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+  .card-topo svg { width: 1.2rem; height: 1.2rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .card strong { display: block; font-size: 1.8rem; font-weight: 750; letter-spacing: -.02em; margin-top: .6rem; }
+  .card .sub { color: var(--muted); font-size: .9rem; }
+  .mini { height: .45rem; background: var(--bg); border-radius: 1rem; overflow: hidden; margin-top: .8rem; }
+  .mini i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 1rem; }
+  @media (prefers-reduced-motion: no-preference) { .mini i { transition: width .4s; } }
+  .backup { margin-top: 1.1rem; padding: 1.1rem 1.25rem; }
+  .backup h2 { margin: 0 0 .25rem; font-size: 1rem; }
+  .backup p { margin: .2rem 0 .8rem; color: var(--muted); font-size: .88rem; line-height: 1.4; }
+  .backup .linha { display: flex; gap: .6rem; flex-wrap: wrap; }
+  .backup button { flex: 1 1 8rem; min-height: 2.6rem; border-radius: .75rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 650; cursor: pointer; }
+  .backup button.principal { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .backup .aviso { color: #b45309; font-weight: 650; }
+  .backup .msg { margin: .7rem 0 0; font-size: .88rem; }
+</style>
+</head>
+<body>
+<main>
+  <p class="data-topo" id="data-topo"></p>
+  <h1 id="saudacao">Brain</h1>
+
+  <div class="cards">
+    <a class="card cartao" href="rotina.html">
+      <div class="card-topo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>Rotina de hoje</div>
+      <strong class="num" id="r-valor">-</strong>
+      <span class="sub" id="r-sub">Rituais, hábitos e renúncias</span>
+      <div class="mini"><i id="r-barra"></i></div>
+    </a>
+    <a class="card cartao" href="jornada.html">
+      <div class="card-topo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></span>Jornada</div>
+      <strong class="num" id="j-valor">-</strong>
+      <span class="sub" id="j-sub">Avalie seus dias e acompanhe sua conduta</span>
+    </a>
+    <a class="card cartao" href="tarefas.html">
+      <div class="card-topo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></span>Tarefas</div>
+      <strong class="num" id="t-valor">-</strong>
+      <span class="sub" id="t-sub">Tarefas e compromissos</span>
+    </a>
+    <a class="card cartao" href="financas.html">
+      <div class="card-topo"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="15" r="1"/></svg></span>Gastos do mês</div>
+      <strong class="num" id="f-valor">-</strong>
+      <span class="sub" id="f-sub">Gastos por texto ou voz</span>
+    </a>
+  </div>
+  <section class="card cartao backup" aria-labelledby="bk-t">
+    <h2 id="bk-t">Seus dados e backup</h2>
+    <p id="bk-info">Tudo fica guardado só neste aparelho.</p>
+    <div class="linha">
+      <button class="principal" id="bk-exportar" type="button">Salvar backup</button>
+      <button id="bk-importar" type="button">Restaurar backup</button>
+    </div>
+    <input type="file" id="bk-arquivo" accept=".json,application/json" hidden>
+    <p class="msg" id="bk-msg" role="status"></p>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const agora = new Date();
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const h = agora.getHours();
+$('saudacao').textContent = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+$('data-topo').textContent = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+fetch(`/api/rotina?data=${iso(agora)}`).then((r) => r.json()).then((d) => {
+  const { feitos, total } = d.progresso;
+  if (!total) { $('r-valor').textContent = 'Monte sua rotina'; $('r-sub').textContent = 'Toque para começar'; return; }
+  $('r-valor').textContent = `${Math.round((feitos / total) * 100)}%`;
+  $('r-sub').textContent = `${feitos} de ${total} cumpridos hoje`;
+  $('r-barra').style.width = `${(feitos / total) * 100}%`;
+}).catch(() => {});
+
+fetch('/api/jornada?dias=7').then((r) => r.json()).then((d) => {
+  const j = d.jornada;
+  if (!j.dia_atual) { $('j-valor').textContent = 'Comece agora'; $('j-sub').textContent = 'Defina sua jornada de disciplina'; return; }
+  $('j-valor').textContent = j.dia_atual > j.duracao ? 'Concluída' : `Dia ${j.dia_atual}`;
+  const n = d.estatisticas.sequencia_positiva;
+  $('j-sub').textContent = d.avaliacao_hoje ? `Hoje: ${d.avaliacao_hoje.resultado}` + (n ? ` · ${n} ${n === 1 ? 'dia' : 'dias'} positivos seguidos` : '') : 'Você ainda não avaliou o dia de hoje';
+}).catch(() => {});
+
+fetch('/api/tarefas').then((r) => r.json()).then((d) => {
+  const abertas = d.tarefas.filter((t) => !t.feita);
+  const hojeAbertas = abertas.filter((t) => t.data === iso(agora));
+  $('t-valor').textContent = `${hojeAbertas.length} para hoje`;
+  $('t-sub').textContent = abertas.length ? `${abertas.length} pendente${abertas.length > 1 ? 's' : ''} no total` : 'Nenhuma tarefa pendente';
+}).catch(() => {});
+
+fetch('/api/financas/gastos').then((r) => r.json()).then((d) => {
+  $('f-valor').textContent = BRL.format(d.total);
+  $('f-sub').textContent = `${d.gastos.length} lançamento${d.gastos.length === 1 ? '' : 's'} neste mês`;
+}).catch(() => {});
+
+// ---- backup (os dados ficam só neste aparelho) ----
+(function () {
+  const L = window.BrainLocal;
+  if (!L) return;
+  const info = $('bk-info'), msg = $('bk-msg');
+  async function atualizar() {
+    try {
+      const r = await L.resumo();
+      let t = 'Tudo fica guardado só neste aparelho.';
+      let aviso = false;
+      if (r.registros) {
+        if (!r.ultimo_backup) { t += ' Você ainda não fez backup.'; aviso = true; }
+        else {
+          const dias = Math.round((new Date(iso(agora) + 'T12:00') - new Date(r.ultimo_backup + 'T12:00')) / 86400000);
+          t += dias === 0 ? ' Último backup: hoje.' : ` Último backup: há ${dias} dia${dias > 1 ? 's' : ''}.`;
+          if (dias >= 14) aviso = true;
+        }
+      }
+      info.textContent = t;
+      info.className = aviso ? 'aviso' : '';
+    } catch (e) {}
+  }
+  $('bk-exportar').addEventListener('click', async () => {
+    try {
+      const texto = await L.exportar();
+      const blob = new Blob([texto], { type: 'application/json' });
+      const nome = `brain-backup-${iso(agora)}.json`;
+      const arquivo = new File([blob], nome, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+        try { await navigator.share({ files: [arquivo], title: 'Backup do Brain' }); }
+        catch (e) { if (e.name === 'AbortError') return; throw e; }
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = nome; document.body.append(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      }
+      msg.textContent = 'Backup salvo. Guarde o arquivo em um lugar seguro (nuvem, e-mail para você mesmo).';
+      atualizar();
+    } catch (e) { msg.textContent = 'Não consegui gerar o backup.'; }
+  });
+  $('bk-importar').addEventListener('click', () => $('bk-arquivo').click());
+  $('bk-arquivo').addEventListener('change', async (ev) => {
+    const f = ev.target.files[0];
+    ev.target.value = '';
+    if (!f) return;
+    if (!confirm('Restaurar vai SUBSTITUIR tudo o que está neste aparelho pelo conteúdo do arquivo. Continuar?')) return;
+    try {
+      const r = await L.importar(await f.text());
+      msg.textContent = `Restaurado: ${r.gastos} gastos, ${r.tarefas} tarefas, ${r.itens} itens de rotina, ${r.avaliacoes} avaliações.`;
+      location.reload();
+    } catch (e) { msg.textContent = e.message || 'Não consegui restaurar esse arquivo.'; }
+  });
+  L.persistir();
+  atualizar();
+})();
+</script>
+</body>
+</html>

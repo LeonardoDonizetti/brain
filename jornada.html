@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brain - Jornada</title>
+<link rel="stylesheet" href="base.css?v=m1">
+<meta name="theme-color" content="#3452e1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Brain">
+<script src="texto.js"></script>
+<script src="categorias.js"></script>
+<script src="api-local.js"></script>
+<script src="nav.js" defer></script>
+<style>
+  .data-topo { margin: 0 0 .15rem; color: var(--muted); font-size: .9rem; text-transform: capitalize; }
+  .hero { margin-top: 1.25rem; padding: 1.25rem; }
+  .hero-topo { display: flex; align-items: center; gap: .9rem; }
+  .emblema { width: 3.4rem; height: 3.4rem; border-radius: 1.1rem; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+  .emblema svg { width: 1.9rem; height: 1.9rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .hero-nome { font-size: .78rem; font-weight: 650; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+  .hero-dia { font-size: 2.2rem; font-weight: 780; letter-spacing: -.03em; line-height: 1.1; }
+  .hero-dia small { font-size: 1rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+  .progresso { height: .5rem; background: var(--bg); border-radius: 1rem; overflow: hidden; margin: 1rem 0 .9rem; }
+  .progresso i { display: block; height: 100%; background: var(--accent); border-radius: 1rem; }
+  .hero p { margin: .8rem 0 0; color: var(--muted); }
+  .hero-acoes { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .btn { border: 1px solid var(--line); background: var(--bg); border-radius: .85rem; padding: .7rem 1.1rem; font-weight: 600; }
+  .btn.primario { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .selo { font-size: .8rem; font-weight: 700; padding: .3rem .7rem; border-radius: 2rem; }
+  .selo.positivo { background: var(--ok-soft); color: var(--ok); }
+  .selo.negativo { background: var(--danger-soft); color: var(--danger); }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-top: .9rem; }
+  .stat { padding: .9rem 1rem; }
+  .stat small { display: block; color: var(--muted); font-size: .78rem; font-weight: 600; }
+  .stat strong { font-size: 1.5rem; font-weight: 750; letter-spacing: -.02em; }
+  .stat strong span { font-size: .85rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+
+  .painel { padding: 1rem; }
+  .painel-topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
+  .painel-topo h2 { margin: 0; }
+  .alternar { display: flex; gap: .25rem; }
+  .alternar button { border: 1px solid var(--line); background: var(--bg); border-radius: .6rem; padding: .35rem .7rem; font-size: .85rem; }
+  .alternar button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  #grafico { width: 100%; height: auto; display: block; margin-top: .75rem; }
+  #grafico text { fill: var(--muted); font-size: 6px; }
+  .leg { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin-top: .6rem; font-size: .78rem; color: var(--muted); }
+  .leg span { display: inline-flex; align-items: center; gap: .35rem; }
+  .leg i { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; }
+  .leg i.linha { width: 1rem; height: 3px; border-radius: 2px; }
+  .vazio-g { color: var(--muted); padding: 1.5rem .5rem; text-align: center; }
+
+  .trilha { display: grid; grid-template-columns: repeat(7, 1fr); gap: .5rem; margin-top: .75rem; }
+  .no { aspect-ratio: 1; border-radius: 50%; border: 2px dashed var(--line-strong); background: none; color: var(--muted); font-weight: 650; font-size: .85rem; padding: 0; }
+  .no.hoje { border: 2px solid var(--accent); color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .no.positivo { background: var(--ok); border: 2px solid var(--ok); color: #fff; }
+  .no.negativo { background: var(--danger); border: 2px solid var(--danger); color: #fff; }
+  .no.futuro { opacity: .4; border: 2px solid var(--line); cursor: default; }
+
+  li.ref { display: block; padding: .8rem 1rem; }
+  li.ref .topo-ref { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--muted); margin-bottom: .25rem; }
+  li.ref p { margin: 0; white-space: pre-wrap; }
+
+  .escolha { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-top: .9rem; }
+  .opcao { border: 2px solid var(--line); border-radius: .9rem; padding: .95rem .5rem; background: var(--bg); font-weight: 700; }
+  .opcao.positivo[aria-pressed="true"] { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+  .opcao.negativo[aria-pressed="true"] { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+  .aviso { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav-h) + 1rem); max-width: 90vw; background: var(--ink); color: var(--bg); padding: .6rem 1rem; border-radius: 2rem; font-size: .88rem; }
+  .aviso:empty { display: none; }
+  .aviso.erro { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <p class="data-topo" id="data-topo"></p>
+      <h1>Jornada</h1>
+    </div>
+    <button class="icon" id="cfg" aria-label="Configurar jornada">⚙</button>
+  </header>
+
+  <section class="hero cartao" id="hero"></section>
+  <section class="stats" id="stats"></section>
+
+  <h2>Conduta</h2>
+  <section class="painel cartao">
+    <div class="painel-topo">
+      <strong>Cumprimento da rotina e avaliação</strong>
+      <div class="alternar" role="group" aria-label="Período do gráfico">
+        <button type="button" data-j="7" aria-pressed="false">7 dias</button>
+        <button type="button" data-j="30" aria-pressed="true">30 dias</button>
+        <button type="button" data-j="90" aria-pressed="false">90 dias</button>
+      </div>
+    </div>
+    <svg id="grafico" viewBox="0 0 300 134" role="img" aria-label="Gráfico de barras do cumprimento da rotina por dia"></svg>
+    <p class="vazio-g" id="grafico-vazio" hidden>Monte sua rotina e marque os itens para ver o gráfico da sua conduta.</p>
+    <div class="leg">
+      <span><i style="background: var(--ok)"></i>Dia positivo</span>
+      <span><i style="background: var(--danger)"></i>Dia negativo</span>
+      <span><i style="background: var(--line-strong)"></i>Sem avaliação</span>
+      <span><i class="linha" style="background: var(--accent)"></i>Média de 7 dias</span>
+    </div>
+  </section>
+
+  <h2>Trilha</h2>
+  <section class="painel cartao">
+    <div class="trilha" id="trilha"></div>
+    <p class="vazio-g" id="trilha-vazia" hidden>A trilha aparece quando você começa a jornada.</p>
+    <div class="leg">
+      <span><i style="background: var(--ok)"></i>Positivo</span>
+      <span><i style="background: var(--danger)"></i>Negativo</span>
+      <span><i style="border: 2px dashed var(--line-strong)"></i>Sem avaliação</span>
+    </div>
+  </section>
+
+  <h2>Reflexões recentes</h2>
+  <ul id="reflexoes"></ul>
+</main>
+
+<div class="aviso" id="aviso" role="status" aria-live="polite"></div>
+
+<dialog id="dlg-av">
+  <form id="av-form">
+    <h3 id="av-titulo">Como foi o dia?</h3>
+    <p class="dica">Suas atitudes desse dia te aproximaram dos seus objetivos?</p>
+    <div class="escolha" role="group" aria-label="Avaliação do dia">
+      <button type="button" class="opcao positivo" data-v="positivo" aria-pressed="false">Positivo</button>
+      <button type="button" class="opcao negativo" data-v="negativo" aria-pressed="false">Negativo</button>
+    </div>
+    <label for="av-nota">Reflexão (opcional)</label>
+    <textarea id="av-nota" maxlength="500" rows="3" placeholder="O que funcionou? O que você muda amanhã?"></textarea>
+    <p class="dica" id="av-resumo"></p>
+    <div class="acoes">
+      <button type="button" class="perigo" id="av-remover" hidden>Remover</button>
+      <button type="button" id="av-cancelar">Cancelar</button>
+      <button type="submit" class="primario">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-cfg">
+  <form id="cfg-form">
+    <h3>Sua jornada</h3>
+    <label for="c-nome">Nome</label>
+    <input id="c-nome" type="text" maxlength="40" placeholder="Ex.: 30 dias de foco">
+    <label for="c-duracao">Duração (dias)</label>
+    <input id="c-duracao" type="number" min="7" max="365" step="1" required>
+    <label for="c-inicio">Data de início</label>
+    <input id="c-inicio" type="date" required>
+    <p class="dica">Mudar a data de início reinicia a contagem de dias. Suas avaliações antigas são mantidas.</p>
+    <div class="acoes">
+      <button type="button" id="c-cancelar">Cancelar</button>
+      <button type="submit" class="primario">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const paraData = (s) => { const [a, m, d] = s.split('-').map(Number); return new Date(a, m - 1, d); };
+const curto = (s) => { const [, m, d] = s.split('-'); return `${d}/${m}`; };
+const NS = 'http://www.w3.org/2000/svg';
+const JSON_HDR = { 'Content-Type': 'application/json' };
+const NOME_AV = { positivo: 'Positivo', negativo: 'Negativo' };
+let janela = 30;
+let dados = null;
+let avDia = null;
+let avEscolha = null;
+const LAPIS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/><path d="M14 7l3 3"/></svg>';
+
+let timerAviso;
+function aviso(msg, erro = false) {
+  const el = $('aviso');
+  el.textContent = msg;
+  el.classList.toggle('erro', erro);
+  clearTimeout(timerAviso);
+  if (msg) timerAviso = setTimeout(() => { el.textContent = ''; }, 4000);
+}
+
+async function api(url, opcoes) {
+  const r = await fetch(url, opcoes);
+  let corpo = {};
+  try { corpo = await r.json(); } catch (e) { /* resposta sem JSON */ }
+  if (!r.ok) {
+    const detalhe = Array.isArray(corpo.detail) ? 'Dados inválidos.' : corpo.detail;
+    throw new Error(detalhe || 'Algo deu errado. Tente de novo.');
+  }
+  return corpo;
+}
+
+async function carregar() {
+  try {
+    dados = await api(`/api/jornada?dias=${janela}`);
+  } catch (err) {
+    aviso(err.message, true);
+    return;
+  }
+  desenhar();
+}
+
+function desenhar() {
+  $('data-topo').textContent = paraData(dados.hoje).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  desenharHero();
+  desenharStats();
+  desenharGrafico();
+  desenharTrilha();
+  desenharReflexoes();
+}
+
+const EMBLEMA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M12 8c1.4 1.8 2.8 2.7 2.8 4.5a2.8 2.8 0 01-5.6 0c0-1 .5-1.6 1.1-2.2.3.6.8.9 1.3.9-.2-1.1-.2-2.1.4-3.2z"/></svg>';
+
+function desenharHero() {
+  const j = dados.jornada;
+  const hero = $('hero');
+  hero.replaceChildren();
+  const topo = document.createElement('div');
+  topo.className = 'hero-topo';
+  const emb = document.createElement('div');
+  emb.className = 'emblema';
+  emb.innerHTML = EMBLEMA;
+  const info = document.createElement('div');
+  topo.append(emb, info);
+  hero.append(topo);
+
+  if (!j.dia_atual) {
+    info.innerHTML = '<div class="hero-nome">Comece agora</div><div class="hero-dia" style="font-size:1.4rem">Sua jornada</div>';
+    const p = document.createElement('p');
+    p.textContent = 'Escolha um nome e por quantos dias você vai manter a disciplina. Cada dia avaliado e cada item da rotina cumprido aparecem aqui.';
+    const b = document.createElement('button');
+    b.className = 'btn primario';
+    b.style.marginTop = '1rem';
+    b.textContent = 'Começar jornada';
+    b.onclick = abrirConfig;
+    hero.append(p, b);
+    return;
+  }
+
+  const nome = document.createElement('div');
+  nome.className = 'hero-nome';
+  nome.textContent = j.nome;
+  const dia = document.createElement('div');
+  dia.className = 'hero-dia num';
+  info.append(nome, dia);
+  const concluida = j.dia_atual > j.duracao;
+  if (concluida) {
+    dia.textContent = 'Jornada concluída';
+    dia.style.fontSize = '1.5rem';
+  } else {
+    dia.innerHTML = `Dia ${j.dia_atual} <small>de ${j.duracao}</small>`;
+  }
+  const barra = document.createElement('div');
+  barra.className = 'progresso';
+  barra.innerHTML = '<i></i>';
+  barra.querySelector('i').style.width = `${Math.min(j.dia_atual / j.duracao, 1) * 100}%`;
+  hero.append(barra);
+
+  const acoes = document.createElement('div');
+  acoes.className = 'hero-acoes';
+  const av = dados.avaliacao_hoje;
+  if (concluida) {
+    const b = document.createElement('button');
+    b.className = 'btn primario';
+    b.textContent = 'Começar nova jornada';
+    b.onclick = abrirConfig;
+    acoes.append(b);
+  } else if (av) {
+    const selo = document.createElement('span');
+    selo.className = `selo ${av.resultado}`;
+    selo.textContent = `Hoje: ${NOME_AV[av.resultado]}`;
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.textContent = 'Editar avaliação';
+    b.onclick = () => abrirAvaliacao(dados.hoje);
+    acoes.append(selo, b);
+  } else {
+    const b = document.createElement('button');
+    b.className = 'btn primario';
+    b.textContent = 'Avaliar meu dia';
+    b.onclick = () => abrirAvaliacao(dados.hoje);
+    acoes.append(b);
+  }
+  hero.append(acoes);
+}
+
+function desenharStats() {
+  const e = dados.estatisticas;
+  const dias = (n) => `${n} <span>${n === 1 ? 'dia' : 'dias'}</span>`;
+  const itens = [
+    ['Sequência positiva', dias(e.sequencia_positiva)],
+    ['Melhor sequência', dias(e.melhor_sequencia)],
+    [`Positivos · negativos (${janela}d)`, `${e.positivos} <span>·</span> ${e.negativos}`],
+    [`Cumprimento médio (${janela}d)`, e.media_cumprimento === null ? '-' : `${e.media_cumprimento}%`],
+  ];
+  const box = $('stats');
+  box.replaceChildren();
+  itens.forEach(([rotulo, valor]) => {
+    const c = document.createElement('div');
+    c.className = 'stat cartao';
+    c.innerHTML = '<small></small><strong class="num"></strong>';
+    c.querySelector('small').textContent = rotulo;
+    c.querySelector('strong').innerHTML = valor; // valores montados aqui, sem texto digitado pelo usuário
+    box.append(c);
+  });
+}
+
+function el(tag, attrs = {}, texto) {
+  const e = document.createElementNS(NS, tag);
+  Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+  if (texto !== undefined) e.textContent = texto;
+  return e;
+}
+
+function desenharGrafico() {
+  const dias = dados.dias;
+  const svg = $('grafico');
+  svg.replaceChildren();
+  const vazio = dias.every((d) => d.cumprimento === null);
+  svg.hidden = vazio;
+  $('grafico-vazio').hidden = !vazio;
+  if (vazio) return;
+
+  const X0 = 26, X1 = 296, Y0 = 8, Y1 = 112;
+  [0, 50, 100].forEach((v) => {
+    const y = Y1 - (v / 100) * (Y1 - Y0);
+    const linha = el('line', { x1: X0, x2: X1, y1: y, y2: y, 'stroke-width': '0.4' });
+    linha.style.stroke = 'var(--line-strong)';
+    if (v !== 0) linha.setAttribute('stroke-dasharray', '1.5 1.5');
+    svg.append(linha);
+    svg.append(el('text', { x: X0 - 3, y: y + 2, 'text-anchor': 'end' }, `${v}%`));
+  });
+
+  const n = dias.length;
+  const passo = (X1 - X0) / n;
+  const larg = Math.max(passo * 0.68, 0.8);
+  const pontos = [];
+  dias.forEach((d, i) => {
+    const cx = X0 + passo * i + passo / 2;
+    if (d.cumprimento !== null) {
+      const h = Math.max((d.cumprimento / 100) * (Y1 - Y0), 1.5);
+      const barra = el('rect', { x: cx - larg / 2, y: Y1 - h, width: larg, height: h, rx: Math.min(larg / 3, 2) });
+      barra.style.fill = d.avaliacao === 'positivo' ? 'var(--ok)' : d.avaliacao === 'negativo' ? 'var(--danger)' : 'var(--line-strong)';
+      barra.style.cursor = 'pointer';
+      const dica = `${curto(d.data)}: ${d.cumprimento}% da rotina` + (d.avaliacao ? ` · ${NOME_AV[d.avaliacao]}` : '');
+      barra.append(el('title', {}, dica));
+      barra.addEventListener('click', () => abrirAvaliacao(d.data));
+      svg.append(barra);
+    }
+    const recentes = dias.slice(Math.max(0, i - 6), i + 1).map((x) => x.cumprimento).filter((v) => v !== null);
+    if (recentes.length) {
+      const media = recentes.reduce((a, b) => a + b, 0) / recentes.length;
+      pontos.push([cx, Y1 - (media / 100) * (Y1 - Y0)]);
+    }
+  });
+  if (pontos.length > 1) {
+    const linha = el('polyline', { points: pontos.map((p) => p.join(',')).join(' '), fill: 'none', 'stroke-width': '1.4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    linha.style.stroke = 'var(--accent)';
+    svg.append(linha);
+  }
+  [[0, 'start', X0], [Math.floor((n - 1) / 2), 'middle', X0 + (X1 - X0) / 2], [n - 1, 'end', X1]].forEach(([i, ancora, x]) => {
+    if (n < 3 && i !== 0 && i !== n - 1) return;
+    svg.append(el('text', { x, y: 126, 'text-anchor': ancora }, curto(dias[i].data)));
+  });
+}
+
+function desenharTrilha() {
+  const trilha = dados.trilha;
+  const box = $('trilha');
+  box.replaceChildren();
+  $('trilha-vazia').hidden = trilha.length > 0;
+  trilha.forEach((x) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `no ${x.estado}` + (x.avaliacao ? ` ${x.avaliacao}` : '');
+    b.textContent = x.dia;
+    b.disabled = x.estado === 'futuro';
+    b.setAttribute('aria-label', `Dia ${x.dia}, ${curto(x.data)}` + (x.avaliacao ? `, ${NOME_AV[x.avaliacao]}` : x.estado === 'futuro' ? ', ainda não chegou' : ', sem avaliação'));
+    b.onclick = () => abrirAvaliacao(x.data);
+    box.append(b);
+  });
+}
+
+function desenharReflexoes() {
+  const ul = $('reflexoes');
+  ul.replaceChildren();
+  const comNota = dados.dias.filter((d) => d.nota).reverse().slice(0, 5);
+  if (!comNota.length) {
+    const v = document.createElement('li');
+    v.className = 'vazio';
+    v.textContent = 'Quando você avaliar um dia e escrever uma reflexão, ela aparece aqui.';
+    ul.append(v);
+    return;
+  }
+  comNota.forEach((d) => {
+    const li = document.createElement('li');
+    li.className = 'ref';
+    li.innerHTML = '<div class="topo-ref"><span class="num"></span><span class="selo"></span><button type="button" class="lapis" aria-label="Editar avaliação deste dia" style="margin-left:auto">' + LAPIS + '</button></div><p></p>';
+    li.querySelector('.num').textContent = paraData(d.data).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+    const selo = li.querySelector('.selo');
+    selo.classList.add(d.avaliacao);
+    selo.textContent = NOME_AV[d.avaliacao];
+    li.querySelector('p').textContent = d.nota;
+    li.querySelector('.lapis').onclick = () => abrirAvaliacao(d.data);
+    ul.append(li);
+  });
+}
+
+// ---------- avaliação do dia ----------
+function marcarEscolha(v) {
+  avEscolha = v;
+  document.querySelectorAll('.opcao').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+}
+document.querySelectorAll('.opcao').forEach((b) => { b.onclick = () => marcarEscolha(b.dataset.v); });
+
+function abrirAvaliacao(data) {
+  const info = dados.dias.find((d) => d.data === data) || dados.trilha.find((d) => d.data === data) || {};
+  avDia = data;
+  $('av-titulo').textContent = data === dados.hoje ? 'Como foi o seu dia?' : `Como foi o dia ${curto(data)}?`;
+  marcarEscolha(info.avaliacao || null);
+  $('av-nota').value = info.nota || '';
+  $('av-resumo').textContent = info.cumprimento != null
+    ? `Rotina cumprida nesse dia: ${info.feitos} de ${info.total} (${info.cumprimento}%).`
+    : 'Não havia itens de rotina nesse dia.';
+  $('av-remover').hidden = !info.avaliacao;
+  $('dlg-av').showModal();
+}
+$('av-cancelar').onclick = () => $('dlg-av').close();
+
+$('av-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!avEscolha) { aviso('Escolha positivo ou negativo.', true); return; }
+  try {
+    await api('/api/jornada/avaliacao', { method: 'PUT', headers: JSON_HDR, body: JSON.stringify({ data: avDia, resultado: avEscolha, nota: $('av-nota').value }) });
+    $('dlg-av').close();
+    aviso('Avaliação salva.');
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+});
+
+$('av-remover').onclick = async () => {
+  if (!confirm('Remover a avaliação deste dia?')) return;
+  try {
+    await api(`/api/jornada/avaliacao?data=${avDia}`, { method: 'DELETE' });
+    $('dlg-av').close();
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+};
+
+// ---------- configuração da jornada ----------
+function abrirConfig() {
+  const j = dados.jornada;
+  $('c-nome').value = j.dia_atual ? j.nome : '';
+  $('c-duracao').value = j.duracao || 30;
+  $('c-inicio').value = j.dia_atual && j.dia_atual <= j.duracao ? j.inicio : dados.hoje;
+  $('c-inicio').max = dados.hoje;
+  $('dlg-cfg').showModal();
+}
+$('cfg').onclick = abrirConfig;
+$('c-cancelar').onclick = () => $('dlg-cfg').close();
+
+$('cfg-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/jornada/config', { method: 'PUT', headers: JSON_HDR, body: JSON.stringify({ nome: $('c-nome').value, duracao: parseInt($('c-duracao').value, 10), inicio: $('c-inicio').value || null }) });
+    $('dlg-cfg').close();
+    carregar();
+  } catch (err) { aviso(err.message, true); }
+});
+
+document.querySelectorAll('.alternar button').forEach((b) => {
+  b.onclick = () => {
+    janela = parseInt(b.dataset.j, 10);
+    document.querySelectorAll('.alternar button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    carregar();
+  };
+});
+
+carregar();
+</script>
+</body>
+</html>
