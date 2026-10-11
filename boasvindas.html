@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brain - Boas-vindas</title>
+<link rel="stylesheet" href="base.css?v=m1">
+<meta name="theme-color" content="#0b5f73">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<script src="prefs.js"></script>
+<script src="texto.js"></script>
+<script src="estudos.js"></script>
+<script src="categorias.js"></script>
+<script src="api-local.js"></script>
+<script src="onboarding.js"></script>
+<style>
+  body { padding-bottom: 2rem; }
+  .bv { max-width: 34rem; margin: 0 auto; padding: 0 1rem; display: flex; flex-direction: column; min-height: 100dvh; }
+  .bv-topo { position: sticky; top: 0; background: var(--bg); padding: calc(.8rem + env(safe-area-inset-top)) 0 .6rem; z-index: 2; }
+  .bv-linha { display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-height: 2.2rem; }
+  .bv-marca { font-weight: 650; letter-spacing: -.01em; }
+  .bv-btn { background: none; border: 0; color: var(--muted); font: inherit; font-size: .88rem; font-weight: 600; padding: .4rem .2rem; min-height: 2.2rem; cursor: pointer; }
+  .bv-btn:disabled { opacity: .35; cursor: default; }
+  .bv-prog { height: 3px; background: var(--line); border-radius: 2px; margin-top: .4rem; overflow: hidden; }
+  .bv-prog i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s cubic-bezier(.23,1,.32,1); }
+  .bv-chat { flex: 1; display: flex; flex-direction: column; gap: .5rem; padding: 1rem 0 1rem; }
+  .bolha { max-width: 88%; padding: .65rem .85rem; border-radius: .75rem; line-height: 1.45; font-size: .95rem; animation: bv-in .35s cubic-bezier(.23,1,.32,1) both; }
+  .bolha.bot { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: .2rem; align-self: flex-start; }
+  .bolha.eu { background: var(--accent); color: var(--on-accent); border-bottom-right-radius: .2rem; align-self: flex-end; }
+  .bolha.eco { color: var(--muted); background: none; border: 0; padding: .1rem .3rem; font-size: .88rem; }
+  .bolha b { font-weight: 600; }
+  @keyframes bv-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .bv ul { background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+  .bv li { display: list-item; padding: 0; }
+  .bv li + li { border-top: 0; }
+  .bv .mods li + li { border-top: 1px solid var(--line); }
+  .mods { list-style: none; margin: .5rem 0 0; padding: 0; }
+  .bv .mods li { display: block; padding: .45rem 0; border-top: 1px solid var(--line); font-size: .88rem; color: var(--muted); }
+  .mods li:first-child { border-top: 0; }
+  .mods b { color: var(--ink); display: block; font-size: .92rem; }
+  .ctl-bv { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; animation: bv-in .35s .12s cubic-bezier(.23,1,.32,1) both; }
+  .opc { font: inherit; text-align: left; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: .6rem; padding: .7rem .9rem; min-height: 2.8rem; cursor: pointer; font-weight: 500; }
+  .opc:active { transform: scale(.985); }
+  .opc[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .opc.pri { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; text-align: center; }
+  .opc.suave { border-color: transparent; background: none; color: var(--muted); text-align: center; }
+  .campo { font: inherit; width: 100%; padding: .7rem .85rem; border: 1px solid var(--line-strong); border-radius: .6rem; background: var(--surface); color: var(--ink); min-height: 2.8rem; }
+  .ajustes { margin: .4rem 0 0; padding-left: 1.1rem; font-size: .88rem; color: var(--muted); }
+  .passos { display: grid; gap: .45rem; margin-top: .3rem; animation: bv-in .35s .12s cubic-bezier(.23,1,.32,1) both; }
+  .passo-c { display: block; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; padding: .7rem .9rem; }
+  .passo-c b { display: block; font-weight: 600; font-size: .95rem; }
+  .passo-c span { color: var(--muted); font-size: .85rem; }
+  @media (prefers-reduced-motion: reduce) { .bolha, .ctl-bv, .passos { animation: none; } .bv-prog i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="bv">
+  <header class="bv-topo">
+    <div class="bv-linha">
+      <button class="bv-btn" id="voltar" type="button" aria-label="Voltar uma pergunta">Voltar</button>
+      <span class="bv-marca">Brain</span>
+      <button class="bv-btn" id="pular" type="button">Pular</button>
+    </div>
+    <div class="bv-prog" role="progressbar" aria-label="Progresso das boas-vindas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="prog"></i></div>
+  </header>
+  <main class="bv-chat" id="chat" aria-live="polite" style="padding-top:1rem"></main>
+</div>
+<script>
+(function () {
+  'use strict';
+  const O = window.BrainOnboarding;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const refazer = /[?&]refazer=1/.test(location.search);
+  const resp = {};
+  let i = 0;
+  let prioTmp = [];
+
+  const passos = [{ t: 'intro' }, { t: 'nome' }]
+    .concat(O.PERGUNTAS.map((q) => ({ t: 'q', q })))
+    .concat([{ t: 'prior' }, { t: 'tom' }, { t: 'fim' }]);
+
+  function sair() { location.replace('./'); }
+  function concluir(aplicar) {
+    if (aplicar) { const p = O.plano(resp); window.BrainPrefs.set(Object.assign({}, p.prefs, { onboarding: true, perfil: p.perfil })); }
+    else window.BrainPrefs.set({ onboarding: true });
+  }
+
+  const bot = (html, extra) => `<div class="bolha bot ${extra || ''}">${html}</div>`;
+  const eu = (txt) => `<div class="bolha eu">${esc(txt)}</div>`;
+  const eco = (txt) => `<div class="bolha eco">${esc(txt)}</div>`;
+
+  function textoDe(p) {
+    const n = resp.nome ? esc(resp.nome) : '';
+    switch (p.t) {
+      case 'intro': return [bot(refazer
+        ? 'Vamos refazer as perguntas. No final, suas metas, o coach e a tela inicial serão reajustados. Seus dados continuam como estão.'
+        : '<b>Olá, eu sou o Brain.</b> É o seu espaço pessoal para organizar a vida. Tudo fica neste aparelho.'),
+        bot('Isto é o que você tem aqui:<ul class="mods">' + O.MODULOS.map((m) => `<li><b>${m.nome}</b>${m.texto}</li>`).join('') + '</ul>'),
+        bot('Vou fazer algumas perguntas rápidas para ajustar tudo ao seu momento. Leva cerca de um minuto.')];
+      case 'nome': return [bot('Como você prefere ser chamado?')];
+      case 'q': return [bot((i === 2 && n ? `${n}, ` : '') + (i === 2 && n ? p.q.texto.charAt(0).toLowerCase() + p.q.texto.slice(1) : p.q.texto))];
+      case 'prior': return [bot('Se pudesse melhorar até <b>duas</b> áreas agora, quais seriam?')];
+      case 'tom': return [bot('Por último: como o coach deve falar com você?')];
+      case 'fim': {
+        const p2 = O.plano(resp);
+        return [bot(`${n ? n + ', ' : ''}montei o Brain assim para você:<ul class="ajustes">${p2.ajustes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>Você pode mudar tudo em Configurações.`),
+          bot('Seus primeiros passos, em ordem de importância:')];
+      }
+    }
+    return [];
+  }
+
+  function resposta(p) {
+    switch (p.t) {
+      case 'intro': return null;
+      case 'nome': return resp.nome ? [eu(resp.nome), eco(`Prazer, ${resp.nome}.`)] : (resp._semnome ? [eu('Prefiro não dizer'), eco('Sem problema.')] : null);
+      case 'q': { const v = resp[p.q.id]; if (!v) return null; const o = p.q.opcoes.find((x) => x.v === v); return [eu(o.t), eco(o.eco)]; }
+      case 'prior': return resp.prioridade ? [eu(resp.prioridade.map((k) => O.PRIORIDADES.find((x) => x[0] === k)[1]).join(' e ')), eco('Essas áreas vêm primeiro nos seus passos.')] : (resp._semprior ? [eu('Sem prioridade'), eco('Tudo bem, vou equilibrar.')] : null);
+      case 'tom': { const o = O.TONS.find((x) => x.v === resp.tom); return o ? [eu(o.t), eco(o.eco)] : null; }
+    }
+    return null;
+  }
+
+  function controles(p) {
+    const c = document.createElement('div'); c.className = 'ctl-bv';
+    const botao = (txt, cls, fn, pressed) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'opc ' + (cls || ''); b.textContent = txt; if (pressed !== undefined) b.setAttribute('aria-pressed', pressed); b.addEventListener('click', () => fn(b)); c.appendChild(b); return b; };
+    if (p.t === 'intro') { botao('Vamos começar', 'pri', () => avancar()); }
+    else if (p.t === 'nome') {
+      const inp = document.createElement('input'); inp.className = 'campo'; inp.maxLength = 24; inp.placeholder = 'Seu nome ou apelido'; inp.autocomplete = 'given-name'; inp.setAttribute('aria-label', 'Seu nome ou apelido');
+      c.appendChild(inp);
+      const ok = () => { const n = inp.value.replace(/\s+/g, ' ').trim(); if (n) { resp.nome = n; delete resp._semnome; } else { delete resp.nome; resp._semnome = true; } avancar(); };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') ok(); });
+      botao('Continuar', 'pri', ok);
+      botao('Prefiro não dizer', 'suave', () => { delete resp.nome; resp._semnome = true; avancar(); });
+    } else if (p.t === 'q') {
+      p.q.opcoes.forEach((o) => botao(o.t, '', () => { resp[p.q.id] = o.v; avancar(); }));
+    } else if (p.t === 'prior') {
+      prioTmp = [];
+      const cont = () => { b.disabled = prioTmp.length === 0; };
+      O.PRIORIDADES.forEach(([k, nome]) => botao(nome, '', (el) => {
+        const ix = prioTmp.indexOf(k);
+        if (ix >= 0) prioTmp.splice(ix, 1); else { if (prioTmp.length >= 2) prioTmp.shift(); prioTmp.push(k); }
+        c.querySelectorAll('.opc[aria-pressed]').forEach((x, n) => x.setAttribute('aria-pressed', prioTmp.includes(O.PRIORIDADES[n][0])));
+        cont();
+      }, false));
+      const b = botao('Continuar', 'pri', () => { resp.prioridade = prioTmp.slice(); delete resp._semprior; avancar(); });
+      b.removeAttribute('aria-pressed'); cont();
+      botao('Sem prioridade', 'suave', () => { delete resp.prioridade; resp._semprior = true; avancar(); });
+    } else if (p.t === 'tom') {
+      O.TONS.forEach((o) => botao(o.t, '', () => { resp.tom = o.v; avancar(); }));
+    }
+    return c;
+  }
+
+  function avancar() { i = Math.min(i + 1, passos.length - 1); desenhar(); }
+
+  function desenhar() {
+    const chat = $('chat'); chat.innerHTML = '';
+    for (let k = 0; k < i; k++) {
+      const p = passos[k];
+      textoDe_k(p, k).forEach((h) => { chat.insertAdjacentHTML('beforeend', h); chat.lastElementChild.style.animation = 'none'; });
+      const r = resposta(p); if (r) r.forEach((h) => { chat.insertAdjacentHTML('beforeend', h); chat.lastElementChild.style.animation = 'none'; });
+    }
+    const p = passos[i];
+    textoDe_k(p, i).forEach((h, n) => { chat.insertAdjacentHTML('beforeend', h); chat.lastElementChild.style.animationDelay = (n * 0.12) + 's'; });
+    if (p.t === 'fim') {
+      concluir(true);
+      const pl = O.plano(resp);
+      const box = document.createElement('div'); box.className = 'passos';
+      box.innerHTML = pl.passos.map((s, n) => `<a class="passo-c" href="${s.href}"><b>${n + 1}. ${esc(s.titulo)}</b><span>${esc(s.texto)}</span></a>`).join('');
+      chat.appendChild(box);
+      const c = document.createElement('div'); c.className = 'ctl-bv';
+      c.innerHTML = '<button type="button" class="opc pri" id="comecar">Ir para o início</button>';
+      chat.appendChild(c);
+      $('comecar').addEventListener('click', sair);
+    } else chat.appendChild(controles(p));
+    const pct = Math.round(i / (passos.length - 1) * 100);
+    $('prog').style.width = pct + '%'; document.querySelector('.bv-prog').setAttribute('aria-valuenow', pct);
+    $('voltar').disabled = i === 0 || p.t === 'fim';
+    $('pular').hidden = p.t === 'fim';
+    window.scrollTo({ top: document.body.scrollHeight, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
+  function textoDe_k(p, k) { const ant = i; i = k; try { return textoDe(p); } finally { i = ant; } }
+
+  $('voltar').addEventListener('click', () => { if (i > 0) { i--; const p = passos[i]; if (p.t === 'q') delete resp[p.q.id]; if (p.t === 'nome') { delete resp.nome; delete resp._semnome; } if (p.t === 'prior') { delete resp.prioridade; delete resp._semprior; } if (p.t === 'tom') delete resp.tom; desenhar(); } });
+  $('pular').addEventListener('click', () => { if (!refazer) concluir(false); sair(); });
+
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  desenhar();
+})();
+</script>
+</body>
+</html>

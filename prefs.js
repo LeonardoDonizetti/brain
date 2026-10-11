@@ -17,6 +17,8 @@
     coach_tom: 'amigo',      // amigo | firme | calmo
     coach_alerta_pct: 40,    // avisa quando uma categoria passa disso % dos gastos
     home: { aneis: true, barras: true, constancia: true, tabela: true, gastos: true },
+    onboarding: false,       // true depois das boas-vindas (ou de pular)
+    perfil: {},              // respostas das boas-vindas (nome, foco, disciplina...)
   };
 
   // [claro: destaque, suave, texto sobre destaque, (opcional) segunda cor do degradê] [escuro: ...]
@@ -43,6 +45,16 @@
     return Number.isInteger(n) && n >= min && n <= max ? n : padrao;
   };
 
+  const PRIORIDADES_OK = ['tarefas', 'estudos', 'financas', 'rotina', 'jornada'];
+  function perfilSeguro(p) {
+    p = p && typeof p === 'object' ? p : {};
+    const r = {};
+    if (typeof p.nome === 'string') { const n = p.nome.replace(/\s+/g, ' ').trim().slice(0, 24); if (n) r.nome = n; }
+    for (const k of ['foco', 'disc', 'tarefas', 'estudos', 'dinheiro', 'rotina', 'tom']) if (typeof p[k] === 'string' && /^[a-z_]{1,12}$/.test(p[k])) r[k] = p[k];
+    if (Array.isArray(p.prioridade)) { const u = [...new Set(p.prioridade.filter((x) => PRIORIDADES_OK.includes(x)))].slice(0, 2); if (u.length) r.prioridade = u; }
+    return r;
+  }
+
   /** Aceita qualquer objeto e devolve preferências válidas (o que vier errado volta ao padrão). */
   function sanitizar(p) {
     p = p && typeof p === 'object' ? p : {};
@@ -64,6 +76,8 @@
       coach_tom: ['amigo', 'firme', 'calmo'].includes(p.coach_tom) ? p.coach_tom : PADRAO.coach_tom,
       coach_alerta_pct: [30, 40, 50, 60].includes(p.coach_alerta_pct) ? p.coach_alerta_pct : PADRAO.coach_alerta_pct,
       home,
+      onboarding: p.onboarding === true,
+      perfil: perfilSeguro(p.perfil),
     };
   }
 
@@ -121,7 +135,18 @@
     });
     aplicar();
     root.BrainPrefs = api;
-    document.addEventListener('DOMContentLoaded', () => { aplicar(); api.sincronizar(); });
+    document.addEventListener('DOMContentLoaded', () => {
+      aplicar();
+      const sinc = api.sincronizar();
+      // Primeira abertura: leva para as boas-vindas (uma vez por sessão, para nunca prender o usuário)
+      const caminho = root.location.pathname;
+      if (/\/(index\.html)?$/.test(caminho)) {
+        Promise.resolve(sinc).then(() => {
+          let visto = false; try { visto = root.sessionStorage.getItem('brain-bv') === '1'; } catch (e) {}
+          if (!atual.onboarding && !visto) { try { root.sessionStorage.setItem('brain-bv', '1'); } catch (e) {} root.location.replace('boasvindas.html'); }
+        });
+      }
+    });
   } else {
     root.BrainPrefsLib = lib;
   }

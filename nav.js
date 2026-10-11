@@ -97,6 +97,7 @@
       .cfg-botoes button.perigo { color: var(--danger); border-color: var(--danger); }
       .cfg-msg { margin: .7rem 0 0; font-size: .88rem; min-height: 1.2rem; }
       .aviso { color: var(--warm); font-weight: 650; }
+      .cfg-link { color: var(--accent); font-weight: 650; font-size: .88rem; text-decoration: none; padding: .5rem .2rem; }
       .cfg-cartao ul.refs { list-style: none; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
       .cfg-cartao .refs li { display: block; background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; margin: 0; padding: .7rem 0; }
       .cfg-cartao .refs li:last-child { border-bottom: 0; }
@@ -140,6 +141,7 @@
           <div class="cfg-linha flex"><div><div class="rot">Coach ligado</div><p class="dica">Incentiva suas tarefas e avisa sobre gastos. Funciona por regras no seu aparelho, sem IA paga.</p></div><label class="chave"><input type="checkbox" data-check="coach" aria-label="Coach ligado"><span></span></label></div>
           <div class="cfg-linha"><div class="rot">Tom de voz</div><div class="ctl">${seg('coach_tom', [['amigo', 'Amigo'], ['firme', 'Firme'], ['calmo', 'Calmo']])}</div></div>
           <div class="cfg-linha"><div class="rot">Avisar quando uma categoria passar de</div><p class="dica">Percentual do total gasto no mês (ex.: Alimentação).</p><div class="ctl">${seg('coach_alerta_pct', [[30, '30%'], [40, '40%'], [50, '50%'], [60, '60%']])}</div></div>
+          <div class="cfg-linha flex"><div><div class="rot">Boas-vindas</div><p class="dica">Refaça as perguntas para reajustar metas, coach e tela inicial.</p></div><a class="cfg-link" href="boasvindas.html?refazer=1">Refazer</a></div>
         </div>
 
         <h3>Calendário</h3>
