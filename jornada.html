@@ -39,6 +39,12 @@
   .btn.primario { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
   .selo { font-size: .8rem; font-weight: 700; padding: .3rem .7rem; border-radius: 2rem; }
   .selo.positivo { background: var(--ok-soft); color: var(--ok); }
+  .abandonar { display: block; width: 100%; min-height: 2.9rem; margin: .2rem 0 1rem; border: 1px solid var(--danger); border-radius: 12px; background: transparent; color: var(--danger); font: inherit; font-weight: 600; cursor: pointer; }
+  .abandonar[hidden] { display: none; }
+  .abandonar:active { background: var(--danger-soft); }
+  #dlg-ab .acoes .perigo-fill { background: var(--danger); border-color: var(--danger); color: #fff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #dlg-ab .acoes .perigo-fill { color: #2a0f0d; } }
+  :root[data-theme="dark"] #dlg-ab .acoes .perigo-fill { color: #2a0f0d; }
   .selo.negativo { background: var(--danger-soft); color: var(--danger); }
 
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-top: .9rem; }
@@ -166,8 +172,8 @@
     <input id="c-duracao" type="number" min="7" max="365" step="1" required>
     <label for="c-inicio">Data de início</label>
     <input id="c-inicio" type="date" required>
-    <button type="button" class="perigo" id="c-abandonar" hidden style="color:var(--danger);margin-bottom:.6rem">Abandonar jornada</button>
     <p class="dica">Mudar a data de início reinicia a contagem de dias. Suas avaliações antigas são mantidas.</p>
+    <button type="button" id="c-abandonar" class="abandonar" hidden>Abandonar esta jornada</button>
     <div class="acoes">
       <button type="button" id="c-cancelar">Cancelar</button>
       <button type="submit" class="primario">Salvar</button>
@@ -182,8 +188,8 @@
     <label for="ab-motivo">O que aconteceu? (opcional)</label>
     <textarea id="ab-motivo" maxlength="300" rows="3" placeholder="Ex.: semana de provas, mudei de objetivo..."></textarea>
     <div class="acoes">
-      <button type="button" id="ab-cancelar">Manter jornada</button>
-      <button type="submit" class="perigo">Abandonar</button>
+      <button type="button" id="ab-cancelar" class="primario" autofocus>Manter jornada</button>
+      <button type="submit" class="perigo-fill">Abandonar</button>
     </div>
   </form>
 </dialog>

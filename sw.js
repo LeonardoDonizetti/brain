@@ -1,5 +1,5 @@
 /* Deixa o Brain abrir sem internet. Muda VERSAO sempre que atualizar os arquivos. */
-const VERSAO = 'brain-v20';
+const VERSAO = 'brain-v21';
 const ARQUIVOS = ['./', 'index.html', 'financas.html', 'tarefas.html', 'rotina.html', 'jornada.html', 'estudos.html',
   'base.css', 'nav.js', 'texto.js', 'prefs.js', 'coach.js', 'agenda.js', 'estudos.js', 'tarefas.js', 'onboarding.js', 'boasvindas.html', 'leitor.js', 'categorias.js', 'cofre.js', 'bloqueio.js', 'api-local.js', 'manifest.webmanifest', 'fonts/ibm-plex-sans-latin-400-normal.woff2', 'fonts/ibm-plex-sans-latin-500-normal.woff2', 'fonts/ibm-plex-sans-latin-600-normal.woff2', 'fonts/fraunces-latin-500-normal.woff2',
   'icon-192.png', 'icon-512.png', 'icon-180.png'];
