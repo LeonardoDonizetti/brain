@@ -246,7 +246,8 @@ button.primario, .acoes .primario, .btn.primario, .btn2.pri, .composer button.en
 body { background: #fff; }
 h1 { font-weight: 800; letter-spacing: -.02em; }
 h2 { font-weight: 700; color: var(--muted); letter-spacing: .01em; }
-.cats, .grafico-sec, .cal, .cartao, .es, .bloco, ul { border: 2px solid var(--line); border-radius: var(--raio); }
+.cats, .grafico-sec, .cal, .cartao, .es, .bloco, ul.lt, #lista, #fixas, #reflexoes { border: 2px solid var(--line); border-radius: var(--raio); }
+.bloco ul, .es ul, .cartao ul { border: 0; border-radius: 0; }
 dialog { border: 2px solid var(--line); border-radius: 1.25rem; }
 dialog input, dialog select, dialog textarea, .composer input { border: 2px solid var(--line); border-radius: .85rem; background: #fff; }
 dialog input:focus, dialog select:focus, dialog textarea:focus, .composer input:focus { border-color: var(--accent); outline: none; }
@@ -283,7 +284,8 @@ html[data-pg="jornada"]  { --accent: #be1f68; --accent-soft: #fde7f1; --tom2: #f
 html[data-pg="tarefas"]  { --accent: #087590; --accent-soft: #dff4fa; --tom2: #35c0e0; }
 html[data-pg="financas"] { --accent: #11793a; --accent-soft: #dff6e6; --tom2: #4fd17c; }
 html[data-pg] { --chunk: color-mix(in srgb, var(--accent) 72%, #000); --borda-t: color-mix(in srgb, var(--accent) 24%, #fff); }
-html[data-pg] body { background: color-mix(in srgb, var(--accent) 5%, #fff); }
+html[data-pg] { --bg: color-mix(in srgb, var(--accent) 5%, #fff); }
+html[data-pg] body { background: var(--bg); }
 
 /* faixa colorida no topo */
 html[data-pg] .topo-config {
@@ -301,11 +303,12 @@ html[data-pg] .topo-config .jg-chip { position: relative; z-index: 1; }
 html[data-pg] h1 { color: var(--accent); }
 html[data-pg] h2 { color: var(--accent); }
 html[data-pg] .cats, html[data-pg] .grafico-sec, html[data-pg] .cal, html[data-pg] .cartao, html[data-pg] .es, html[data-pg] .bloco,
-html[data-pg] ul.lt, html[data-pg] .res, html[data-pg] .hero, html[data-pg] .meta-c, html[data-pg] .nums, html[data-pg] .mat > section,
-html[data-pg] .stats div, html[data-pg] .resumo > div {
+html[data-pg] ul.lt, html[data-pg] #lista, html[data-pg] #fixas, html[data-pg] #reflexoes, html[data-pg] .res, html[data-pg] .hero, html[data-pg] .meta-c, html[data-pg] .nums, html[data-pg] .mat > section,
+html[data-pg] .stats div, html[data-pg="financas"] .resumo > div {
   border: 2px solid var(--borda-t); box-shadow: 0 3px 0 var(--borda-t); border-radius: 1.1rem;
 }
-html[data-pg] .stats div, html[data-pg] .resumo > div { background: var(--accent-soft); box-shadow: none; }
+html[data-pg] .stats div, html[data-pg="financas"] .resumo > div { background: var(--accent-soft); box-shadow: none; }
+html[data-pg] .bloco ul, html[data-pg] .es ul, html[data-pg] .cartao ul { border: 0; box-shadow: none; }
 html[data-pg] dialog { border-color: var(--borda-t); }
 html[data-pg] .icon, html[data-pg] .lapis { border-color: var(--borda-t); box-shadow: 0 2px 0 var(--borda-t); color: var(--accent); }
 
@@ -332,3 +335,19 @@ html[data-pg] #abas-f button[aria-pressed="true"] {
 @media (prefers-reduced-motion: no-preference) { .mascote-vazio svg { animation: masc-flutua 3.4s ease-in-out infinite; } @keyframes masc-flutua { 50% { transform: translateY(-5px); } } }
 .vazio-t, .vazio-i, .vazio-total { text-align: center; }
 .vazio-total .acoes { justify-content: center; }
+
+/* v5.1: respiro e linhas apertadas */
+.ritmo-linha { flex-wrap: wrap; row-gap: .1rem; }
+.ritmo-linha span:first-child { flex: 1 1 11rem; }
+html[data-pg] header .mes { padding: .3rem; gap: .5rem; }
+html[data-pg] .cartao, html[data-pg] .es, html[data-pg] .bloco { padding-left: max(1rem, var(--pad-c, 0px)); padding-right: max(1rem, var(--pad-c, 0px)); }
+html[data-pg] .nums small { white-space: nowrap; font-size: .68rem; }
+html[data-pg] .nums div { padding-left: .2rem; padding-right: .2rem; }
+/* rotina: o .bloco é só um agrupador; a caixa é a lista */
+html[data-pg="rotina"] .bloco { border: 0; box-shadow: none; padding: 0; border-radius: 0; background: none; }
+html[data-pg="rotina"] .bloco ul { border: 2px solid var(--borda-t); box-shadow: 0 3px 0 var(--borda-t); border-radius: 1.1rem; overflow: hidden; }
+html[data-pg="rotina"] .bloco-topo { padding: 0 .2rem; }
+html[data-pg="rotina"] .bloco-vazio { border: 2px dashed var(--borda-t); border-radius: 1.1rem; background: #fff; padding: 1rem 1.1rem; }
+/* só a tela de tarefas usa .stats como caixinhas */
+html:not([data-pg="tarefas"]) .stats div { background: none; border: 0; box-shadow: none; }
+.vazio-i[data-m] > svg { display: none; }

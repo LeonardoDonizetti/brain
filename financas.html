@@ -1019,7 +1019,7 @@ $('proximo').onclick = () => mudarMes(1);
 let modoGrafico = 'valor'; // 'valor' ou 'quantidade'
 let dadosGrafico = [];
 // Paleta discreta, distinguível por daltônicos (tons e luminosidades diferentes); o valor e o % sempre aparecem em texto
-const PALETA_CAT = ['#2f6f8f', '#c4743f', '#7d8f4e', '#8a5a8c', '#c19a2e', '#4f9a8e', '#b0566a', '#7a8591'];
+const PALETA_CAT = ['#2563eb', '#ea580c', '#16a34a', '#9333ea', '#db2777', '#0891b2', '#ca8a04', '#64748b'];
 const corCategoria = (i) => PALETA_CAT[i % PALETA_CAT.length];
 // cor fixa por categoria (a mesma em barras, rosca e lista)
 const catCor = (nome) => { if (nome === 'Entrada') return 'var(--ok)'; const l = (DADOS && DADOS.categorias) || []; const i = l.indexOf(nome); return corCategoria(i < 0 ? 0 : i); };
