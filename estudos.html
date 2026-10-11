@@ -27,6 +27,7 @@
 <script src="nav.js" defer></script>
 <script src="jogo-ui.js" defer></script>
 <script src="mascote.js" defer></script>
+<script src="tour.js" defer></script>
 <style>
   body { padding-bottom: calc(var(--nav-h) + 2rem); }
   .data-topo { margin: 0 0 .15rem; color: var(--muted); font-size: .9rem; }
@@ -166,6 +167,58 @@
   .rev-k { font-size: .8rem; color: var(--muted); font-weight: 600; }
   .rev-i { background: var(--accent-soft); border-radius: .6rem; padding: .8rem .9rem; margin: .8rem 0; font-size: .92rem; line-height: 1.45; }
   .rev-b { display: grid; gap: .5rem; }
+  /* ===== legibilidade (v5.2): textos maiores, mais ar, hierarquia clara ===== */
+  .es { padding: 1.15rem 1.2rem; margin-bottom: 1rem; }
+  .es h3 { font-size: 1.12rem; font-weight: 750; letter-spacing: -.01em; margin: 0 0 .3rem; line-height: 1.3; }
+  .es .sub, .es .dica2 { font-size: .92rem; line-height: 1.5; color: var(--muted); margin: .15rem 0 .8rem; }
+  .linkb { font-size: .92rem; }
+  .hero-es { padding: 1.25rem 1.3rem; }
+  .hero-es .k { font-size: .88rem; font-weight: 650; opacity: .95; letter-spacing: .01em; }
+  .hero-es .t { font-size: 1.7rem; font-weight: 750; margin: .25rem 0 .2rem; }
+  .hero-es .r { font-size: 1rem; opacity: .96; }
+  .hero-es .prox { font-size: .92rem; opacity: .95; margin-top: 1rem; }
+  .hero-es .bar { margin: 1rem 0 .4rem; height: .4rem; }
+  .nums b { font-size: 1.2rem; font-weight: 750; }
+  .nums div { padding: .85rem .3rem; }
+  .nums small { font-size: .74rem; margin-top: .15rem; display: block; }
+  .tl-i { grid-template-columns: 3.6rem 1fr; gap: .5rem; }
+  .tl-h { font-size: .86rem; font-weight: 650; color: var(--ink); padding: .8rem 0; line-height: 1.35; }
+  .tl-c { padding: .75rem .2rem .75rem 1.2rem; }
+  .tl-c::before { top: 1.3rem; width: .65rem; height: .65rem; }
+  .tl-c b { font-size: 1.02rem; font-weight: 700; }
+  .tl-c small { font-size: .86rem; display: block; margin-top: .1rem; }
+  .tl-c .btn2 { font-size: .9rem; padding: .4rem .9rem; min-height: 2.4rem; }
+  .vazio { font-size: .98rem; line-height: 1.5; text-align: center; padding: 1rem .5rem; margin: 0; }
+  .es-topo h3 { margin: 0; }
+  .es-topo .linkb, .es-topo small { font-size: .88rem; }
+  .gs-cab { font-size: .8rem; }
+  .gs-h { font-size: .68rem; }
+  .grade-sem { height: 18rem; gap: 4px; }
+  .gs-d i { opacity: .62; border-radius: 4px; }
+  .gs-d i.e { opacity: 1; }
+  .mini { height: 6.2rem; }
+  .mini div { font-size: .78rem; }
+  .mrow { grid-template-columns: 6.5rem 1fr auto; font-size: .96rem; padding: .4rem 0; }
+  .mrow .v { font-size: .88rem; }
+  .item { padding: .8rem 0; }
+  .item small { font-size: .86rem; }
+  .chips-m { flex-wrap: wrap; overflow: visible; gap: .5rem; }
+  .chips-m button { font-size: .92rem; min-height: 2.5rem; padding: .4rem .95rem; }
+  .preset button { font-size: .92rem; min-height: 2.4rem; padding: .4rem 1rem; }
+  .anel-f .ct small { font-size: .9rem; }
+  .abas { gap: .25rem; }
+  .abas button { flex: 1 0 auto; font-size: .9rem; min-height: 2.5rem; padding: .45rem .55rem; }
+  .bl { grid-template-columns: 3.8rem 4px 1fr auto; padding: .7rem 0; }
+  .bl .h { font-size: .86rem; font-weight: 650; color: var(--ink); }
+  .bl .t { font-size: 1.02rem; font-weight: 700; }
+  .bl .t small { font-size: .86rem; }
+  .es select, .es input[type=text], .es input[type=password], .es input[type=date], .es input[type=number], .es textarea { font-size: 1rem; padding: .7rem .85rem; width: 100%; box-sizing: border-box; margin-top: .45rem; }
+  .es .linhas { gap: .6rem; margin-top: .8rem; }
+  .grade2 { grid-template-columns: 1fr; gap: .1rem; }
+  details.tec summary { font-size: 1rem; padding: .2rem 0; }
+  details.tec p { font-size: .92rem; line-height: 1.55; }
+  .aviso2 { font-size: .9rem; line-height: 1.45; padding: .7rem .9rem; }
+  .rev-i { font-size: 1rem; }
 </style>
 </head>
 <body>
