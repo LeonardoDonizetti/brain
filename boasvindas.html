@@ -108,14 +108,14 @@
   .splash .deco { position: absolute; display: block; opacity: .95; }
   .splash .deco svg { display: block; }
   .splash .bloco, .splash .base { position: relative; z-index: 1; }
-  .splash .bloco { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 0; padding-bottom: 2rem; }
+  .splash .bloco { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; min-height: 0; padding-bottom: 2rem; }
   .splash .masc { margin: 0 0 .9rem; }
-  .splash .masc .mascote { margin: 0 auto; width: 10.5rem; }
-  .splash .slogan { text-align: center; margin-left: auto; margin-right: auto; }
+  .splash .masc .mascote { margin: 0; width: 10.5rem; }
+  .splash .slogan { text-align: left; }
   .splash .base { flex: none; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
   @media (prefers-reduced-motion: no-preference) { .splash .masc .mascote { animation: flutua 3.2s ease-in-out infinite; } .splash .deco { animation: flutua 5s ease-in-out infinite alternate; } @keyframes flutua { 50% { translate: 0 -5px; } } }
-  @media (max-height: 740px) { .splash .masc .mascote { width: 8rem; } .splash .deco.b, .splash .deco.m { display: none; } .splash .faixa .deco:nth-child(1) { top: 2% !important; } .splash .faixa .deco:nth-child(2) { top: 1% !important; right: 3% !important; } .splash .deco svg { transform: scale(.82); } .splash .bloco { padding-bottom: 1rem; } }
-  @media (max-height: 600px) { .splash .masc .mascote { width: 6.6rem; } .splash .deco svg { transform: scale(.7); } }
+  @media (max-height: 740px) { .splash .masc .mascote { width: 8rem; } .splash .deco.b, .splash .deco.m { display: none; } .splash .deco.moeda { bottom: 25% !important; } .splash .faixa .deco:nth-child(1) { top: 2% !important; } .splash .faixa .deco:nth-child(2) { top: 1% !important; right: 3% !important; } .splash .deco svg { transform: scale(.82); } .splash .bloco { padding-bottom: 1rem; } }
+  @media (max-height: 600px) { .splash .faixa .deco:nth-child(1) { display: none; } .splash .masc .mascote { width: 6.6rem; } .splash .deco svg { transform: scale(.7); } }
   .marca { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; font-size: 3.1rem; letter-spacing: -.045em; margin: 0; line-height: 1; }
   .splash .slogan { font-size: 1.15rem; line-height: 1.4; margin: .8rem 0 0; max-width: 17rem; font-weight: 500; }
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.1rem 0 0; }
@@ -283,14 +283,14 @@
       const D = (k, t, pos, rot, cls) => `<span class="deco${cls ? ' ' + cls : ''}" style="${pos};transform:rotate(${rot}deg)">${deco(k, t)}</span>`;
       html = `<div class="splash">
         <div class="faixa" aria-hidden="true">
-          ${D('lapis', 78, 'top:6%;left:6%', -18)}
-          ${D('livro', 118, 'top:4%;right:5%', 12)}
-          ${D('lampada', 54, 'top:8%;left:44%', 6, 'm')}
-          ${D('moeda', 66, 'top:31%;left:3%', -8)}
-          ${D('relogio', 68, 'top:34%;right:3%', 10)}
-          ${D('calc', 72, 'bottom:22%;left:8%', -12, 'b')}
-          ${D('bandeira', 66, 'bottom:21%;right:10%', 8, 'b')}
-          ${D('clip', 52, 'bottom:30%;left:46%', 14, 'b m')}
+          ${D('lapis', 70, 'top:5%;left:7%', -18)}
+          ${D('livro', 116, 'top:4%;right:5%', 12)}
+          ${D('lampada', 54, 'top:9%;left:42%', 6, 'm')}
+          ${D('relogio', 78, 'top:31%;right:7%', 10)}
+          ${D('moeda', 76, 'bottom:21%;left:7%', -8, 'moeda')}
+          ${D('clip', 54, 'bottom:30%;left:41%', 14, 'b m')}
+          ${D('calc', 70, 'bottom:23%;right:24%', -12, 'b')}
+          ${D('bandeira', 62, 'bottom:31%;right:7%', 8, 'b')}
         </div>
         <div class="bloco">
           <div class="masc">${mascote('oi')}</div>
