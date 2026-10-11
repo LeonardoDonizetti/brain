@@ -351,3 +351,10 @@ html[data-pg="rotina"] .bloco-vazio { border: 2px dashed var(--borda-t); border-
 /* só a tela de tarefas usa .stats como caixinhas */
 html:not([data-pg="tarefas"]) .stats div { background: none; border: 0; box-shadow: none; }
 .vazio-i[data-m] > svg { display: none; }
+
+/* microfone: ícone próprio, na cor da seção; vermelho e pulsando enquanto escuta */
+#mic { display: inline-grid; place-items: center; width: 2.9rem; height: 2.9rem; padding: 0; border-radius: 50%; border: 2px solid var(--borda-t, var(--line)); background: #fff; color: var(--accent); box-shadow: 0 3px 0 var(--borda-t, var(--line)); cursor: pointer; }
+#mic svg { width: 1.35rem; height: 1.35rem; }
+#mic:active { box-shadow: none; transform: translateY(3px); }
+#mic.ouvindo { background: var(--danger); border-color: var(--danger); color: #fff; box-shadow: 0 3px 0 #9f1d14; }
+@media (prefers-reduced-motion: no-preference) { #mic.ouvindo { animation: mic-pulsa 1.1s ease-in-out infinite; } @keyframes mic-pulsa { 50% { transform: scale(1.08); } } }
