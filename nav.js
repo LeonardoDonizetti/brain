@@ -179,6 +179,8 @@
             <div class="cfg-botoes"><button type="button" id="cfg-csv-tarefas">Tarefas</button><button type="button" id="cfg-csv-gastos">Gastos</button></div></div>
           <div class="cfg-linha"><div class="rot">Apagar todos os dados</div><p class="dica">Remove gastos, tarefas, rotina e jornada deste aparelho. Suas configurações ficam. Faça um backup antes.</p>
             <div class="cfg-botoes"><button type="button" class="perigo" id="cfg-apagar">Apagar tudo</button></div></div>
+          <div class="cfg-linha"><div class="rot">Zerar o app (como a primeira vez)</div><p class="dica">Apaga tudo, inclusive configurações, senha, tutoriais já vistos e cache, e abre a introdução do zero. Útil para testar. Faça um backup antes.</p>
+            <div class="cfg-botoes"><button type="button" class="perigo" id="cfg-zerar">Zerar tudo</button></div></div>
           <p class="cfg-msg" id="cfg-msg" role="status"></p>
         </div>
 
@@ -372,6 +374,21 @@
       if (r.trim().toUpperCase() !== 'APAGAR') { msg('Nada foi apagado: a palavra não confere.', true); return; }
       try { await L().apagarTudo(); msg('Tudo foi apagado.'); setTimeout(() => location.reload(), 700); }
       catch (e) { msg('Não consegui apagar.', true); }
+    });
+
+    $('cfg-zerar').addEventListener('click', async () => {
+      const r = prompt('Isto apaga TUDO deste aparelho: dados, configurações, senha, tutoriais e cache. O app volta como se fosse a primeira vez e não dá para desfazer.\n\nPara confirmar, digite ZERAR:');
+      if (r === null) return;
+      if (r.trim().toUpperCase() !== 'ZERAR') { msg('Nada foi apagado: a palavra não confere.', true); return; }
+      msg('Zerando…');
+      try { localStorage.clear(); sessionStorage.clear(); } catch (e) { /* segue */ }
+      try {
+        const bancos = indexedDB.databases ? await indexedDB.databases() : [{ name: 'brain' }];
+        await Promise.all(bancos.filter((b) => b && b.name).map((b) => new Promise((ok) => { const q = indexedDB.deleteDatabase(b.name); q.onsuccess = q.onerror = q.onblocked = () => ok(); })));
+      } catch (e) { /* segue */ }
+      try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch (e) { /* segue */ }
+      try { if (navigator.serviceWorker) for (const g of await navigator.serviceWorker.getRegistrations()) await g.unregister(); } catch (e) { /* segue */ }
+      location.replace(new URL('boasvindas.html', location.href).href);
     });
 
     if (L()) L().persistir();
