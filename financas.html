@@ -28,6 +28,8 @@
 <script src="nav.js" defer></script>
 <script src="jogo-ui.js" defer></script>
 <script src="mascote.js" defer></script>
+<script src="animar.js"></script>
+<script src="celebrar.js"></script>
 <script src="tour.js" defer></script>
 <style>
   body { padding-bottom: calc(var(--nav-h) + 9rem); }
@@ -1006,6 +1008,7 @@ $('form').addEventListener('submit', async (e) => {
     let msg = (tipoNovo === 'receita' ? 'Entrada registrada: ' : 'Registrado: ') + d.registrados.map((g) => `${BRL.format(g.valor)} · ${g.descricao}${tipoNovo === 'receita' ? '' : ` (${g.categoria})`}`).join(' | ');
     if (d.ignorados.length) msg += `. Sem valor, ignorei: ${d.ignorados.join(', ')}`;
     aviso(msg);
+    if (window.BrainCelebrar) { if (tipoNovo === 'receita') window.BrainCelebrar.moedas(); else window.BrainCelebrar.micro(document.querySelector('.composer .enviar'), { xp: 4 }); }
     $('texto').value = '';
     const [a, m] = d.registrados[0].data.split('-');
     mes = `${a}-${m}`;

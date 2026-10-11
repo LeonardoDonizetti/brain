@@ -251,7 +251,7 @@
     if (d.rotina) prog.push(`${d.rotina}/3 da rotina`);
     return `<div class="jg-bloco"><h4>Complete o dia</h4>
       <div class="jg-miss ${d.xp_ok ? 'ok' : ''}"><span class="jg-ck" aria-hidden="true">${d.xp_ok ? '✓' : ''}</span><div><b>${Math.min(d.xp || 0, d.meta)}/${d.meta} XP</b>
-        <div class="jg-barra" role="progressbar" aria-valuenow="${pctXp}" aria-valuemin="0" aria-valuemax="100" aria-label="XP do dia"><i style="width:${pctXp}%"></i></div></div></div>
+        <div class="jg-barra" role="progressbar" aria-valuenow="${pctXp}" aria-valuemin="0" aria-valuemax="100" aria-label="XP do dia"><i data-ak="jg-xp-dia" data-pct="${pctXp}" style="width:${pctXp}%"></i></div></div></div>
       <div class="jg-miss ${d.entrega ? 'ok' : ''}"><span class="jg-ck" aria-hidden="true">${d.entrega ? '✓' : ''}</span><div><b>Uma entrega real</b>
         <small>${prog.length ? esc(prog.join(' · ')) : 'Ainda nada hoje'}. Vale: ${OPCOES}.</small></div></div>
       <p class="jg-sub" style="margin-top:.5rem">${d.completo ? 'Dia completo! Sua ofensiva está garantida hoje.' : esc(falta(r))}</p></div>`;
@@ -273,7 +273,7 @@
         <div class="jg-stat"><b>${r.dias_ativos}</b><span>Dias ativos</span></div>
       </div>
       <div class="jg-bloco"><div class="jg-nivel"><span>Nível ${r.nivel.n} · ${esc(r.nivel.titulo)}</span><small>${r.xp_total} XP</small></div>
-        <div class="jg-barra az" role="progressbar" aria-valuenow="${r.nivel.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso do nível"><i style="width:${r.nivel.pct}%"></i></div>
+        <div class="jg-barra az" role="progressbar" aria-valuenow="${r.nivel.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso do nível"><i data-ak="jg-nivel-${r.nivel.n}" data-pct="${r.nivel.pct}" style="width:${r.nivel.pct}%"></i></div>
         <p class="jg-sub" style="margin-top:.5rem">Faltam ${r.nivel.xp_prox - r.nivel.xp_nivel} XP para o próximo nível.</p></div>
       ${missao(r)}
       <div class="jg-bloco"><h4>Marcas de ofensiva</h4><div class="jg-marcos">${marcos}</div></div>
@@ -296,6 +296,7 @@
     d.querySelector('.jg-fecha').onclick = () => d.close();
     d.querySelector('#jg-ok').onclick = () => d.close();
     if (!d.open) d.showModal();
+    if (window.BrainAnim) window.BrainAnim.varrer(d);
     d.scrollTop = 0;
     const h = d.querySelector('.jg-heroi'); if (h) h.focus({ preventScroll: true });
   }
@@ -324,7 +325,7 @@
         const marco = R.marcos.includes(R.sequencia);
         const t = R.salvou_hoje ? 'Ofensiva salva!' : marco ? `Marca de ${R.sequencia} dias!` : R.sequencia === 1 ? 'Ofensiva começou!' : `${R.sequencia} dias de ofensiva!`;
         const s = R.salvou_hoje ? 'Você recuperou o dia que faltava.' : marco ? 'Que constância. Você conquistou uma nova marca.' : R.sequencia === 1 ? 'Volte amanhã para ela crescer.' : 'Mais um dia firme. Continue assim.';
-        festa(R, t, s);
+        if (window.BrainCelebrar && window.BrainCelebrar.dia && window.BrainCelebrar.ligado()) window.BrainCelebrar.dia(R, { titulo: t, sub: s, marco, salvou: !!R.salvou_hoje }); else festa(R, t, s);
       }
       gravarLS('brain-jogo-visto', { data: hoje, seq: R.sequencia });
     } else if (!veioDeAcao && R.estado === 'quebrada') {
@@ -339,7 +340,7 @@
       const r = await buscar();
       if (!r) return;
       R = r; estilo(); pintarChip(); pintarCartoes();
-      const d = document.getElementById('jg-dlg'); if (d && d.open) { d.querySelector('.jg-in').innerHTML = corpoPainel(R); d.querySelector('.jg-fecha').onclick = () => d.close(); d.querySelector('#jg-ok').onclick = () => d.close(); }
+      const d = document.getElementById('jg-dlg'); if (d && d.open) { d.querySelector('.jg-in').innerHTML = corpoPainel(R); if (window.BrainAnim) window.BrainAnim.varrer(d); d.querySelector('.jg-fecha').onclick = () => d.close(); d.querySelector('#jg-ok').onclick = () => d.close(); }
       aposAtualizar(veioDeAcao);
     } finally { ocupado = false; }
   }

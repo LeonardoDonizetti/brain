@@ -142,6 +142,13 @@
           <div class="cfg-linha flex"><div><div class="rot">Ofensiva leve</div><p class="dica">Qualquer ação vale o dia. Desligado: o dia só conta com 30 XP e uma entrega (tarefa, foco, revisão ou rotina).</p></div><label class="chave"><input type="checkbox" data-check="ofensiva_leve" aria-label="Ofensiva leve"><span></span></label></div>
         </div>
 
+        <h3>Comemorações</h3>
+        <div class="cfg-cartao">
+          <div class="cfg-linha flex"><div><div class="rot">Efeitos animados</div><p class="dica">Confete, moedas e a tela da ofensiva ao concluir algo. Desligue se preferir o app mais quieto.</p></div><label class="chave"><input type="checkbox" data-check="efeitos" aria-label="Efeitos animados"><span></span></label></div>
+          <div class="cfg-linha flex"><div><div class="rot">Sons</div><p class="dica">Sons curtos nas comemorações. Fica desligado até você ativar.</p></div><label class="chave"><input type="checkbox" data-check="efeitos_som" aria-label="Sons nas comemorações"><span></span></label></div>
+          <div class="cfg-linha"><div class="cfg-botoes"><button type="button" id="cfg-cel-testar">Ver uma comemoração</button></div></div>
+        </div>
+
         <h3>Coach</h3>
         <div class="cfg-cartao">
           <div class="cfg-linha flex"><div><div class="rot">Coach ligado</div><p class="dica">Incentiva suas tarefas e avisa sobre gastos. Funciona por regras no seu aparelho, sem IA paga.</p></div><label class="chave"><input type="checkbox" data-check="coach" aria-label="Coach ligado"><span></span></label></div>
@@ -400,6 +407,7 @@
       mostrar();
       dlg.addEventListener('change', (e) => { if (e.target.dataset && e.target.dataset.check === 'coach_ia') { setTimeout(mostrar, 0); if (e.target.checked && lerChave().length < 20) st.textContent = 'Cole sua chave abaixo para ativar.'; } });
       campo.addEventListener('input', () => { try { localStorage.setItem('brain-gemini-key', campo.value.trim()); localStorage.removeItem('brain-gemini-model'); } catch (e) { /* sem armazenamento */ } st.textContent = ''; });
+      { const bt = $('cfg-cel-testar'); if (bt) bt.addEventListener('click', () => { if (window.BrainCelebrar) { window.BrainCelebrar.micro(bt, { xp: 10, super: true }); setTimeout(() => window.BrainCelebrar.dia({ sequencia: 7 }, {}), 900); } }); }
       $('cfg-ia-testar').addEventListener('click', async () => {
         const k = campo.value.trim();
         if (k.length < 20) { st.textContent = 'Cole a chave inteira primeiro.'; return; }

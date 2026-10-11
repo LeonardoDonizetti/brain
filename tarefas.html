@@ -28,6 +28,8 @@
 <script src="nav.js" defer></script>
 <script src="jogo-ui.js" defer></script>
 <script src="mascote.js" defer></script>
+<script src="animar.js"></script>
+<script src="celebrar.js"></script>
 <script src="tour.js" defer></script>
 <style>
   body { padding-bottom: calc(var(--nav-h) + 7rem); }
@@ -293,6 +295,9 @@ function desenharResumo() {
   const candidatos = atras.concat(dehoje).sort((a, b) => (b.prioridade || 0) - (a.prioridade || 0) || (a.data || '').localeCompare(b.data || '') || (a.hora || '99').localeCompare(b.hora || '99'));
   const res = $('res');
   res.className = 'res' + (total && feitasHoje === total ? ' ok' : '');
+  resumoAtual = { feitasHoje, total };
+  if (celebrarTudo && total && feitasHoje === total && window.BrainCelebrar) setTimeout(() => window.BrainCelebrar.metaDoDia(), 250);
+  celebrarTudo = false;
   let titulo, linha;
   if (!total) { titulo = 'Dia livre'; linha = 'Nada marcado para hoje. Adicione uma tarefa abaixo ou planeje o amanhã.'; }
   else if (feitasHoje === total) { titulo = 'Tudo feito por hoje'; linha = `${feitasHoje} ${feitasHoje === 1 ? 'tarefa concluída' : 'tarefas concluídas'}. Bom trabalho.`; }
@@ -301,7 +306,7 @@ function desenharResumo() {
   const p = res.querySelector('.txt');
   if (linha) p.textContent = linha;
   else if (candidatos[0]) { p.className = 'txt foco'; p.innerHTML = 'Comece por: <span></span>'; p.querySelector('span').textContent = candidatos[0].titulo; }
-  requestAnimationFrame(() => requestAnimationFrame(() => { const pr = res.querySelector('.prog'); pr.style.strokeOpacity = pct ? 1 : 0; pr.setAttribute('stroke-dasharray', `${pct} ${100 - pct}`); }));
+  { const pr = res.querySelector('.prog'); pr.style.strokeOpacity = pct ? 1 : 0; if (window.BrainAnim) window.BrainAnim.anel(pr, 'tar-anel', pct, { celebrar: false }); else pr.setAttribute('stroke-dasharray', `${pct} ${100 - pct}`); }
   res.querySelector('.anel').setAttribute('role', 'img'); res.querySelector('.anel').setAttribute('aria-label', `${pct}% das tarefas de hoje concluídas`);
   // números rápidos
   const sem = new Set(tarefas.filter((t) => t.feita && t.concluida_em).map((t) => t.concluida_em));
@@ -346,8 +351,12 @@ function linha(t, opcoes = {}) {
   return li;
 }
 
+let celebrarTudo = false, resumoAtual = null;
 async function alternar(t, li) {
   const virouFeita = !t.feita;
+  if (li && virouFeita && window.BrainCelebrar) window.BrainCelebrar.micro(li.querySelector('.ck'), { xp: 10 });
+  if (virouFeita) celebrarTudo = true;
+  if (resumoAtual && resumoAtual.total && window.BrainAnim) { const pr = document.querySelector('.res .prog'); const q = Math.max(0, Math.min(resumoAtual.total, resumoAtual.feitasHoje + (virouFeita ? 1 : -1))); if (pr) window.BrainAnim.anel(pr, 'tar-anel', Math.round((q / resumoAtual.total) * 100), { celebrar: false }); }
   if (li) { li.classList.toggle('feita', virouFeita); li.querySelector('.ck').setAttribute('aria-checked', String(virouFeita)); try { if (virouFeita && navigator.vibrate) navigator.vibrate(8); } catch (e) {} }
   try {
     const r = await api(`/api/tarefas/${t.id}/alternar`, { method: 'PATCH' });

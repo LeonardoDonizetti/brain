@@ -27,6 +27,8 @@
 <script src="nav.js" defer></script>
 <script src="jogo-ui.js" defer></script>
 <script src="mascote.js" defer></script>
+<script src="animar.js"></script>
+<script src="celebrar.js"></script>
 <script src="tour.js" defer></script>
 <style>
   body { padding-bottom: calc(var(--nav-h) + 6rem); }
@@ -227,8 +229,8 @@ function desenhar() {
 
   // resumo
   const pct = progresso.total ? Math.round((progresso.feitos / progresso.total) * 100) : 0;
-  $('anel').setAttribute('stroke-dasharray', `${pct} ${100 - pct}`);
-  $('pct').textContent = `${pct}%`;
+  if (window.BrainAnim) { window.BrainAnim.anel($('anel'), 'rot-anel-' + dia, pct, { texto: 'Dia completo!' }); window.BrainAnim.contar($('pct'), 'rot-pct-' + dia, pct, (v) => v + '%'); }
+  else { $('anel').setAttribute('stroke-dasharray', `${pct} ${100 - pct}`); $('pct').textContent = `${pct}%`; }
   $('resumo-titulo').textContent = pct === 100 ? 'Dia completo!' : pct >= 50 ? 'Bom ritmo, continue' : 'Vamos começar';
   $('resumo-sub').textContent = `${progresso.feitos} de ${progresso.total} cumpridos`;
   // Regra de "nunca falhar duas vezes": depois de um dia fraco, o objetivo de hoje é só marcar um item
@@ -288,7 +290,7 @@ function linha(item) {
   const check = li.querySelector('.check');
   check.setAttribute('aria-checked', String(item.feito));
   check.setAttribute('aria-label', (item.tipo === 'renuncia' ? 'Cumpri hoje: ' : 'Concluir: ') + item.titulo);
-  check.onclick = () => alternar(item);
+  check.onclick = () => { if (!item.feito && window.BrainCelebrar) window.BrainCelebrar.micro(check, { xp: 5 }); alternar(item); };
   { const rt = document.createElement('span'); rt.className = 'rt'; rt.textContent = item.titulo; li.querySelector('.titulo-item').appendChild(rt); }
   const meta = li.querySelector('.meta');
   const chip = document.createElement('span');

@@ -12,6 +12,8 @@
     dias_folga: [],          // dias da semana sem cobrança de meta (0-6)
     modo_ferias: false,      // pausa as metas sem "quebrar" nada
     coach_ia: false,         // conversa com o Gemini (chave grátis do usuário); desligado = só regras locais
+    efeitos: true,           // comemorações animadas (confete, ofensiva, anéis); respeita "reduzir movimento" do aparelho
+    efeitos_som: false,      // sons curtos nas comemorações
     ofensiva_leve: false,    // true = qualquer ação vale o dia (padrão: dia completo = 30 XP + uma entrega)
     periodo_grafico: 7,      // 7 | 14 | 30
     lembrete_backup: 14,     // dias; 0 = nunca lembrar
@@ -77,6 +79,8 @@
       meta_semanal: inteiro(p.meta_semanal, 0, 300, PADRAO.meta_semanal),
       dias_folga: [...new Set(folgas)].sort(),
       modo_ferias: p.modo_ferias === true,
+      efeitos: p.efeitos !== false,
+      efeitos_som: p.efeitos_som === true,
       ofensiva_leve: p.ofensiva_leve === true,
       coach_ia: p.coach_ia === true,
       periodo_grafico: [7, 14, 30].includes(p.periodo_grafico) ? p.periodo_grafico : PADRAO.periodo_grafico,

@@ -28,6 +28,8 @@
 <script src="nav.js" defer></script>
 <script src="jogo-ui.js" defer></script>
 <script src="mascote.js" defer></script>
+<script src="animar.js"></script>
+<script src="celebrar.js"></script>
 <script src="tour.js" defer></script>
 <style>
   body { padding-bottom: calc(var(--nav-h) + 2rem); }
@@ -355,7 +357,7 @@ function desenharRevisao() {
     <p class="sub" style="margin-top:.6rem">Lembrei bem: próxima revisão mais longe. Pouco: repete em 3 dias. Esqueci: recomeça amanhã.</p></div>`;
   c.querySelector('.rev-t').textContent = r.tema;
   $('rev-sair').onclick = () => $('dlg-rev').close();
-  c.querySelectorAll('[data-n]').forEach((b) => { b.onclick = async () => { ES.avaliarRevisao(r, b.dataset.n, HOJE); FILA.shift(); await salvar(); desenharRevisao(); }; });
+  c.querySelectorAll('[data-n]').forEach((b) => { b.onclick = async () => { if (window.BrainCelebrar && b.dataset.n !== 'esqueci') window.BrainCelebrar.micro(b, { xp: 8, super: b.dataset.n === 'bom' ? undefined : false }); ES.avaliarRevisao(r, b.dataset.n, HOJE); FILA.shift(); await salvar(); desenharRevisao(); }; });
 }
 $('dlg-rev').addEventListener('close', () => { try { desenhar && desenhar(); } catch (e) {} });
 
@@ -381,7 +383,7 @@ function desenhar() {
   p.append(w);
   ({ hoje: abaHoje, semana: abaSemana, foco: abaFoco, rev: abaRev, plano: abaPlano }[aba] || abaHoje)(w);
 }
-const html = (w, s) => w.insertAdjacentHTML('beforeend', s);
+const html = (w, s) => { w.insertAdjacentHTML('beforeend', s); if (window.BrainAnim) window.BrainAnim.varrer(w); };
 
 function blocoHtml(b, opcoes = {}) {
   const m = b.materia_id && mat(b.materia_id);
@@ -492,6 +494,7 @@ function bipe() {
 async function registrar(min, materiaId) {
   if (min < 1) return;
   E.sessoes.push({ id: ES.novoId(E), data: ES.isoDe(new Date()), minutos: Math.min(720, Math.round(min)), materia_id: materiaId || null });
+  if (window.BrainCelebrar && min >= 15) window.BrainCelebrar.micro(null, { xp: 10, super: true });
   await salvar();
 }
 function liberarTela() { try { if (wake) { wake.release(); wake = null; } } catch (e) {} }
@@ -549,10 +552,10 @@ function abaFoco(w) {
   // estatísticas
   const st = ES.estatisticas(E, HOJE);
   const mx = Math.max(30, ...st.ultimos7.map((d) => d.min));
-  html(w, `<div class="es"><h3>Últimos 7 dias</h3><p class="sub">Hoje ${ES.fmtMin(st.hoje)} · semana ${ES.fmtMin(st.semana)} · ${st.sequencia} ${st.sequencia === 1 ? 'dia' : 'dias'} seguidos</p><div class="mini">${st.ultimos7.map((d) => `<div><span>${d.min ? Math.round(d.min / 6) / 10 + 'h' : ''}</span><i style="height:${(d.min / mx) * 70}%"></i><span>${ES.DIAS_CURTO[new Date(d.data + 'T12:00').getDay()]}</span></div>`).join('')}</div></div>`);
+  html(w, `<div class="es"><h3>Últimos 7 dias</h3><p class="sub">Hoje ${ES.fmtMin(st.hoje)} · semana ${ES.fmtMin(st.semana)} · ${st.sequencia} ${st.sequencia === 1 ? 'dia' : 'dias'} seguidos</p><div class="mini">${st.ultimos7.map((d) => `<div><span>${d.min ? Math.round(d.min / 6) / 10 + 'h' : ''}</span><i data-ak="es-mini-${d.data}" data-eixo="height" data-pct="${(d.min / mx) * 70}" style="height:${(d.min / mx) * 70}%"></i><span>${ES.DIAS_CURTO[new Date(d.data + 'T12:00').getDay()]}</span></div>`).join('')}</div></div>`);
   const linhas = E.materias.map((m) => ({ m, min: st.porMateria.get(m.id) || 0 })).filter((x) => x.min || x.m.meta_h);
   const semMat = st.porMateria.get(null) || 0;
-  html(w, `<div class="es"><h3>Por matéria (esta semana)</h3>${linhas.length || semMat ? '' : '<p class="vazio">Nenhum estudo registrado esta semana.</p>'}${linhas.map(({ m, min }) => { const alvo = m.meta_h * 60; const pct = alvo ? Math.min(100, (min / alvo) * 100) : Math.min(100, (min / Math.max(60, ...linhas.map((x) => x.min))) * 100); return `<div class="mrow"><span class="nm">${esc(m.nome)}</span><span class="b" style="--c:${ES.CORES_MATERIA[m.cor]}"><i style="width:${pct}%"></i></span><span class="v">${ES.fmtMin(min)}${alvo ? ' / ' + m.meta_h + ' h' : ''}</span></div>`; }).join('')}${semMat ? `<div class="mrow"><span class="nm">Sem matéria</span><span class="b"><i style="width:40%;opacity:.4"></i></span><span class="v">${ES.fmtMin(semMat)}</span></div>` : ''}</div>`);
+  html(w, `<div class="es"><h3>Por matéria (esta semana)</h3>${linhas.length || semMat ? '' : '<p class="vazio">Nenhum estudo registrado esta semana.</p>'}${linhas.map(({ m, min }) => { const alvo = m.meta_h * 60; const pct = alvo ? Math.min(100, (min / alvo) * 100) : Math.min(100, (min / Math.max(60, ...linhas.map((x) => x.min))) * 100); return `<div class="mrow"><span class="nm">${esc(m.nome)}</span><span class="b" style="--c:${ES.CORES_MATERIA[m.cor]}"><i data-ak="es-mat-${m.id}" data-pct="${pct}" style="width:${pct}%"></i></span><span class="v">${ES.fmtMin(min)}${alvo ? ' / ' + m.meta_h + ' h' : ''}</span></div>`; }).join('')}${semMat ? `<div class="mrow"><span class="nm">Sem matéria</span><span class="b"><i style="width:40%;opacity:.4"></i></span><span class="v">${ES.fmtMin(semMat)}</span></div>` : ''}</div>`);
   html(w, `<div class="es"><h3>Registrar tempo manualmente</h3><p class="sub">Estudou sem o cronômetro? Anote aqui.</p><div class="linha2" style="display:grid;grid-template-columns:1fr 6rem;gap:.5rem"><select id="mn-mat" aria-label="Matéria">${opcoesMat}</select><input id="mn-min" type="number" min="1" max="720" placeholder="min" aria-label="Minutos"></div><div class="linhas"><button class="btn2" id="mn-ok">Registrar</button></div></div>`);
   $('mn-ok').onclick = async () => { const n = Number($('mn-min').value); if (!(n >= 1 && n <= 720)) { aviso('Informe os minutos (1 a 720).', true); return; } await registrar(n, $('mn-mat').value ? Number($('mn-mat').value) : null); aviso('Tempo registrado.'); };
 }

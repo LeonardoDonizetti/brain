@@ -28,6 +28,8 @@
 <script src="nav.js" defer></script>
 <script src="jogo-ui.js" defer></script>
 <script src="mascote.js" defer></script>
+<script src="animar.js"></script>
+<script src="celebrar.js"></script>
 <script src="tour.js" defer></script>
 <style>
   .data-topo { margin: 0 0 .15rem; color: var(--muted); font-size: .9rem; }
@@ -127,7 +129,6 @@
   @media (prefers-reduced-motion: no-preference) {
     @keyframes cresce { from { transform: scaleY(0); } to { transform: scaleY(1); } }
     @keyframes surge { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
-    .barras.anim .barra-col i { transform-origin: bottom; animation: cresce 420ms var(--ease) backwards; animation-delay: calc(var(--i) * 18ms); }
     .mapa.anim .cel { animation: surge 300ms var(--ease) backwards; animation-delay: calc(var(--c) * 14ms); }
     @keyframes estala { 0% { transform: scale(.82); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
     .check.estala { animation: estala 260ms var(--ease); }
@@ -270,11 +271,13 @@ function ligarDica(el, texto) {
 function anel(el, { nome, frac, centro, sub, ok }) {
   const R = 40, C = 2 * Math.PI * R;
   const f = Math.max(0, Math.min(1, frac || 0));
+  const ant = window.BrainAnim ? Math.max(0, Math.min(1, window.BrainAnim.anterior('idx-anel-' + (el.id || nome), f, 0))) : 0;
   if (!el.firstElementChild) {
-    el.innerHTML = `<div class="centro"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="trilho" cx="50" cy="50" r="${R}" fill="none" stroke-width="10"/><circle class="valor" cx="50" cy="50" r="${R}" fill="none" stroke-width="10" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/></svg><b class="num"></b></div><div class="nome"></div><div class="sub"></div>`;
-    el.offsetWidth; // força o início em "vazio" para o anel preencher com animação
+    el.innerHTML = `<div class="centro"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="trilho" cx="50" cy="50" r="${R}" fill="none" stroke-width="10"/><circle class="valor" cx="50" cy="50" r="${R}" fill="none" stroke-width="10" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - ant)).toFixed(1)}"/></svg><b class="num"></b></div><div class="nome"></div><div class="sub"></div>`;
+    el.offsetWidth; // começa no valor anterior (guardado na sessão) e sobe até o novo
   }
   el.querySelector('.valor').style.strokeDashoffset = (C * (1 - f)).toFixed(1);
+  if (f > ant + 0.001) { const cen = el.querySelector('.centro'); setTimeout(() => window.BrainAnim && window.BrainAnim.pulsar(cen), 520); if (f >= 1 && ant < 1 && window.BrainCelebrar) setTimeout(() => window.BrainCelebrar.micro(cen, { texto: 'Anel fechado!', super: true }), 760); }
   el.querySelector('.valor').classList.toggle('ok', !!ok);
   el.querySelector('b').textContent = centro;
   el.querySelector('.nome').textContent = nome;
@@ -324,7 +327,7 @@ function desenharBarras() {
     b.className = 'barra-col' + (k === HOJE ? ' hoje' : '');
     b.dataset.v = v[i];
     b.style.setProperty('--i', i);
-    b.innerHTML = `<i style="height:${(v[i] / topo) * 100}%"></i>`;
+    b.innerHTML = '<i></i>'; { const bi = b.firstChild, alvo = (v[i] / topo) * 100; if (window.BrainAnim) window.BrainAnim.barra(bi, 'idx-barra-' + k, alvo, 'height', 900); else bi.style.height = alvo + '%'; }
     const txt = `${fmtCurto(k)}: ${v[i]} ${plural(v[i], 'tarefa', 'tarefas')}`;
     b.setAttribute('aria-label', txt);
     ligarDica(b, txt);
@@ -446,6 +449,7 @@ function desenharTabela() {
     if (b.disabled) return;
     b.disabled = true;
     const vaiFicarFeita = b.getAttribute('aria-pressed') !== 'true';
+    if (vaiFicarFeita && window.BrainCelebrar) window.BrainCelebrar.micro(b, { xp: 10 });
     b.setAttribute('aria-pressed', String(vaiFicarFeita));
     b.classList.add('estala');
     const linha = b.closest('tr');
