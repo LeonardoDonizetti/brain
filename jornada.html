@@ -47,7 +47,7 @@
   .selo.positivo { background: var(--ok-soft); color: var(--ok); }
   .abandonar { display: block; width: 100%; min-height: 2.9rem; margin: .2rem 0 1rem; border: 1px solid var(--danger); border-radius: 12px; background: transparent; color: var(--danger); font: inherit; font-weight: 600; cursor: pointer; }
   .abandonar[hidden] { display: none; }
-  .abandonar:active { background: var(--danger-soft); }
+  .abandonar.pr { background: var(--danger-soft); }
   #dlg-ab .acoes .perigo-fill { background: var(--danger); border-color: var(--danger); color: #fff; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #dlg-ab .acoes .perigo-fill { color: #2a0f0d; } }
   :root[data-theme="dark"] #dlg-ab .acoes .perigo-fill { color: #2a0f0d; }
@@ -557,5 +557,6 @@ document.querySelectorAll('.alternar button').forEach((b) => {
 
 carregar();
 </script>
+<script src="toque.js" defer></script>
 </body>
 </html>

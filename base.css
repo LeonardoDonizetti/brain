@@ -161,8 +161,8 @@ h1, h2, h3 { text-wrap: balance; }
   button, .tabs a, a.anel, a.card, .lapis, .icon, .check, .barra-col, .cel {
     transition: transform var(--t-toque) var(--ease), background-color var(--t-ui) ease, border-color var(--t-ui) ease, color var(--t-ui) ease, opacity var(--t-ui) ease;
   }
-  button:active, .tabs a:active, a.anel:active, a.card:active, .lapis:active, .icon:active, .check:active { transform: scale(.96); }
-  .cel:active { transform: scale(.85); }
+  button.pr, .tabs a.pr, a.anel.pr, a.card.pr, .lapis.pr, .icon.pr, .check.pr { transform: scale(.96); }
+  .cel.pr { transform: scale(.85); }
   @media (hover: hover) {
     a.anel:hover, a.card:hover { transform: translateY(-1px); }
     .cel:hover { transform: scale(1.25); }
@@ -252,17 +252,17 @@ dialog { border: 2px solid var(--line); border-radius: 1.25rem; }
 dialog input, dialog select, dialog textarea, .composer input { border: 2px solid var(--line); border-radius: .85rem; background: #fff; }
 dialog input:focus, dialog select:focus, dialog textarea:focus, .composer input:focus { border-color: var(--accent); outline: none; }
 .icon, .lapis { border: 2px solid var(--line); border-radius: .85rem; box-shadow: 0 2px 0 var(--line); }
-.icon:active, .lapis:active { box-shadow: none; transform: translateY(2px) !important; }
+.icon.pr, .lapis.pr { box-shadow: none; transform: translateY(2px) !important; }
 
 /* botão principal "3D" */
 .acoes .primario, .composer button.enviar, .btn.primario, .btn2.pri, button.primario, .cfg-botoes button.principal {
   background-color: var(--accent); color: var(--on-accent); border: 0 !important; border-radius: .95rem; font-weight: 750;
   box-shadow: 0 4px 0 var(--chunk); transform: translateY(0);
 }
-.acoes .primario:active, .composer button.enviar:active, .btn.primario:active, .btn2.pri:active, button.primario:active, .cfg-botoes button.principal:active { box-shadow: 0 1px 0 var(--chunk); transform: translateY(3px) !important; }
+.acoes .primario.pr, .composer button.enviar.pr, .btn.primario.pr, .btn2.pri.pr, button.primario.pr, .cfg-botoes button.principal.pr { box-shadow: 0 1px 0 var(--chunk); transform: translateY(3px) !important; }
 /* botão secundário */
 .acoes button:not(.primario), .btn, .btn2 { border: 2px solid var(--line); border-radius: .95rem; background: #fff; box-shadow: 0 3px 0 var(--line); font-weight: 650; }
-.acoes button:not(.primario):active, .btn:active, .btn2:active { box-shadow: 0 0 0 var(--line); transform: translateY(3px) !important; }
+.acoes button:not(.primario).pr, .btn.pr, .btn2.pr { box-shadow: 0 0 0 var(--line); transform: translateY(3px) !important; }
 .acoes { margin-bottom: 3px; }
 .acoes .perigo { color: var(--danger); }
 
@@ -355,7 +355,7 @@ html:not([data-pg="tarefas"]) .stats div { background: none; border: 0; box-shad
 /* microfone: ícone próprio, na cor da seção; vermelho e pulsando enquanto escuta */
 #mic { display: inline-grid; place-items: center; width: 2.9rem; height: 2.9rem; padding: 0; border-radius: 50%; border: 2px solid var(--borda-t, var(--line)); background: #fff; color: var(--accent); box-shadow: 0 3px 0 var(--borda-t, var(--line)); cursor: pointer; }
 #mic svg { width: 1.35rem; height: 1.35rem; }
-#mic:active { box-shadow: none; transform: translateY(3px); }
+#mic.pr { box-shadow: none; transform: translateY(3px); }
 #mic.ouvindo { background: var(--danger); border-color: var(--danger); color: #fff; box-shadow: 0 3px 0 #9f1d14; }
 @media (prefers-reduced-motion: no-preference) { #mic.ouvindo { animation: mic-pulsa 1.1s ease-in-out infinite; } @keyframes mic-pulsa { 50% { transform: scale(1.08); } } }
 
