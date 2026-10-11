@@ -327,6 +327,35 @@
     return { ok: true };
   }
 
+  // Desfazer de um "apagar": devolve o item como estava (mantém o id se estiver livre)
+  async function restaurar(estado, ctx, q, corpo) {
+    corpo = corpo || {};
+    const it = corpo.item && typeof corpo.item === 'object' ? corpo.item : {};
+    if (corpo.colecao === 'tarefas') {
+      const { titulo, data, hora } = lerTarefa(it);
+      const livre = Number.isInteger(it.id) && it.id > 0 && !estado.tarefas.some((t) => t.id === it.id);
+      const id = livre ? it.id : proximoId(estado.tarefas);
+      const feita = it.feita ? 1 : 0;
+      estado.tarefas.push({ id, titulo: titulo.slice(0, 200), data, hora, feita, concluida_em: feita && it.concluida_em ? iso(validarData(it.concluida_em)) : null });
+      ctx.salvar = true;
+      return { ok: true, id };
+    }
+    if (corpo.colecao === 'gastos') {
+      const valor = r2(Number(it.valor));
+      if (!(valor > 0 && valor < 10000000)) erro(400, 'Valor inválido.');
+      const tipo = it.tipo === 'receita' ? 'receita' : 'despesa';
+      const categoria = tipo === 'receita' ? CAT_ENTRADA : it.categoria;
+      if (tipo === 'despesa' && !C.CATEGORIAS.includes(categoria)) erro(400, 'Categoria inválida.');
+      const descricao = texto(it.descricao).trim().slice(0, 120) || 'Lançamento';
+      const livre = Number.isInteger(it.id) && it.id > 0 && !estado.gastos.some((g) => g.id === it.id);
+      const id = livre ? it.id : proximoId(estado.gastos);
+      estado.gastos.push({ id, valor, categoria, descricao, data: iso(validarData(it.data)), texto_original: texto(it.texto_original).slice(0, 300), corrigido: it.corrigido ? 1 : 0, tipo });
+      ctx.salvar = true;
+      return { ok: true, id };
+    }
+    erro(400, 'Nada para restaurar.');
+  }
+
   // =========================================================== rotina
   const PERIODOS = ['manha', 'dia', 'noite'];
   const TIPOS = ['ritual', 'habito', 'renuncia'];
@@ -626,6 +655,7 @@
     ['PUT', `/api/tarefas/${id}`, tarefasEditar],
     ['PATCH', `/api/tarefas/${id}/alternar`, tarefasAlternar],
     ['DELETE', `/api/tarefas/${id}`, tarefasApagar],
+    ['POST', '/api/restaurar', restaurar],
     ['GET', '/api/rotina', rotinaListar],
     ['POST', '/api/rotina/itens', rotinaCriar],
     ['PUT', `/api/rotina/itens/${id}`, rotinaEditar],

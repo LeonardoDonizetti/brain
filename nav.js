@@ -372,6 +372,32 @@
     document.body.append(nav);
   }
 
+
+  // Aviso com "Desfazer" (padrão Material: ação reversível sem diálogo de confirmação)
+  let snackTimer = null;
+  window.BrainUI = Object.assign(window.BrainUI || {}, {
+    snack(msg, acao, fn, ms) {
+      let el = document.getElementById('snack');
+      if (!el) {
+        el = document.createElement('div'); el.id = 'snack'; el.className = 'snack'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+        el.innerHTML = '<span class="snack-t"></span><button type="button" class="snack-b"></button>';
+        document.body.append(el);
+      }
+      el.querySelector('.snack-t').textContent = msg;
+      const b = el.querySelector('.snack-b'); b.hidden = !acao; b.textContent = acao || '';
+      b.onclick = () => { el.classList.remove('on'); clearTimeout(snackTimer); try { fn && fn(); } catch (e) {} };
+      el.classList.add('on'); clearTimeout(snackTimer);
+      snackTimer = setTimeout(() => el.classList.remove('on'), ms || 6500);
+    },
+    /** Apaga já e oferece desfazer: restaura o item pela API local. */
+    async desfazerApagar(colecao, item, msg, depois) {
+      this.snack(msg, 'Desfazer', async () => {
+        try { await fetch('/api/restaurar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ colecao, item }) }); } catch (e) {}
+        if (depois) depois();
+      });
+    },
+  });
+
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }

@@ -151,7 +151,7 @@
 
   <section class="bloco an" id="an" aria-label="Análises">
     <div class="an-topo">
-      <div class="alternar" role="tablist" aria-label="Tipo de análise">
+      <div class="alternar" role="group" aria-label="Tipo de análise">
         <button type="button" data-an="evol" aria-pressed="true">Evolução</button>
         <button type="button" data-an="dia" aria-pressed="false">No mês</button>
         <button type="button" data-an="sem" aria-pressed="false">Semana</button>
@@ -246,7 +246,7 @@
   </form>
 </dialog>
 
-<div class="composer">
+<div class="composer" role="region" aria-label="Registrar gasto ou entrada">
   <div class="tipo" role="group" aria-label="Tipo de lançamento">
     <button type="button" data-t="despesa" aria-pressed="true">Gasto</button>
     <button type="button" data-t="receita" aria-pressed="false">Entrada</button>
@@ -328,8 +328,8 @@ function desenharTudo() {
   $('total').textContent = BRL.format(d.total);
   $('r-entradas').textContent = BRL.format(d.entradas);
   const saldo = $('r-saldo');
-  saldo.textContent = BRL.format(d.saldo);
-  saldo.className = 'num ' + (d.saldo > 0 ? 'pos' : d.saldo < 0 ? 'neg' : '');
+  if (!d.entradas) { saldo.textContent = 'Sem entradas'; saldo.className = 'num'; saldo.style.fontSize = '.95rem'; saldo.style.color = 'var(--muted)'; }
+  else { saldo.textContent = BRL.format(d.saldo); saldo.style.fontSize = ''; saldo.style.color = ''; saldo.className = 'num ' + (d.saldo > 0 ? 'pos' : d.saldo < 0 ? 'neg' : ''); }
   const sel = $('d-cat');
   if (!sel.options.length) d.categorias.forEach((c) => sel.add(new Option(c, c)));
   const selF = $('f-cat');
@@ -349,7 +349,7 @@ const NS = 'http://www.w3.org/2000/svg';
 const NOME_MES = (m) => new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
 const BRLc = (v) => (v >= 1000 ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k` : String(Math.round(v)));
 function svgEl(tag, attrs, txt) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (txt != null) e.textContent = txt; return e; }
-function titulo(t, sub) { const f = document.createDocumentFragment(); const h = document.createElement('h3'); h.textContent = t; const p = document.createElement('p'); p.className = 'sub'; p.textContent = sub; f.append(h, p); return f; }
+function titulo(t, sub) { const f = document.createDocumentFragment(); const h = document.createElement('h3'); h.setAttribute('aria-level', '2'); h.setAttribute('role', 'heading'); h.textContent = t; const p = document.createElement('p'); p.className = 'sub'; p.textContent = sub; f.append(h, p); return f; }
 function legenda(itens) { const d = document.createElement('div'); d.className = 'legenda-i'; itens.forEach(([t, c]) => { const s = document.createElement('span'); s.style.setProperty('--c', c); s.textContent = t; d.append(s); }); return d; }
 function numeros(itens) { const d = document.createElement('div'); d.className = 'an-nums'; itens.forEach(([r, v]) => { const x = document.createElement('div'); const s = document.createElement('small'); s.textContent = r; const b = document.createElement('b'); b.textContent = v; x.append(s, b); d.append(x); }); return d; }
 
@@ -450,7 +450,7 @@ function semana(w) {
   });
   w.append(svg);
   if (desp.length) {
-    const h = document.createElement('h3'); h.style.marginTop = '1rem'; h.textContent = 'Maiores gastos do mês'; w.append(h);
+    const h = document.createElement('h3'); h.setAttribute('aria-level', '2'); h.style.marginTop = '1rem'; h.textContent = 'Maiores gastos do mês'; w.append(h);
     const ul = document.createElement('ul'); ul.className = 'top-g';
     desp.slice().sort((a, b) => b.valor - a.valor).slice(0, 5).forEach((g, i) => {
       const li = document.createElement('li');
@@ -744,11 +744,12 @@ function abrirDialogo(g) {
 $('d-cancelar').onclick = () => $('dlg').close();
 
 $('d-apagar').onclick = async () => {
-  if (!editando || !confirm('Apagar este lançamento?')) return;
+  if (!editando) return;
+  const copia = Object.assign({}, editando);
   try {
     await api(`/api/financas/gastos/${editando.id}`, { method: 'DELETE' });
     $('dlg').close();
-    aviso('Lançamento apagado.');
+    if (window.BrainUI) window.BrainUI.desfazerApagar('gastos', copia, 'Lançamento apagado.', carregar);
     carregar();
   } catch (err) { aviso(err.message, true); }
 };
@@ -802,7 +803,9 @@ $('proximo').onclick = () => mudarMes(1);
 // ---------- Gráfico por categoria (rosca em SVG, sem bibliotecas) ----------
 let modoGrafico = 'valor'; // 'valor' ou 'quantidade'
 let dadosGrafico = [];
-const corCategoria = (i) => `hsl(${(i * 47 + 220) % 360} 60% 55%)`;
+// Paleta discreta, distinguível por daltônicos (tons e luminosidades diferentes); o valor e o % sempre aparecem em texto
+const PALETA_CAT = ['#2f6f8f', '#c4743f', '#7d8f4e', '#8a5a8c', '#c19a2e', '#4f9a8e', '#b0566a', '#7a8591'];
+const corCategoria = (i) => PALETA_CAT[i % PALETA_CAT.length];
 
 function desenharGrafico(dados) {
   dadosGrafico = dados;

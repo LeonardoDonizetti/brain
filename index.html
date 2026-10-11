@@ -126,6 +126,14 @@
     #dica.on { transform: none; }
   }
   .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .rapido { display: flex; gap: .5rem; margin-top: .8rem; }
+  .rapido input { flex: 1; min-width: 0; font: inherit; padding: .7rem .85rem; border: 1px solid var(--line-strong); border-radius: .6rem; background: var(--surface); color: var(--ink); min-height: 2.9rem; }
+  .rapido button { font: inherit; font-weight: 650; background: var(--accent); color: var(--on-accent); border: 0; border-radius: .6rem; padding: 0 1rem; min-height: 2.9rem; cursor: pointer; }
+  #agora .ag-t { margin: 0; font-size: .78rem; color: var(--muted); font-weight: 600; }
+  #agora .ag-l { margin: .15rem 0 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+  #agora .ag-s { margin: .15rem 0 0; font-size: .85rem; color: var(--muted); }
+  #agora .ag-f { display: flex; justify-content: space-between; align-items: center; margin-top: .6rem; }
+  #agora .ag-f a { font-weight: 650; font-size: .85rem; color: var(--accent); text-decoration: none; min-height: 2.75rem; display: inline-flex; align-items: center; }
 </style>
 </head>
 <body>
@@ -134,6 +142,12 @@
   <h1 id="saudacao">Brain</h1>
 
   <section class="cartao bloco" id="coach" aria-label="Coach" hidden style="margin-top:1rem"></section>
+
+  <form class="rapido" id="rapido" autocomplete="off">
+    <input id="rapido-t" type="text" maxlength="200" placeholder="Nova tarefa (ex.: prova sexta 14h)" aria-label="Nova tarefa">
+    <button type="submit" aria-label="Adicionar tarefa">Adicionar</button>
+  </form>
+  <section class="cartao bloco" id="agora" aria-label="Estudos agora" hidden style="margin-top:.8rem"></section>
 
   <p class="ferias" id="ferias" hidden>Modo férias ligado: metas pausadas</p>
   <div data-bloco="aneis">
@@ -472,6 +486,48 @@ if (window.BrainCoach) { const mc = () => window.BrainCoach.montar($('coach'), '
 if (window.BrainPrefs) window.BrainPrefs.aoMudar(() => { periodo = PF().periodo_grafico; marcarPeriodo(); redesenhar(); });
 carregarAneis();
 carregarTarefas();
+// ---- adicionar tarefa rápido ----
+$('rapido').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const titulo = $('rapido-t').value.trim();
+  if (!titulo) return;
+  try {
+    const r = await fetch('/api/tarefas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo }) });
+    const t = await r.json();
+    if (!r.ok) throw new Error(typeof t.detail === 'string' ? t.detail : 'Não consegui adicionar.');
+    $('rapido-t').value = '';
+    const quando = [t.data ? t.data.split('-').reverse().slice(0, 2).join('/') : null, t.hora].filter(Boolean).join(' · ');
+    if (window.BrainUI) window.BrainUI.snack(`Adicionada: ${t.titulo}${quando ? ' (' + quando + ')' : ''}`, 'Desfazer', async () => { await fetch(`/api/tarefas/${t.id}`, { method: 'DELETE' }); carregarTarefas(); });
+    carregarTarefas();
+  } catch (err) { if (window.BrainUI) window.BrainUI.snack(err.message); }
+});
+
+// ---- card de estudos: bloco de agora/próximo e revisões ----
+async function carregarAgora() {
+  const ES = window.BrainEstudos; if (!ES) return;
+  let e; try { e = (await get('/api/estudos')).estudos; } catch (x) { return; }
+  const sec = $('agora');
+  const { atual, proximo, hoje: blocosHoje } = ES.agoraProximo(e.blocos, new Date());
+  const dev = ES.revisoesDevidas(e, HOJE);
+  const est = ES.estatisticas(e, HOJE);
+  if (!e.blocos.length && !dev.length && !est.hoje) { sec.hidden = true; return; }
+  let titulo = 'Estudos hoje', linha = '', sub = '';
+  if (atual) { titulo = 'Agora'; linha = atual.titulo; sub = `até ${atual.fim}`; }
+  else if (proximo) { titulo = 'Próximo bloco'; linha = proximo.titulo; sub = `às ${proximo.ini}`; }
+  else if (blocosHoje.length) { titulo = 'Estudos hoje'; linha = 'Blocos de hoje concluídos'; }
+  else { linha = est.hoje ? `${ES.fmtMin(est.hoje)} estudados hoje` : 'Sem blocos hoje'; }
+  const partes = [];
+  if (sub) partes.push(sub);
+  if (dev.length) partes.push(`${dev.length} ${dev.length === 1 ? 'revisão pendente' : 'revisões pendentes'}`);
+  if (est.hoje && (atual || proximo)) partes.push(`${ES.fmtMin(est.hoje)} hoje`);
+  sec.innerHTML = `<p class="ag-t">${titulo}</p><p class="ag-l"></p><p class="ag-s"></p><div class="ag-f"><span></span><a href="estudos.html">${atual ? 'Iniciar foco' : 'Abrir estudos'}</a></div>`;
+  sec.querySelector('.ag-l').textContent = linha;
+  sec.querySelector('.ag-s').textContent = partes.join(' · ');
+  sec.hidden = false;
+}
+carregarAgora();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) carregarAgora(); });
+
 get('/api/jornada?dias=84').then((d) => { dadosJornada = d; desenharAneis(); desenharMapa(d.dias); }).catch(() => desenharMapa([]));
 
 const mesAnterior = (() => { const d = new Date(agora.getFullYear(), agora.getMonth() - 1, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();

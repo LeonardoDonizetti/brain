@@ -59,9 +59,11 @@
 
   .trilha { display: grid; grid-template-columns: repeat(7, 1fr); gap: .5rem; margin-top: .75rem; }
   .no { aspect-ratio: 1; border-radius: 50%; border: 2px dashed var(--line-strong); background: none; color: var(--muted); font-weight: 650; font-size: .85rem; padding: 0; }
-  .no.hoje { border: 2px solid var(--accent); color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .no.hoje { border: 2px solid var(--accent); color: var(--ink); box-shadow: 0 0 0 3px var(--accent-soft); }
   .no.positivo { background: var(--ok); border: 2px solid var(--ok); color: #fff; }
   .no.negativo { background: var(--danger); border: 2px solid var(--danger); color: #fff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]) .no.positivo, :root:not([data-tema="claro"]) .no.negativo { color: #101214; } }
+  :root[data-tema="escuro"] .no.positivo, :root[data-tema="escuro"] .no.negativo { color: #101214; }
   .no.futuro { opacity: .4; border: 2px solid var(--line); cursor: default; }
 
   li.ref { display: block; padding: .8rem 1rem; }
