@@ -109,7 +109,7 @@
 .cel-chama svg { display: block; }
 .cel-numbloco { text-align: left; line-height: 1; animation: cel-pop .6s cubic-bezier(.34,1.56,.64,1) .3s both; }
 .cel-odo { display: block; position: relative; height: 1em; font-size: 4.6rem; font-weight: 800; letter-spacing: -.03em; overflow: hidden; color: #c2410c; min-width: 1ch; }
-.cel-dia.marco h2, .cel-dia.marco p.sub { color: #fff; }
+#cel-raiz .cel-dia.marco h2, #cel-raiz .cel-dia.marco p.sub { color: #fff; }
 .cel-dia.marco .cel-odo { color: #ffd23f; }
 .cel-odo i { display: block; font-style: normal; height: 1em; line-height: 1; }
 .cel-odo .vai { animation: cel-odo-sai .45s cubic-bezier(.6,0,.4,1) .55s both; }
@@ -118,7 +118,7 @@
 .cel-selo { display: inline-block; margin-bottom: .4rem; padding: .22rem .7rem; border-radius: 2rem; background: #ffd23f; color: #5c3b00; font-size: .72rem; font-weight: 800; letter-spacing: .08em; animation: cel-pop .5s cubic-bezier(.34,1.56,.64,1) .2s both; }
 .cel-masc { margin-top: .2rem; animation: cel-sobe .65s cubic-bezier(.34,1.56,.64,1) .45s both; }
 .cel-masc svg { display: block; }
-.cel-dia h2 { color: #1d2433; margin: .2rem 0 0; font-size: 1.6rem; line-height: 1.15; font-weight: 800; animation: cel-fade .5s ease-out .8s both; }
+#cel-raiz .cel-dia h2 { color: #1d2433; margin: .2rem 0 0; font-size: 1.6rem; line-height: 1.15; font-weight: 800; animation: cel-fade .5s ease-out .8s both; }
 .cel-dia p.sub { margin: .4rem 0 0; font-size: 1rem; line-height: 1.4; opacity: .88; animation: cel-fade .5s ease-out .95s both; }
 .cel-sem { margin-top: .9rem; animation: cel-fade .5s ease-out 1.1s both; }
 .cel-btn { margin-top: 1.1rem; width: min(100%, 16rem); min-height: 3.1rem; border: 0; border-radius: 1rem; background: #1565d8; color: #fff; font-family: inherit; font-weight: 800; font-size: 1.05rem; box-shadow: 0 4px 0 #0d4aa8; cursor: pointer; animation: cel-fade .45s ease-out 1.3s both; }
@@ -304,7 +304,7 @@
     d.className = 'cel-dia' + (marco ? ' marco' : '') + (movimento ? '' : ' cel-quieto');
     d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', titulo);
     const chama = ui && ui.chama ? ui.chama('ativa', 104, true) : '';
-    const masc = root.BrainMascote ? root.BrainMascote.svg('festa', 150) : '';
+    const masc = root.BrainMascote ? root.BrainMascote.svg(marco ? 'rei' : 'vitoria', 160) : '';
     const sem = ui && ui.faixa && rj && rj.semana ? ui.faixa(rj) : '';
     const de = Math.max(0, n - 1);
     d.innerHTML = `${movimento ? '<div class="cel-raios" aria-hidden="true"></div><i class="cel-onda" style="animation-delay:.2s"></i><i class="cel-onda" style="animation-delay:.5s"></i>' : ''}

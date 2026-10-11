@@ -401,3 +401,23 @@ html[data-pg] .topo-config { min-height: 4.9rem; }
 .rt { background: linear-gradient(currentColor, currentColor) no-repeat 0 62% / 0% 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 @media (prefers-reduced-motion: no-preference) { .rt { transition: background-size .38s cubic-bezier(.65, 0, .35, 1), color .3s ease .08s; } }
 .feita > .rt, .feito > .rt, li.t.feita .tt > .rt, tr.feita td.col-t > .rt, li.r.feito .titulo-item > .rt, .subs li.feita .st > .rt { background-size: 100% 2px; }
+
+/* poses de ofensiva: pulinho com squash/stretch, punhos que alternam, estrelas nos olhos, chamas na cabeça */
+.mascote-b.m-salta { overflow: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  .m-salta .m-all { transform-box: fill-box; transform-origin: 50% 100%; animation: m-salto 1.15s cubic-bezier(.3, 0, .3, 1) infinite; }
+  @keyframes m-salto { 0% { transform: scale(1.07, .92); } 14% { transform: scale(1.07, .92); } 38% { transform: translateY(-11px) scale(.96, 1.06); } 62% { transform: translateY(0) scale(1.06, .93); } 80% { transform: scale(.98, 1.03); } 100% { transform: scale(1.07, .92); } }
+  .m-puno-e { animation: m-puno 1.15s ease-in-out infinite; }
+  .m-puno-d { animation: m-puno 1.15s ease-in-out -.575s infinite; }
+  @keyframes m-puno { 0%, 100% { transform: rotate(10deg); } 50% { transform: rotate(-16deg); } }
+  .m-olho { transform-box: fill-box; transform-origin: center; animation: m-olho .9s ease-in-out infinite; }
+  .m-olho2 { animation-delay: -.45s; }
+  @keyframes m-olho { 0%, 100% { transform: scale(1) rotate(-6deg); } 50% { transform: scale(1.22) rotate(8deg); } }
+  .m-tufo { transform-box: fill-box; transform-origin: 50% 100%; animation: m-tufo .55s ease-in-out infinite alternate; }
+  .m-tufo2 { animation-duration: .45s; }
+  @keyframes m-tufo { from { transform: scale(.88, .8) skewX(-7deg); } to { transform: scale(1.06, 1.14) skewX(7deg); } }
+  .m-aura { transform-box: fill-box; transform-origin: center; animation: m-aura 1.6s ease-in-out infinite; }
+  @keyframes m-aura { 50% { transform: scale(1.1); opacity: .5; } }
+  .m-trofeu { animation: m-trofeu 1.15s ease-in-out infinite; }
+  @keyframes m-trofeu { 50% { transform: rotate(10deg) scale(1.06); } }
+}

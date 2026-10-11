@@ -29,10 +29,52 @@
     if (estado === 'inicio' || estado === 'nova') {
       return `<svg ${vb} ${tam} role="img" aria-hidden="true" class="chama v"><path d="${CHAMA}" fill="#eef1f5" stroke="#c9d1dc" stroke-width="3" stroke-linejoin="round"/><path d="${MIOLO}" fill="#e2e7ee"/></svg>`;
     }
-    const risco = estado === 'em_risco';
-    return `<svg ${vb} ${tam} role="img" aria-hidden="true" class="chama ${risco ? 'r' : 'a'}${anim ? ' anim' : ''}">
-      <defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${risco ? '#f59e3a' : '#ff6a00'}"/><stop offset=".6" stop-color="${risco ? '#f8b04a' : '#ff9a1a'}"/><stop offset="1" stop-color="${risco ? '#fbc56a' : '#ffc12e'}"/></linearGradient></defs>
-      <path d="${CHAMA}" fill="url(#${id})"/><path d="${MIOLO}" fill="${risco ? '#ffe2a6' : '#fff0a8'}"/></svg>`;
+    return fogo(id, tam, vb, estado === 'em_risco', !!anim);
+  }
+
+  // ------------------------------------------------------------ fogo de verdade (SVG original, línguas independentes)
+  /** Uma língua de fogo: base larga em y=78, ponta em (tx, 78-h). Todos os quadros têm a mesma estrutura, para o SMIL interpolar. */
+  function lingua(cx, a, h, tx, k) {
+    const y0 = 78, ty = y0 - h, f = (v) => v.toFixed(1);
+    return `M${f(tx)} ${f(ty)}C${f(tx + k)} ${f(y0 - h * .72)} ${f(cx + a)} ${f(y0 - h * .58)} ${f(cx + a)} ${f(y0 - h * .3)}C${f(cx + a)} ${f(y0 - h * .1)} ${f(cx + a * .55)} ${y0} ${f(cx)} ${y0}C${f(cx - a * .55)} ${y0} ${f(cx - a)} ${f(y0 - h * .1)} ${f(cx - a)} ${f(y0 - h * .3)}C${f(cx - a)} ${f(y0 - h * .56)} ${f(tx - k)} ${f(y0 - h * .7)} ${f(tx)} ${f(ty)}Z`;
+  }
+  let reduzMov = null;
+  const semMovimento = () => { if (reduzMov === null) { try { reduzMov = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduzMov = false; } } return reduzMov; };
+  function fogo(id, tam, vb, risco, anim) {
+    const mexe = anim && !semMovimento();
+    // [centro, meia-largura, altura, [quadros: ponta x, curva, altura extra]]
+    const L = risco ? [
+      ['o', 32, 21, 66, [[32, 3, 0], [35, -2, -4], [29, 3, 2]], 1.5, '0'],
+      ['m', 32, 12, 40, [[32, 2, 0], [30, 3, 3], [34, -1, -3]], 1.2, '-.4'],
+    ] : [
+      ['sl', 13, 8, 34, [[11, 2, 0], [15, -2, -5], [10, 3, 3], [14, 1, -2]], 1.35, '-.3'],
+      ['sr', 51, 8, 29, [[53, 2, 0], [49, -2, 4], [54, 3, -3], [50, 1, 2]], 1.05, '-.7'],
+      ['o', 32, 22, 76, [[32, 3, 0], [37, -2, -5], [27, 4, 3], [34, 2, -2]], 1.15, '0'],
+      ['m', 32, 15, 56, [[32, 3, 0], [28, 3, 4], [36, -2, -4], [31, 2, 2]], .95, '-.35'],
+      ['i', 32, 9.5, 38, [[32, 2, 0], [35, -2, -3], [29, 3, 3], [33, 1, -1]], .8, '-.2'],
+      ['c', 32, 5, 22, [[32, 2, 0], [31, 1, 2], [33, -1, -2], [32, 1, 1]], .7, '-.5'],
+    ];
+    const cor = risco
+      ? { o: ['#f59e3a', '#fbc56a'], m: ['#fbbf5a', '#ffe2a6'] }
+      : { sl: ['#ff4d0a', '#ff9a1a'], sr: ['#ff4d0a', '#ff9a1a'], o: ['#ff3d00', '#ffa51f'], m: ['#ff8a00', '#ffd23f'], i: ['#ffc21f', '#fff0a0'], c: ['#fff1a6', '#ffffff'] };
+    const defs = Object.keys(cor).map((k) => `<linearGradient id="${id}${k}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${cor[k][0]}"/><stop offset="1" stop-color="${cor[k][1]}"/></linearGradient>`).join('')
+      + `<radialGradient id="${id}g" cx=".5" cy=".62" r=".5"><stop offset="0" stop-color="#ffb43a" stop-opacity="${risco ? .3 : .6}"/><stop offset="1" stop-color="#ffb43a" stop-opacity="0"/></radialGradient>`;
+    const camadas = L.map(([k, cx, a, h, qs, dur, ini]) => {
+      const q = qs.map(([tx, kk, dh]) => lingua(cx, a, h + dh, tx, kk));
+      const kt = q.map((_, i) => (i / q.length).toFixed(3)).concat('1').join(';'), vals = q.concat(q[0]).join(';');
+      const sp = q.map(() => '.45 0 .55 1').join(';');
+      const an = mexe ? `<animate attributeName="d" dur="${dur}s" begin="${ini}s" repeatCount="indefinite" calcMode="spline" keyTimes="${kt}" keySplines="${sp}" values="${vals}"/>` : '';
+      return `<path d="${q[0]}" fill="url(#${id}${k})">${an}</path>`;
+    }).join('');
+    let brasas = '';
+    if (!risco) {
+      const B = [[22, 2.1, 2.4, '0'], [42, 1.6, 2.9, '-1.1'], [31, 1.4, 2.2, '-.6'], [48, 1.9, 3.2, '-2'], [16, 1.3, 2.7, '-1.6']];
+      brasas = B.map(([x, r, d, ini]) => mexe
+        ? `<circle cx="${x}" cy="46" r="${r}" fill="#ffd23f" opacity="0"><animate attributeName="cy" dur="${d}s" begin="${ini}s" repeatCount="indefinite" values="52;-14"/><animate attributeName="cx" dur="${d}s" begin="${ini}s" repeatCount="indefinite" values="${x};${x + 5};${x - 4};${x + 3}"/><animate attributeName="opacity" dur="${d}s" begin="${ini}s" repeatCount="indefinite" values="0;1;.8;0" keyTimes="0;.15;.6;1"/><animate attributeName="r" dur="${d}s" begin="${ini}s" repeatCount="indefinite" values="${r};${r};0.2" keyTimes="0;.5;1"/></circle>`
+        : `<circle cx="${x}" cy="${20 + r * 8}" r="${r * .8}" fill="#ffd23f" opacity=".85"/>`).join('');
+    }
+    const brilho = `<circle cx="32" cy="50" r="40" fill="url(#${id}g)">${mexe ? '<animate attributeName="opacity" dur="1.6s" repeatCount="indefinite" values=".7;1;.75;1;.7"/>' : ''}</circle>`;
+    return `<svg ${vb} ${tam} role="img" aria-hidden="true" class="chama ${risco ? 'r' : 'a'}${anim ? ' anim' : ''}"><defs>${defs}</defs>${brilho}${camadas}${brasas}</svg>`;
   }
   const ESCUDO = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V5z" fill="currentColor"/></svg>';
   const CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -84,7 +126,9 @@
     s.textContent = `
       .chama { display: block; overflow: visible; }
       @media (prefers-reduced-motion: no-preference) {
-        .chama.a.anim, .jg-chip[data-e="ativa"] .chama { animation: jg-tremer 2.2s ease-in-out infinite; transform-origin: 50% 90%; }
+        .chama.a.anim { animation: jg-balanca 2.4s ease-in-out infinite; transform-origin: 50% 92%; }
+        .jg-chip[data-e="ativa"] .chama { animation: jg-tremer 2.2s ease-in-out infinite; transform-origin: 50% 90%; }
+        @keyframes jg-balanca { 0%,100% { transform: rotate(-1.6deg) scaleY(1); } 50% { transform: rotate(1.8deg) scaleY(1.035); } }
         .chama.r { animation: jg-pulsa 1.6s ease-in-out infinite; transform-origin: 50% 90%; }
         @keyframes jg-tremer { 0%,100% { transform: scale(1) rotate(0); } 30% { transform: scale(1.05,1.08) rotate(-2deg); } 60% { transform: scale(.98,1.03) rotate(2deg); } }
         @keyframes jg-pulsa { 50% { transform: scale(1.07); opacity: .85; } }
