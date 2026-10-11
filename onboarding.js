@@ -16,40 +16,40 @@
   const PERGUNTAS = [
     { id: 'foco', texto: 'Como anda o seu foco ultimamente?', opcoes: [
       O('dificil', 'Me distraio com facilidade', 'Entendi. Vou sugerir blocos curtos de foco e metas pequenas.'),
-      O('varia', 'Depende do dia', 'Normal. O Brain se ajusta aos dias bons e aos ruins.'),
-      O('bom', 'Consigo me concentrar bem', 'Ótimo. Então o desafio é manter o ritmo.') ] },
+      O('varia', 'Depende do dia', 'Normal. O Brain se adapta aos seus dias bons e aos ruins.'),
+      O('bom', 'Consigo me concentrar bem', 'Ótimo! Então o desafio agora é manter o ritmo.') ] },
     { id: 'disc', texto: 'E a disciplina: você mantém o que começa?', opcoes: [
       O('baixa', 'Começo animado e acabo largando', 'Sem culpa. Vou começar com metas leves para você ganhar embalo.'),
-      O('media', 'Oscilo, mas costumo retomar', 'Retomar é a habilidade que mais importa.'),
-      O('alta', 'Costumo manter a constância', 'Então posso deixar as metas mais exigentes.') ] },
+      O('media', 'Oscilo, mas costumo retomar', 'Saber retomar é a habilidade que mais pesa na constância.'),
+      O('alta', 'Costumo manter a constância', 'Excelente! Posso deixar as metas mais desafiadoras.') ] },
     { id: 'tarefas', texto: 'Como você organiza as tarefas hoje?', opcoes: [
       O('nada', 'Guardo tudo na cabeça', 'Tirar da cabeça já alivia bastante. Começamos por aí.'),
-      O('acumula', 'Eu anoto, mas elas acumulam', 'Comum. Metas diárias pequenas ajudam a desafogar.'),
-      O('ok', 'Está tudo em dia', 'Boa. Vou deixar uma meta diária mais alta.') ] },
+      O('acumula', 'Eu anoto, mas as tarefas acumulam', 'Isso é mais comum do que parece. Metas diárias pequenas ajudam a desafogar.'),
+      O('ok', 'Está tudo em dia', 'Muito bem! Vou deixar a meta diária um pouco mais alta.') ] },
     { id: 'estudos', texto: 'E os estudos?', opcoes: [
       O('sem', 'Não tenho rotina de estudo', 'O plano semanal foi feito para isso.'),
       O('solto', 'Estudo, mas sem um plano', 'Um plano com revisões costuma render mais que horas soltas.'),
       O('plano', 'Tenho plano e sigo', 'Então use o app para registrar o foco e as revisões.'),
-      O('nao', 'Não estou estudando agora', 'Tudo bem. Vou deixar Estudos em segundo plano.') ] },
+      O('nao', 'Não estou estudando agora', 'Sem problema. Deixo Estudos em segundo plano.') ] },
     { id: 'dinheiro', texto: 'Como está o controle do dinheiro?', opcoes: [
       O('nada', 'Não acompanho meus gastos', 'Registrar por uma semana já mostra para onde o dinheiro vai.'),
       O('as_vezes', 'Olho de vez em quando', 'Registrar na hora deixa os gráficos bem mais úteis.'),
-      O('controle', 'Controlo bem', 'Então o foco será orçamento e categorias.'),
+      O('controle', 'Controlo bem', 'Ótimo! Então o foco será orçamento e categorias.'),
       O('nao', 'Prefiro não usar finanças', 'Combinado. Escondo os gastos da tela inicial.') ] },
     { id: 'rotina', texto: 'Como é a sua rotina diária?', opcoes: [
       O('sem', 'Muda todo dia', 'Começar com 2 ou 3 hábitos fixos já dá estrutura.'),
-      O('meio', 'Tenho horários, mas falho', 'Marcar o hábito na hora ajuda a não falhar em silêncio.'),
-      O('firme', 'É bem definida', 'Ótimo. Use a Rotina para registrar a constância.') ] },
+      O('meio', 'Tenho horários, mas nem sempre cumpro', 'Marcar o hábito na hora ajuda a perceber quando você sai do trilho.'),
+      O('firme', 'É bem definida', 'Ótimo! Use a Rotina para registrar a sua constância.') ] },
   ];
   const PRIORIDADES = [['tarefas', 'Tarefas'], ['estudos', 'Estudos'], ['financas', 'Finanças'], ['rotina', 'Rotina'], ['jornada', 'Jornada']];
   const TONS = [
-    O('amigo', 'Amigo: incentivo leve', 'Fechado: vou falar de forma leve.'),
-    O('firme', 'Firme: direto e cobrando', 'Fechado: vou ser direto.'),
-    O('calmo', 'Calmo: sem pressão', 'Fechado: sem pressão.') ];
+    O('amigo', 'Amigo: incentivo leve', 'Combinado: vou incentivar você com leveza.'),
+    O('firme', 'Firme: direto, com cobrança', 'Combinado: vou ser direto e cobrar quando precisar.'),
+    O('calmo', 'Calmo: sem pressão', 'Combinado: sem pressão, no seu tempo.') ];
 
   const MOTIVOS = [['vestibular', 'Passar no vestibular ou no ENEM'], ['notas', 'Melhorar minhas notas'], ['disciplina', 'Criar disciplina e constância'], ['organizar', 'Organizar tarefas e rotina'], ['dinheiro', 'Controlar meu dinheiro']];
   const MOTIVACOES = [['curso', 'Entrar no curso que eu quero'], ['familia', 'Deixar minha família orgulhosa'], ['autonomia', 'Ter mais autonomia'], ['estresse', 'Menos correria e estresse'], ['tempo', 'Ganhar tempo livre'], ['mente', 'Ter a cabeça mais tranquila'], ['grana', 'Independência financeira']];
-  const RITMOS = [['leve', 'Devagar, mas firme'], ['medio', 'Na metade do caminho'], ['rapido', 'O mais rápido possível']];
+  const RITMOS = [['leve', 'Com calma, mas sem parar'], ['medio', 'Equilibrado, no meu tempo'], ['rapido', 'O mais rápido que der']];
   const HORAS = []; for (let h = 0.5; h <= 8; h += 0.5) HORAS.push(h);
   const rotuloHoras = (h) => (h < 1 ? '30 min' : Number.isInteger(h) ? `${h} h` : `${Math.floor(h)} h 30`);
 
@@ -120,7 +120,7 @@
       home: { aneis: true, semana: true, barras: true, constancia: true, tabela: true, gastos: r.dinheiro !== 'nao' },
     };
     ajustes.push(`Meta de ${prefs.meta_diaria} ${prefs.meta_diaria === 1 ? 'tarefa' : 'tarefas'} por dia e ${prefs.meta_semanal} por semana`);
-    ajustes.push(`Coach com tom ${{ amigo: 'amigo', firme: 'firme', calmo: 'calmo' }[prefs.coach_tom]}`);
+    ajustes.push(`Coach com tom ${{ amigo: 'amigável', firme: 'firme', calmo: 'calmo' }[prefs.coach_tom]}`);
     if (r.horas && r.dias) { const tot = r.horas * r.dias; ajustes.push(`Meta de estudo: ${rotuloHoras(r.horas)} por dia, ${r.dias} ${r.dias === 1 ? 'dia' : 'dias'} por semana (${Number.isInteger(tot) ? tot : tot.toFixed(1).replace('.', ',')} h)`); }
     if (r.dinheiro !== 'nao') ajustes.push(`Aviso quando uma categoria passar de ${prefs.coach_alerta_pct}% dos gastos`);
     else ajustes.push('Gastos escondidos da tela inicial');

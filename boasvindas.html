@@ -330,17 +330,17 @@
   const SECOES = [['rotina', 'Rotina'], ['estudos', 'Estudos'], ['jornada', 'Jornada'], ['tarefas', 'Tarefas'], ['financas', 'Finanças']];
   /* cada benefício traz um dado real (fontes completas em Configurações > Referências) */
   const BENS = [
-    ['financas', 'Gastos em segundos', 'Escreva “32 no iFood” e eu organizo.', '82%', 'das famílias estão endividadas'],
-    ['estudos', 'Revisão no tempo certo', 'Revisão espaçada fixa o que você estuda.', '2 em 10', 'técnicas têm alta utilidade'],
-    ['rotina', 'Ofensiva que perdoa', 'Escudos protegem a sequência.', '66 dias', 'para o hábito virar automático'],
-    ['tarefas', 'Quando e onde', 'Tarefas com dia e hora definidos.', '94 testes', 'confirmam: planejar ajuda'],
+    ['financas', 'Gastos em segundos', 'Digite “32 no iFood” e o Brain categoriza.', '82%', 'das famílias brasileiras endividadas'],
+    ['estudos', 'Revisão no tempo certo', 'Revisão espaçada fixa o que você estuda.', '2 em 10', 'técnicas de estudo têm alta eficácia'],
+    ['rotina', 'Ofensiva que perdoa', 'Escudos protegem sua sequência nos dias ruins.', '66 dias', 'em média até o hábito se fixar'],
+    ['tarefas', 'Planejar quando e onde', 'Tarefas com dia e hora marcados.', '94 testes', 'mostram que planejar ajuda'],
   ];
   const mascM = (pose, px, cls) => (window.BrainMascote ? window.BrainMascote.svg(pose, px, cls) : mascote('oi', cls));
 
   /* ---------- roteiro ---------- */
   const SEC = { a: 'Objetivo & perfil', b: 'Seu dia a dia', c: 'Prioridades' };
   const passos = [
-    { t: 'splash' }, { t: 'ola' }, { t: 'nome', s: 'a' },
+    { t: 'splash' }, { t: 'parabens', n: 0 }, { t: 'parabens', n: 1 }, { t: 'ola' }, { t: 'nome', s: 'a' },
     { t: 'motivo', s: 'a' }, { t: 'motivacoes', s: 'a' }, { t: 'ritmo', s: 'a' }, { t: 'horas', s: 'a' }, { t: 'dias', s: 'a' }, { t: 'curva' },
   ].concat(O.PERGUNTAS.map((q) => ({ t: 'q', q, s: 'b' })))
    .concat([{ t: 'prior', s: 'c' }, { t: 'tom', s: 'c' }, { t: 'resumo' }, { t: 'fim' }, { t: 'pronto' }]);
@@ -418,19 +418,25 @@
         <div class="sp-bloco">
           <div class="masc">${mascM('aceno', 176)}</div>
           <h1 class="marca">brain</h1>
-          <p class="serif slogan">${refazer ? 'Vamos refazer as perguntas.' : 'Seu sistema de estudo e disciplina, do jeito que você vive.'}</p>
+          <p class="serif slogan">${refazer ? 'Vamos refazer as perguntas.' : 'Estudos, rotina e dinheiro organizados do seu jeito.'}</p>
         </div>
         <div class="base">
           <button class="pill" id="comecar" type="button" style="flex:none;width:12rem">Começar</button>
           ${refazer ? '' : '<div style="font-size:.88rem;color:var(--bv-muted)">Já usou o Brain? <button class="link" id="imp" type="button"><u>Importar backup</u></button></div>'}
         </div></div>`;
       mostrarProx = false;
+    } else if (p.t === 'parabens') {
+      const t = [
+        ['Parabéns por dar o primeiro passo!', 'Começar é a parte mais difícil, e você acabou de fazer isso.', tile('bandeira', 'moeda', 'calc', 'livro')],
+        ['Você é único, e o seu plano também', 'Suas respostas moldam as metas, os lembretes e o tom do coach.', tile('agenda', 'lampada', 'relogio', 'lapis')],
+      ][p.n];
+      html = `<div class="meio centro">${t[2]}<h1 class="titulo" style="margin-top:1.6rem">${t[0]}</h1><p class="sub centro" style="margin-top:.7rem">${t[1]}</p></div><div class="pontos" aria-hidden="true">${[0, 1].map((x) => `<i class="${x === p.n ? 'on' : ''}"></i>`).join('')}</div>`;
     } else if (p.t === 'ola') {
       html = `<div class="meio ola">
         <div class="ola-topo">${mascM('festa', 92)}<div><h1 class="titulo" style="text-align:left;margin:0">Você está no lugar certo!</h1></div></div>
-        <p class="sub" style="margin-top:.7rem">O Brain junta o que a pesquisa mostra que funciona:</p>
+        <p class="sub" style="margin-top:.7rem">O Brain reúne o que a pesquisa mostra que funciona:</p>
         <ul class="bens">${BENS.map(([k, t, x, v, c]) => `<li style="--c:${COR[k]}"><span class="sc-ic">${ICS[k]}</span><div><b>${t}</b><span>${x}</span></div><em class="bd"><strong>${v}</strong><small>${c}</small></em></li>`).join('')}</ul>
-        <p class="dica" style="margin-top:.7rem">Dados: CNC, OCDE, Dunlosky, Lally e Gollwitzer (fontes em Configurações). Leva ~2 min; as respostas ficam só neste aparelho.</p></div>`;
+        <p class="dica" style="margin-top:.7rem">São cerca de 2 minutos de perguntas, e as respostas ficam só no seu aparelho. Fontes dos dados em Configurações.</p></div>`;
     } else if (p.t === 'nome') {
       html = `<div class="meio" style="margin-top:2rem"><h1 class="perg" style="font-size:1.5rem">Vamos nos conhecer.<br>Como você prefere ser chamado?</h1><label class="rotc" for="nm">Nome ou apelido</label><input class="campo" id="nm" maxlength="24" autocomplete="given-name" value="${esc(resp.nome || '')}"></div>`;
       depois = (el) => { const inp = el.querySelector('#nm'); inp.addEventListener('input', () => { const v = inp.value.replace(/\s+/g, ' ').trim(); if (v) resp.nome = v; else delete resp.nome; $('prox').disabled = !v; }); inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && inp.value.trim()) avancar(); }); };
@@ -445,12 +451,12 @@
       podeIr = !!(resp.motivacoes && resp.motivacoes.length);
     } else if (p.t === 'ritmo') {
       const r = O.RITMOS.map((x) => x[0]); const cur = Math.max(0, r.indexOf(resp.ritmo || 'medio')); resp.ritmo = r[cur];
-      html = `<h1 class="perg">Em que ritmo você quer chegar ao seu objetivo?</h1>
+      html = `<h1 class="perg">Em que ritmo você quer alcançar o seu objetivo?</h1>
         <div class="ritmo"><div class="ritmo-ic" aria-hidden="true"><span>${ico.passo}</span><span>${ico.bike}</span><span>${ico.foguete}</span></div>
         <input type="range" id="rg" min="0" max="2" step="1" value="${cur}" aria-label="Ritmo">
         <div class="ritmo-rot">${O.RITMOS.map((x, k) => `<button type="button" data-r="${k}">${esc(x[1])}</button>`).join('')}</div></div>
         <p class="sub" id="rt-dica" style="margin-top:1.4rem"></p>`;
-      const dicas = ['Metas menores. Ideal para criar o hábito sem se cansar.', 'Equilíbrio entre avançar e manter a vida em dia.', 'Metas mais altas. Exige mais, então vale revisar a cada semana.'];
+      const dicas = ['Metas menores. Ideal para criar o hábito sem se cansar.', 'Equilíbrio entre avançar e manter a vida em dia.', 'Metas mais altas. Exige mais de você, então vale revisar toda semana.'];
       depois = (el) => {
         const g = el.querySelector('#rg');
         const atualizar = () => { const v = Number(g.value); g.style.setProperty('--p', `${v * 50}%`); g.setAttribute('aria-valuetext', O.RITMOS[v][1]); resp.ritmo = r[v]; el.querySelectorAll('.ritmo-ic svg').forEach((s, k) => s.classList.toggle('on', k === v)); el.querySelectorAll('.ritmo-rot button').forEach((b, k) => b.setAttribute('aria-pressed', String(k === v))); el.querySelector('#rt-dica').textContent = dicas[v]; };
@@ -482,7 +488,7 @@
       depois = (el) => el.appendChild(cartoes(q.opcoes.map((o) => [o.v, o.t]), resp[q.id], false, (v) => { resp[q.id] = v; setTimeout(() => { if (passos[i] === p) avancar(); }, 260); }));
       mostrarProx = false;
     } else if (p.t === 'prior') {
-      html = '<h1 class="perg">Se pudesse melhorar até duas áreas agora, quais seriam?</h1><p class="sub">Elas aparecem primeiro nos seus passos iniciais.</p>';
+      html = '<h1 class="perg">Se pudesse melhorar até duas áreas agora, quais você escolheria?</h1><p class="sub">Elas vêm primeiro nos seus passos iniciais.</p>';
       depois = (el) => { el.insertBefore(cartoes(O.PRIORIDADES, resp.prioridade, true, (v) => { if (v.length) resp.prioridade = v; else delete resp.prioridade; }, 2), el.querySelector('.espaco')); el.querySelector('#sp').addEventListener('click', () => { delete resp.prioridade; avancar(); }); };
       html += '<div class="espaco" style="flex:1"></div><div class="centro"><button class="link" id="sp" type="button"><u>Sem prioridade</u></button></div>';
     } else if (p.t === 'tom') {
@@ -494,7 +500,7 @@
       const rit = (O.RITMOS.find((x) => x[0] === resp.ritmo) || [0, ''])[1];
       const mot = (O.MOTIVOS.find((x) => x[0] === resp.motivo) || [0, ''])[1];
       const mvs = (resp.motivacoes || []).map((v) => O.MOTIVACOES.find((x) => x[0] === v)[1]).join(', ');
-      const dicaNivel = cs.pct <= 25 ? 'Você está começando, e tudo bem. Vamos de metas pequenas e de retomar sem culpa quando falhar.' : cs.pct <= 50 ? 'Você já tem partes do hábito. Metas moderadas e o registro diário vão consolidar o resto.' : cs.pct <= 75 ? 'Boa base. Dá para subir as metas aos poucos e usar as revisões a seu favor.' : 'Você já tem constância. O Brain entra para medir, revisar e manter o ritmo.';
+      const dicaNivel = cs.pct <= 25 ? 'Todo mundo começa de algum lugar. Vamos com metas pequenas e, se você falhar, retoma sem culpa.' : cs.pct <= 50 ? 'Você já tem parte do hábito. Metas moderadas e o registro diário consolidam o resto.' : cs.pct <= 75 ? 'Você tem uma boa base. Dá para subir as metas aos poucos e usar as revisões a seu favor.' : 'Você já tem constância! O Brain entra para medir, revisar e manter o seu ritmo.';
       const seg = Math.min(3, Math.floor((Math.max(1, cs.pct) - 1) / 25));
       html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem"><h1 class="titulo" style="text-align:left;margin:1.6rem 0 0">${n ? n + ', seu' : 'Seu'} resumo pessoal</h1>${mascM('festa', 100, 'mascote p')}</div>
         <div class="chips"><span class="chip">${esc(O.rotuloHoras(resp.horas))} por dia</span><span class="chip">${resp.dias} ${resp.dias === 1 ? 'dia' : 'dias'} por semana</span>${rit ? `<span class="chip">${esc(rit)}</span>` : ''}</div>
@@ -509,7 +515,7 @@
     } else if (p.t === 'fim') {
       const pl = O.plano(resp); rotulo = 'Continuar';
       html = `<div style="margin-top:1.4rem">${mascM('festa', 100, 'mascote p')}</div><h1 class="titulo" style="text-align:left;margin:.8rem 0 0">${n ? n + ', seu' : 'Seu'} plano está montado</h1>
-        <p class="sub">Ajustei isto para você (dá para mudar depois em ⚙):</p><ul class="ajustes">${pl.ajustes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
+        <p class="sub">Ajustei estes pontos para você (dá para mudar depois em ⚙):</p><ul class="ajustes">${pl.ajustes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
         <h2 class="sec-h">Seus primeiros passos</h2><div class="passos">${pl.passos.map((s, m) => `<a class="passo-c" href="${s.href}"><b>${m + 1}. ${esc(s.titulo)}</b><span>${esc(s.texto)}</span></a>`).join('')}</div><div style="height:.6rem"></div>`;
     } else if (p.t === 'pronto') {
       const G = {
