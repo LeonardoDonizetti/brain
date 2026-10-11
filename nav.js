@@ -162,10 +162,17 @@
             <div class="cfg-botoes"><button type="button" class="principal" id="cfg-ics">Baixar agenda (.ics)</button></div></div>
         </div>
 
+        <h3>Segurança</h3>
+        <div class="cfg-cartao">
+          <div id="cfg-seg"></div>
+          <div class="cfg-linha"><div class="rot">Bloquear sozinho</div><p class="dica">Pede a senha de novo depois de ficar parado ou ao voltar para o app.</p><div class="ctl">${seg('bloqueio_min', [[0, 'Ao sair'], [1, '1 min'], [5, '5 min'], [15, '15 min']])}</div></div>
+        </div>
+
         <h3>Dados e backup</h3>
         <div class="cfg-cartao">
           <div class="cfg-linha"><div class="rot">Backup</div><p class="dica" id="cfg-info">Tudo fica guardado só neste aparelho.</p>
             <div class="cfg-botoes"><button type="button" class="principal" id="cfg-exportar">Salvar backup</button><button type="button" id="cfg-importar">Restaurar backup</button></div>
+            <div class="cfg-botoes"><button type="button" id="cfg-exportar-sen">Salvar backup com senha</button></div>
             <input type="file" id="cfg-arquivo" accept=".json,application/json" hidden></div>
           <div class="cfg-linha"><div class="rot">Lembrar de fazer backup</div><div class="ctl">${seg('lembrete_backup', [[7, '7 dias'], [14, '14 dias'], [30, '30 dias'], [0, 'Nunca']])}</div></div>
           <div class="cfg-linha"><div class="rot">Exportar planilha (CSV)</div><p class="dica">Abre no Excel e no Google Planilhas.</p>
@@ -186,6 +193,7 @@
     const $ = (id) => dlg.querySelector('#' + id);
     const L = () => window.BrainLocal;
     const msg = (t, aviso) => { const m = $('cfg-msg'); m.textContent = t; m.className = 'cfg-msg' + (aviso ? ' aviso' : ''); };
+    if (window.BrainSeg) window.BrainSeg.montar($('cfg-seg'), msg);
 
     // ---- estado dos controles ----
     function marcar() {
@@ -290,6 +298,20 @@
       };
     });
 
+    $('cfg-exportar-sen').addEventListener('click', () => {
+      if (!L() || !window.BrainSeg) { msg('O backup só existe na versão do celular.'); return; }
+      window.BrainSeg.formulario('Backup com senha', [{ rot: 'Senha do backup (4 a 64 caracteres)', auto: 'new-password', forca: true }, { rot: 'Repita a senha', auto: 'new-password' }], 'Salvar', async (v) => {
+        if (v[0] !== v[1]) throw new Error('As senhas não são iguais.');
+        const texto = await L().exportarCifrado(v[0]);
+        const nome = `brain-backup-protegido-${hojeIso()}.json`;
+        const blob = new Blob([texto], { type: 'application/json' });
+        let feito = false;
+        try { const arq = new File([blob], nome, { type: 'application/json' }); if (navigator.canShare && navigator.canShare({ files: [arq] })) { await navigator.share({ files: [arq], title: 'Backup do Brain' }); feito = true; } } catch (e) { if (e && e.name === 'AbortError') { msg('Compartilhamento cancelado.'); return; } }
+        if (!feito) baixar(blob, nome);
+        msg('Backup protegido gerado. Sem a senha ele não abre: guarde-a em lugar seguro.'); atualizarInfo();
+      });
+    });
+
     $('cfg-importar').addEventListener('click', () => {
       if (!L()) { msg('O backup só existe na versão do celular.'); return; }
       $('cfg-arquivo').click();
@@ -300,9 +322,13 @@
       if (!f) return;
       if (!confirm('Restaurar vai SUBSTITUIR tudo o que está neste aparelho pelo conteúdo do arquivo. Continuar?')) return;
       try {
-        const r = await L().importar(await f.text());
-        msg(`Restaurado: ${r.gastos} gastos, ${r.tarefas} tarefas, ${r.itens} itens de rotina, ${r.avaliacoes} avaliações.`);
-        setTimeout(() => location.reload(), 900);
+        const txt = await f.text();
+        const concluir = (r) => { msg(`Restaurado: ${r.gastos} gastos, ${r.tarefas} tarefas, ${r.itens} itens de rotina, ${r.avaliacoes} avaliações.`); setTimeout(() => location.reload(), 900); };
+        try { concluir(await L().importar(txt)); }
+        catch (e) {
+          if (!e.pedeSenha || !window.BrainSeg) throw e;
+          window.BrainSeg.formulario('Backup protegido', [{ rot: 'Senha do backup', auto: 'off' }], 'Restaurar', async (v) => { concluir(await L().importar(txt, v[0])); });
+        }
       } catch (e) { msg(e.message || 'Não consegui restaurar esse arquivo.', true); }
     });
 

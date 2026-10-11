@@ -1,0 +1,11 @@
+{
+  "name": "brain-apk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Empacota o Brain (PWA) como app Android com Capacitor.",
+  "dependencies": {
+    "@capacitor/android": "7.6.9",
+    "@capacitor/cli": "7.6.9",
+    "@capacitor/core": "7.6.9"
+  }
+}

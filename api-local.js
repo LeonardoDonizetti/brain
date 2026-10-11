@@ -11,6 +11,7 @@
   const C = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./categorias.js') : root.BrainCategorias;
   const TF = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./tarefas.js') : root.BrainTarefas;
   const ES = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./estudos.js') : root.BrainEstudos;
+  const CF = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./cofre.js') : root.BrainCofre;
   const { iso, addDias, hojeData, deIso } = T;
 
   class ErroHTTP extends Error {
@@ -48,7 +49,11 @@
       });
       return this._db;
     },
-    async ler() {
+    chave: null,              // chave AES na memória (só existe com o cofre desbloqueado)
+    sal: null,
+    voltas: null,
+    _sessaoLida: false,
+    async _bruto() {
       if (this.modo === null) {
         try { await this._abrir(); this.modo = 'indexeddb'; }
         catch (e) {
@@ -60,15 +65,35 @@
         const db = await this._abrir();
         return new Promise((resolve, reject) => {
           const req = db.transaction('estado', 'readonly').objectStore('estado').get('principal');
-          req.onsuccess = () => resolve(req.result ? JSON.parse(req.result) : null);
+          req.onsuccess = () => resolve(req.result || null);
           req.onerror = () => reject(req.error);
         });
       }
-      if (this.modo === 'localstorage') { const s = root.localStorage.getItem(CHAVE_LS); return s ? JSON.parse(s) : null; }
-      return this.memoria ? JSON.parse(this.memoria) : null;
+      if (this.modo === 'localstorage') return root.localStorage.getItem(CHAVE_LS);
+      return this.memoria;
     },
-    async gravar(estado) {
-      const json = JSON.stringify(estado);
+    /** Se a página foi aberta com o cofre já destravado nesta sessão, recupera a chave (some ao fechar o app). */
+    async _sessao() {
+      if (this._sessaoLida) return; this._sessaoLida = true;
+      try {
+        const s = root.sessionStorage && root.sessionStorage.getItem('brain-kx');
+        if (s && CF && CF.disponivel()) { const o = JSON.parse(s); this.chave = await CF.importarChave(o.k); this.sal = o.s; this.voltas = o.v || null; }
+      } catch (e) { this.chave = null; }
+    },
+    _guardarSessao(b64) { try { if (root.sessionStorage) { if (b64) root.sessionStorage.setItem('brain-kx', JSON.stringify({ k: b64, s: this.sal, v: this.voltas })); else root.sessionStorage.removeItem('brain-kx'); } } catch (e) { /* sem sessão */ } },
+    async ler() {
+      await this._sessao();
+      const bruto = await this._bruto();
+      if (!bruto) return null;
+      const obj = JSON.parse(bruto);
+      if (CF && CF.ehEnvelope(obj)) {
+        if (!this.chave) erro(423, 'O Brain está bloqueado.');
+        try { return JSON.parse(await CF.decifrar(this.chave, obj)); }
+        catch (e) { this.chave = null; this._guardarSessao(null); erro(423, 'O Brain está bloqueado.'); }
+      }
+      return obj;
+    },
+    async _gravarBruto(json) {
       if (this.modo === 'indexeddb') {
         const db = await this._abrir();
         return new Promise((resolve, reject) => {
@@ -81,6 +106,11 @@
       }
       if (this.modo === 'localstorage') { root.localStorage.setItem(CHAVE_LS, json); return; }
       this.memoria = json;
+    },
+    async gravar(estado) {
+      let json = JSON.stringify(estado);
+      if (this.chave) json = JSON.stringify(await CF.cifrar(this.chave, json, this.sal, this.voltas));
+      await this._gravarBruto(json);
     },
   };
 
@@ -876,12 +906,16 @@
     return novo;
   }
 
-  /** Substitui TODOS os dados do aparelho pelo conteúdo do backup. */
-  function importar(textoJson) {
+  /** Substitui TODOS os dados do aparelho pelo conteúdo do backup (aceita backup protegido com senha). */
+  async function importar(textoJson, senha) {
     let obj;
-    try { obj = JSON.parse(textoJson); } catch (e) { return Promise.reject(new Error('Não consegui ler o arquivo. Ele precisa ser um backup .json do Brain.')); }
-    let novo;
-    try { novo = normalizarBackup(obj); } catch (e) { return Promise.reject(e); }
+    try { obj = JSON.parse(textoJson); } catch (e) { throw new Error('Não consegui ler o arquivo. Ele precisa ser um backup .json do Brain.'); }
+    if (CF && CF.ehEnvelope(obj)) {
+      if (!senha) { const e = new Error('Este backup é protegido por senha.'); e.pedeSenha = true; throw e; }
+      const chave = await CF.derivar(senha, obj.s, obj.it);
+      try { obj = JSON.parse(await CF.decifrar(chave, obj)); } catch (e) { const er = new Error('Senha do backup incorreta.'); er.pedeSenha = true; throw er; }
+    }
+    const novo = normalizarBackup(obj);
     return executar(async (estado, ctx) => {
       Object.assign(estado, novo, { ultimo_backup: estado.ultimo_backup, preferencias: novo.preferencias || estado.preferencias });
       ctx.salvar = true;
@@ -889,6 +923,74 @@
     });
   }
 
+  // =========================================================== cofre (senha + criptografia)
+  const brutoObj = async () => { await Armazem._sessao(); const b = await Armazem._bruto(); return b ? JSON.parse(b) : null; };
+  const senhaOk = (s) => { if (typeof s !== 'string' || s.length < 4 || s.length > 64) throw new Error('A senha precisa ter de 4 a 64 caracteres.'); };
+  /** Confere a senha atual (reautenticação) sem alterar nada. */
+  async function conferirSenha(senha) {
+    const o = await brutoObj();
+    if (!(o && CF.ehEnvelope(o))) throw new Error('O bloqueio não está ativo.');
+    const chave = await CF.derivar(senha, o.s, o.it);
+    await CF.decifrar(chave, o);
+    return chave;
+  }
+  const cofre = {
+    disponivel: () => !!CF && CF.disponivel(),
+    async protegido() { const o = await brutoObj(); return !!(o && CF.ehEnvelope(o)); },
+    async bloqueado() { const o = await brutoObj(); return !!(o && CF.ehEnvelope(o)) && !Armazem.chave; },
+    async ativar(senha) {
+      senhaOk(senha);
+      if (!CF.disponivel()) throw new Error('Este aparelho não oferece criptografia no navegador.');
+      if (await this.protegido()) throw new Error('O bloqueio já está ativo.');
+      await executar(async (estado, ctx) => {
+        Armazem.sal = CF.novoSal(); Armazem.voltas = CF.VOLTAS;
+        Armazem.chave = await CF.derivar(senha, Armazem.sal, Armazem.voltas);
+        ctx.salvar = true;
+      });
+      Armazem._guardarSessao(await CF.exportarChave(Armazem.chave));
+      return { ok: true };
+    },
+    async desbloquear(senha) {
+      const o = await brutoObj();
+      if (!(o && CF.ehEnvelope(o))) return { ok: true };
+      const chave = await CF.derivar(String(senha || ''), o.s, o.it);
+      await CF.decifrar(chave, o); // lança "Senha incorreta."
+      Armazem.chave = chave; Armazem.sal = o.s; Armazem.voltas = o.it;
+      Armazem._guardarSessao(await CF.exportarChave(chave));
+      return { ok: true };
+    },
+    bloquear() { Armazem.chave = null; Armazem._guardarSessao(null); return { ok: true }; },
+    async desativar(senha) {
+      await conferirSenha(senha);
+      await Armazem._sessao();
+      await executar(async (estado, ctx) => { Armazem.chave = null; ctx.salvar = true; });
+      Armazem._guardarSessao(null);
+      return { ok: true };
+    },
+    async trocar(atual, nova) {
+      senhaOk(nova);
+      await conferirSenha(atual);
+      await executar(async (estado, ctx) => {
+        Armazem.sal = CF.novoSal(); Armazem.voltas = CF.VOLTAS;
+        Armazem.chave = await CF.derivar(nova, Armazem.sal, Armazem.voltas);
+        ctx.salvar = true;
+      });
+      Armazem._guardarSessao(await CF.exportarChave(Armazem.chave));
+      return { ok: true };
+    },
+  };
+
+  /** Backup protegido com senha (o arquivo só abre com ela). */
+  function exportarCifrado(senha) {
+    senhaOk(senha);
+    return executar(async (estado, ctx) => {
+      estado.ultimo_backup = iso(hojeData());
+      ctx.salvar = true;
+      const sal = CF.novoSal();
+      const chave = await CF.derivar(senha, sal, CF.VOLTAS);
+      return JSON.stringify(await CF.cifrar(chave, JSON.stringify(copiaLimpa(estado)), sal, CF.VOLTAS));
+    });
+  }
 
   /** Apaga gastos, tarefas, rotina e jornada deste aparelho. Mantém as preferências. */
   function apagarTudo() {
@@ -917,7 +1019,7 @@
     return false;
   }
 
-  const api = { chamar, copia, exportar, importar, apagarTudo, resumo, persistir, normalizarBackup, sequencia, melhorSequencia, _armazem: Armazem, _executar: executar, ErroHTTP };
+  const api = { chamar, copia, exportar, exportarCifrado, importar, cofre, apagarTudo, resumo, persistir, normalizarBackup, sequencia, melhorSequencia, _armazem: Armazem, _executar: executar, ErroHTTP };
 
   // No navegador: responde às chamadas fetch('/api/...') com os dados locais.
   if (typeof window !== 'undefined' && typeof window.fetch === 'function' && typeof process === 'undefined') {

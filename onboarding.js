@@ -47,9 +47,17 @@
     O('firme', 'Firme: direto e cobrando', 'Fechado: vou ser direto.'),
     O('calmo', 'Calmo: sem pressão', 'Fechado: sem pressão.') ];
 
+  const MOTIVOS = [['vestibular', 'Passar no vestibular ou no ENEM'], ['notas', 'Melhorar minhas notas'], ['disciplina', 'Criar disciplina e constância'], ['organizar', 'Organizar tarefas e rotina'], ['dinheiro', 'Controlar meu dinheiro']];
+  const MOTIVACOES = [['curso', 'Entrar no curso que eu quero'], ['familia', 'Deixar minha família orgulhosa'], ['autonomia', 'Ter mais autonomia'], ['estresse', 'Menos correria e estresse'], ['tempo', 'Ganhar tempo livre'], ['mente', 'Ter a cabeça mais tranquila'], ['grana', 'Independência financeira']];
+  const RITMOS = [['leve', 'Devagar, mas firme'], ['medio', 'Na metade do caminho'], ['rapido', 'O mais rápido possível']];
+  const HORAS = []; for (let h = 0.5; h <= 8; h += 0.5) HORAS.push(h);
+  const rotuloHoras = (h) => (h < 1 ? '30 min' : Number.isInteger(h) ? `${h} h` : `${Math.floor(h)} h 30`);
+
   const VALIDOS = {};
   for (const p of PERGUNTAS) VALIDOS[p.id] = p.opcoes.map((o) => o.v);
   VALIDOS.tom = TONS.map((o) => o.v);
+  VALIDOS.motivo = MOTIVOS.map((x) => x[0]);
+  VALIDOS.ritmo = RITMOS.map((x) => x[0]);
 
   /** Mantém só respostas conhecidas; o resto é descartado. */
   function sanitizarPerfil(p) {
@@ -57,6 +65,9 @@
     const r = {};
     if (typeof p.nome === 'string') { const n = p.nome.replace(/\s+/g, ' ').trim().slice(0, 24); if (n) r.nome = n; }
     for (const k of Object.keys(VALIDOS)) if (VALIDOS[k].includes(p[k])) r[k] = p[k];
+    if (Array.isArray(p.motivacoes)) { const ok = MOTIVACOES.map((x) => x[0]); const u = [...new Set(p.motivacoes.filter((x) => ok.includes(x)))].slice(0, 3); if (u.length) r.motivacoes = u; }
+    if (HORAS.includes(Number(p.horas))) r.horas = Number(p.horas);
+    if (Number.isInteger(Number(p.dias)) && Number(p.dias) >= 1 && Number(p.dias) <= 7 && p.dias !== null && p.dias !== '') r.dias = Number(p.dias);
     if (Array.isArray(p.prioridade)) {
       const ok = PRIORIDADES.map((x) => x[0]);
       const u = [...new Set(p.prioridade.filter((x) => ok.includes(x)))].slice(0, 2);
@@ -80,6 +91,17 @@
     jornada: (r) => ({ titulo: 'Comece uma jornada curta', texto: r.disc === 'baixa' ? 'Sete dias bastam. Se falhar, você retoma sem perder o histórico.' : 'Defina um desafio de alguns dias e acompanhe a constância.', href: 'jornada.html' }),
   };
 
+  const NIVEIS = [[25, 'Começando'], [50, 'Em formação'], [75, 'Boa base'], [100, 'Firme']];
+  /** Estimativa 0-100 de constância a partir das respostas (não é diagnóstico). */
+  function constancia(respostas) {
+    const r = sanitizarPerfil(respostas);
+    const pts = (v, mapa) => (v in mapa ? mapa[v] : 1);
+    const soma = pts(r.foco, { dificil: 0, varia: 1, bom: 2 }) + pts(r.disc, { baixa: 0, media: 1, alta: 2 })
+      + pts(r.tarefas, { nada: 0, acumula: 1, ok: 2 }) + pts(r.rotina, { sem: 0, meio: 1, firme: 2 });
+    const pct = Math.round((soma / 8) * 100);
+    return { pct, nivel: NIVEIS.find((n) => pct <= n[0])[1] };
+  }
+
   /** Transforma as respostas em ajustes e em um plano de primeiros passos. */
   function plano(respostas) {
     const r = sanitizarPerfil(respostas);
@@ -88,6 +110,7 @@
     if (r.disc === 'baixa') diaria = Math.min(diaria, 2);
     if (r.foco === 'dificil') diaria = Math.min(diaria, 3);
     if (r.disc === 'alta' && r.tarefas === 'ok') diaria = 6;
+    if (r.ritmo === 'leve') diaria = Math.max(1, diaria - 1); else if (r.ritmo === 'rapido') diaria = Math.min(8, diaria + 1);
     const prefs = {
       meta_diaria: diaria,
       meta_semanal: diaria * 5,
@@ -98,6 +121,7 @@
     };
     ajustes.push(`Meta de ${prefs.meta_diaria} ${prefs.meta_diaria === 1 ? 'tarefa' : 'tarefas'} por dia e ${prefs.meta_semanal} por semana`);
     ajustes.push(`Coach com tom ${{ amigo: 'amigo', firme: 'firme', calmo: 'calmo' }[prefs.coach_tom]}`);
+    if (r.horas && r.dias) { const tot = r.horas * r.dias; ajustes.push(`Meta de estudo: ${rotuloHoras(r.horas)} por dia, ${r.dias} ${r.dias === 1 ? 'dia' : 'dias'} por semana (${Number.isInteger(tot) ? tot : tot.toFixed(1).replace('.', ',')} h)`); }
     if (r.dinheiro !== 'nao') ajustes.push(`Aviso quando uma categoria passar de ${prefs.coach_alerta_pct}% dos gastos`);
     else ajustes.push('Gastos escondidos da tela inicial');
 
@@ -111,6 +135,9 @@
     };
     if (r.foco === 'dificil') { nota.estudos += r.estudos === 'nao' ? 0 : 1; nota.jornada += 1; }
     for (const p of pri) nota[p] += 2;
+    const porMotivo = { vestibular: 'estudos', notas: 'estudos', disciplina: 'jornada', organizar: 'tarefas', dinheiro: 'financas' }[r.motivo];
+    if (porMotivo) nota[porMotivo] += 2;
+    if (r.motivo === 'organizar') nota.rotina += 1;
     const passos = Object.keys(nota)
       .filter((k) => nota[k] > 0 && !(k === 'estudos' && r.estudos === 'nao') && !(k === 'financas' && r.dinheiro === 'nao'))
       .sort((a, b) => nota[b] - nota[a])
@@ -120,7 +147,7 @@
     return { perfil: r, prefs, ajustes, passos };
   }
 
-  const lib = { MODULOS, PERGUNTAS, PRIORIDADES, TONS, sanitizarPerfil, plano };
+  const lib = { MODULOS, PERGUNTAS, PRIORIDADES, TONS, MOTIVOS, MOTIVACOES, RITMOS, HORAS, rotuloHoras, sanitizarPerfil, constancia, plano };
   root.BrainOnboarding = lib;
   if (typeof module !== 'undefined' && module.exports) module.exports = lib;
 })(typeof self !== 'undefined' ? self : this);

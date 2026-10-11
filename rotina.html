@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self' https://generativelanguage.googleapis.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Brain - Rotina</title>
 <link rel="stylesheet" href="base.css?v=m1">
@@ -17,7 +18,9 @@
 <script src="categorias.js"></script>
 <script src="estudos.js"></script>
 <script src="tarefas.js"></script>
+<script src="cofre.js"></script>
 <script src="api-local.js"></script>
+<script src="bloqueio.js"></script>
 <script src="nav.js" defer></script>
 <style>
   body { padding-bottom: calc(var(--nav-h) + 6rem); }

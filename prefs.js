@@ -13,6 +13,7 @@
     modo_ferias: false,      // pausa as metas sem "quebrar" nada
     periodo_grafico: 7,      // 7 | 14 | 30
     lembrete_backup: 14,     // dias; 0 = nunca lembrar
+    bloqueio_min: 1,         // bloqueia o app após N min parado (0 = ao sair do app)
     coach: true,             // mensagens do coach
     coach_tom: 'amigo',      // amigo | firme | calmo
     coach_alerta_pct: 40,    // avisa quando uma categoria passa disso % dos gastos
@@ -52,6 +53,10 @@
     if (typeof p.nome === 'string') { const n = p.nome.replace(/\s+/g, ' ').trim().slice(0, 24); if (n) r.nome = n; }
     for (const k of ['foco', 'disc', 'tarefas', 'estudos', 'dinheiro', 'rotina', 'tom']) if (typeof p[k] === 'string' && /^[a-z_]{1,12}$/.test(p[k])) r[k] = p[k];
     if (Array.isArray(p.prioridade)) { const u = [...new Set(p.prioridade.filter((x) => PRIORIDADES_OK.includes(x)))].slice(0, 2); if (u.length) r.prioridade = u; }
+    for (const k of ['motivo', 'ritmo']) if (typeof p[k] === 'string' && /^[a-z_]{1,12}$/.test(p[k])) r[k] = p[k];
+    if (Array.isArray(p.motivacoes)) { const u = [...new Set(p.motivacoes.filter((x) => typeof x === 'string' && /^[a-z_]{1,12}$/.test(x)))].slice(0, 3); if (u.length) r.motivacoes = u; }
+    if (typeof p.horas === 'number' && p.horas >= 0.5 && p.horas <= 8) r.horas = Math.round(p.horas * 2) / 2;
+    if (Number.isInteger(p.dias) && p.dias >= 1 && p.dias <= 7) r.dias = p.dias;
     return r;
   }
 
@@ -72,6 +77,7 @@
       modo_ferias: p.modo_ferias === true,
       periodo_grafico: [7, 14, 30].includes(p.periodo_grafico) ? p.periodo_grafico : PADRAO.periodo_grafico,
       lembrete_backup: [0, 7, 14, 30].includes(p.lembrete_backup) ? p.lembrete_backup : PADRAO.lembrete_backup,
+      bloqueio_min: [0, 1, 5, 15].includes(p.bloqueio_min) ? p.bloqueio_min : PADRAO.bloqueio_min,
       coach: p.coach !== false,
       coach_tom: ['amigo', 'firme', 'calmo'].includes(p.coach_tom) ? p.coach_tom : PADRAO.coach_tom,
       coach_alerta_pct: [30, 40, 50, 60].includes(p.coach_alerta_pct) ? p.coach_alerta_pct : PADRAO.coach_alerta_pct,

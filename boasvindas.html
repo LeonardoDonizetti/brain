@@ -2,10 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self' https://generativelanguage.googleapis.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Brain - Boas-vindas</title>
 <link rel="stylesheet" href="base.css?v=m1">
-<meta name="theme-color" content="#0b5f73">
+<meta name="theme-color" content="#faf6ee">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -14,81 +15,144 @@
 <script src="estudos.js"></script>
 <script src="tarefas.js"></script>
 <script src="categorias.js"></script>
+<script src="cofre.js"></script>
 <script src="api-local.js"></script>
+<script src="bloqueio.js"></script>
 <script src="onboarding.js"></script>
 <style>
-  html, body { height: 100%; margin: 0; overflow: hidden; }
+  @font-face { font-family: "Fraunces"; font-weight: 500; font-style: normal; font-display: swap; src: url(fonts/fraunces-latin-500-normal.woff2) format("woff2"); }
+  :root { --bv-bg: #faf6ee; --bv-card: #f1ebdf; --bv-card2: #ebe3d3; --bv-ink: #1d1b19; --bv-muted: #625c52; --bv-pill: #1c2230; --bv-on-pill: #ffffff; --bv-tag: #f0b45c; --bv-on-tag: #3a2606; --bv-sel: #fbe4bd; --bv-line: #ddd4c2; --bv-ok: #4f7f43; --bv-body: #ef9a95; --bv-body2: #d97d78; }
+  @media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]) { --bv-bg: #15130f; --bv-card: #211e18; --bv-card2: #2a261e; --bv-ink: #f2ede3; --bv-muted: #a59d8e; --bv-pill: #f2ede3; --bv-on-pill: #15130f; --bv-tag: #e8a950; --bv-on-tag: #2b1c04; --bv-sel: #3b2e17; --bv-line: #3a352b; --bv-ok: #7fb06f; } }
+  html[data-tema="escuro"] { --bv-bg: #15130f; --bv-card: #211e18; --bv-card2: #2a261e; --bv-ink: #f2ede3; --bv-muted: #a59d8e; --bv-pill: #f2ede3; --bv-on-pill: #15130f; --bv-tag: #e8a950; --bv-on-tag: #2b1c04; --bv-sel: #3b2e17; --bv-line: #3a352b; --bv-ok: #7fb06f; }
+  html, body { height: 100%; margin: 0; overflow: hidden; background: var(--bv-bg); color: var(--bv-ink); }
   body { padding: 0; }
-  .bv { max-width: 34rem; margin: 0 auto; height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; padding: 0 1rem; }
-  .bv-topo { padding: calc(.7rem + env(safe-area-inset-top)) 0 .4rem; }
-  .bv-linha { display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-height: 2.2rem; }
-  .bv-marca { font-weight: 650; letter-spacing: -.01em; }
-  .bv-btn { background: none; border: 0; color: var(--muted); font: inherit; font-size: .88rem; font-weight: 600; padding: .4rem .2rem; min-height: 2.2rem; min-width: 3.4rem; cursor: pointer; }
-  .bv-btn:last-child { text-align: right; }
-  .bv-btn:disabled { opacity: .35; cursor: default; }
-  .bv-btn[hidden] { display: block; visibility: hidden; }
-  .bv-prog { display: flex; gap: 3px; margin-top: .3rem; }
-  .bv-prog i { flex: 1; height: 3px; border-radius: 2px; background: var(--line); transition: background .3s; }
-  .bv-prog i.on { background: var(--accent); }
-  .palco { overflow-y: auto; display: flex; flex-direction: column; justify-content: center; padding: .5rem 0; }
-  .cena { display: flex; flex-direction: column; gap: .7rem; animation: bv-in .38s cubic-bezier(.23,1,.32,1) both; }
+  .bv { max-width: 30rem; margin: 0 auto; height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; position: relative; }
+  .topo { padding: calc(.9rem + env(safe-area-inset-top)) 1.3rem .2rem; min-height: 3.4rem; }
+  .topo.vazio { visibility: hidden; }
+  .topo { grid-row: 1; } .palco { grid-row: 2; } .rod { grid-row: 3; }
+  .tag-linha { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+  .tag { display: inline-block; background: var(--bv-tag); color: var(--bv-on-tag); font-weight: 600; font-size: .78rem; padding: .22rem .6rem; border-radius: .4rem; }
+  .pular { background: none; border: 0; font: inherit; font-size: .82rem; color: var(--bv-muted); min-height: 2.75rem; padding: 0 .2rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .barra { height: 4px; border-radius: 2px; background: var(--bv-line); margin-top: .1rem; overflow: hidden; }
+  .barra i { display: block; height: 100%; width: 0; background: var(--bv-tag); border-radius: 2px; transition: width .4s cubic-bezier(.23,1,.32,1); }
+  .palco { overflow-y: auto; overflow-x: hidden; padding: 0 1.3rem; display: flex; flex-direction: column; }
+  .cena { display: flex; flex-direction: column; flex: 1 0 auto; animation: bv-in .4s cubic-bezier(.23,1,.32,1) both; }
   .cena.sai { animation: bv-out .16s ease-in both; pointer-events: none; }
-  @keyframes bv-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-  @keyframes bv-out { to { opacity: 0; transform: translateX(-14px); } }
-  .arte { height: clamp(84px, 19dvh, 132px); display: flex; justify-content: center; color: var(--accent); }
-  .arte svg { height: 100%; width: auto; max-width: 100%; }
-  .arte .f { fill: var(--accent-soft); }
-  .arte .s { fill: var(--accent); stroke: var(--accent); }
-  .arte svg * { vector-effect: non-scaling-stroke; }
-  .arte svg path, .arte svg rect, .arte svg circle, .arte svg ellipse, .arte svg line { stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .arte svg .f { fill: var(--accent-soft); }
-  .arte svg .n { fill: none; }
-  .arte svg .s { fill: var(--accent); }
-  .eco { color: var(--muted); font-size: .86rem; text-align: center; margin: 0; min-height: 1.2em; }
-  .perg { font-size: 1.28rem; font-weight: 600; letter-spacing: -.015em; line-height: 1.25; margin: 0; text-align: center; }
-  .sub { color: var(--muted); font-size: .9rem; margin: 0; text-align: center; line-height: 1.45; }
-  .ctl-bv { display: flex; flex-direction: column; gap: .45rem; margin-top: .2rem; }
-  .opc { font: inherit; text-align: left; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: .6rem; padding: .7rem .9rem; min-height: 2.8rem; cursor: pointer; font-weight: 500; }
-  .opc:active { transform: scale(.985); }
-  .opc[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
-  .opc.pri { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; text-align: center; }
-  .opc.pri:disabled { opacity: .45; }
-  .opc.suave { border-color: transparent; background: none; color: var(--muted); text-align: center; min-height: 2.4rem; }
-  .campo { font: inherit; width: 100%; padding: .7rem .85rem; border: 1px solid var(--line-strong); border-radius: .6rem; background: var(--surface); color: var(--ink); min-height: 2.8rem; text-align: center; }
-  .mods2 { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; }
-  .mods2 div { background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; padding: .55rem .7rem; }
-  .mods2 b { display: block; font-size: .9rem; font-weight: 600; }
-  .mods2 span { color: var(--muted); font-size: .76rem; line-height: 1.3; display: block; margin-top: .1rem; }
-  .ajustes { margin: 0; padding: .6rem .8rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; list-style: none; font-size: .84rem; color: var(--muted); display: grid; gap: .25rem; }
-  .ajustes li { display: block; padding: 0; border: 0; }
-  .ajustes li + li { border: 0; }
-  .bv.final .log { display: none; }
-  .passos { display: grid; gap: .4rem; }
-  .passo-c { display: block; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; padding: .55rem .8rem; }
-  .passo-c b { display: block; font-weight: 600; font-size: .92rem; }
-  .passo-c span { color: var(--muted); font-size: .8rem; line-height: 1.35; }
-  .log { border-top: 1px solid var(--line); padding: .55rem 0 calc(.6rem + env(safe-area-inset-bottom)); max-height: 25dvh; overflow-y: auto; }
-  .log h2 { margin: 0 0 .35rem; font-size: .76rem; font-weight: 600; color: var(--muted); }
-  .chips { display: flex; flex-wrap: wrap; gap: .3rem; }
-  .chip { background: var(--accent-soft); color: var(--ink); border-radius: 1rem; padding: .2rem .65rem; font-size: .78rem; line-height: 1.3; animation: bv-in .35s cubic-bezier(.23,1,.32,1) both; }
-  .chip small { color: var(--muted); font-size: .72rem; margin-right: .25rem; }
-  .vazio-log { color: var(--muted); font-size: .8rem; margin: 0; }
-  @media (max-height: 640px) { .arte { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .cena, .chip { animation: none; } .cena.sai { animation: none; } .bv-prog i { transition: none; } }
+  .cena.volta { animation-name: bv-in-r; }
+  @keyframes bv-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+  @keyframes bv-in-r { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+  @keyframes bv-out { to { opacity: 0; transform: translateX(-16px); } }
+  h1, .serif { font-family: "Fraunces", Georgia, "Times New Roman", serif; font-weight: 500; letter-spacing: -.01em; }
+  .perg { font-size: 1.32rem; line-height: 1.3; margin: 1.5rem 0 .3rem; font-weight: 500; font-family: "IBM Plex Sans", system-ui, sans-serif; letter-spacing: -.01em; }
+  .sub { color: var(--bv-muted); font-size: .98rem; line-height: 1.45; margin: .5rem 0 0; }
+  .titulo { font-size: 1.55rem; line-height: 1.25; text-align: center; margin: 1.6rem 0 .4rem; text-wrap: balance; }
+  .centro { text-align: center; }
+  .meio { margin: auto 0; }
+  .rod { padding: .6rem 1.3rem calc(1rem + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: .6rem; min-height: 4.6rem; }
+  .rod[hidden] { display: none; }
+  .volt { flex: none; width: 3.4rem; height: 3.4rem; border-radius: 50%; border: 0; background: var(--bv-card2); color: var(--bv-ink); display: grid; place-items: center; cursor: pointer; }
+  .volt[hidden] { display: none; }
+  .volt svg { width: 1.3rem; height: 1.3rem; }
+  .pill { flex: 1; min-height: 3.4rem; border: 0; border-radius: 2rem; background: var(--bv-pill); color: var(--bv-on-pill); font: inherit; font-size: 1.02rem; font-weight: 600; cursor: pointer; padding: 0 1.4rem; }
+  .pill[hidden] { display: none; }
+  .pill:disabled { opacity: .35; cursor: default; }
+  .pill:active:not(:disabled) { transform: scale(.985); }
+  .link { background: none; border: 0; font: inherit; color: var(--bv-muted); font-size: .9rem; min-height: 2.75rem; cursor: pointer; padding: 0 .4rem; }
+  .link u { text-underline-offset: 3px; }
+  .opcs { display: flex; flex-direction: column; gap: .6rem; margin: 1.3rem 0 .6rem; }
+  .opc { position: relative; width: 100%; font: inherit; text-align: left; background: var(--bv-card); color: var(--bv-ink); border: 2px solid transparent; border-radius: 1.1rem; padding: 1.05rem 3.2rem 1.05rem 1.1rem; min-height: 3.6rem; font-size: 1rem; cursor: pointer; line-height: 1.3; transition: background .15s, border-color .15s; }
+  .opc[aria-pressed="true"], .opc[aria-checked="true"] { background: var(--bv-sel); border-color: var(--bv-tag); }
+  .opc .cx { position: absolute; right: 1rem; top: 50%; width: 1.5rem; height: 1.5rem; margin-top: -.75rem; border-radius: .45rem; border: 2px solid var(--bv-line); display: grid; place-items: center; }
+  .opc[aria-checked="true"] .cx { background: var(--bv-tag); border-color: var(--bv-tag); }
+  .opc .cx svg { width: .9rem; height: .9rem; opacity: 0; color: var(--bv-on-tag); }
+  .opc[aria-checked="true"] .cx svg { opacity: 1; }
+  .dica { color: var(--bv-muted); font-size: .84rem; margin: .1rem 0 0; }
+  .campo { font: inherit; font-size: 1.1rem; width: 100%; box-sizing: border-box; border: 0; border-bottom: 2px solid var(--bv-line); background: transparent; color: var(--bv-ink); padding: .9rem .1rem .5rem; border-radius: 0; outline: none; }
+  .campo:focus { border-bottom-color: var(--bv-tag); }
+  .rotc { color: var(--bv-muted); font-size: .8rem; margin-top: 1.6rem; display: block; }
+  .roda-box { position: relative; margin: auto 0; display: flex; justify-content: center; align-items: center; gap: .4rem; }
+  .roda { height: 17.5rem; width: 9.5rem; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; outline: none; -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent); mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent); }
+  .roda::-webkit-scrollbar { display: none; }
+  .roda:focus-visible { outline: 3px solid var(--bv-tag); outline-offset: 4px; border-radius: .6rem; }
+  .roda .esp { height: 7rem; }
+  .roda .it { height: 3.5rem; display: grid; place-items: center; scroll-snap-align: center; font-size: 2.1rem; font-weight: 600; color: var(--bv-ink); opacity: .22; transform: scale(.72); transition: opacity .12s, transform .12s; cursor: pointer; white-space: nowrap; }
+  .roda .it::before { content: attr(data-t); }
+  .roda .it[data-d="1"] { opacity: .5; transform: scale(.88); }
+  .roda .it[data-d="0"] { opacity: 1; transform: scale(1); }
+  .roda-un { font-size: 1.15rem; font-weight: 600; margin-top: .3rem; min-width: 5.5rem; }
+  .ritmo { margin: 2.2rem 0 0; }
+  .ritmo-ic { display: grid; grid-template-columns: 1fr 1fr 1fr; color: var(--bv-tag); }
+  .ritmo-ic span:nth-child(2) { text-align: center; } .ritmo-ic span:nth-child(3) { text-align: right; }
+  .ritmo-ic svg { width: 2.2rem; height: 2.2rem; opacity: .45; transition: opacity .2s; }
+  .ritmo-ic svg.on { opacity: 1; }
+  .ritmo input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 2.75rem; background: transparent; margin: .3rem 0; --p: 50%; }
+  .ritmo input[type=range]::-webkit-slider-runnable-track { height: .85rem; border-radius: .5rem; background: linear-gradient(to right, var(--bv-tag) var(--p), var(--bv-card2) var(--p)); }
+  .ritmo input[type=range]::-moz-range-track { height: .85rem; border-radius: .5rem; background: var(--bv-card2); }
+  .ritmo input[type=range]::-moz-range-progress { height: .85rem; border-radius: .5rem; background: var(--bv-tag); }
+  .ritmo input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 2.6rem; height: 2.6rem; margin-top: -.875rem; border-radius: 50%; background: var(--bv-tag) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a2606' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 7v10M12 6v12M15 7v10'/%3E%3C/svg%3E") center/1.4rem no-repeat; border: 0; box-shadow: 0 2px 6px #0003; }
+  .ritmo input[type=range]::-moz-range-thumb { width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--bv-tag); border: 0; }
+  .ritmo input[type=range]:focus-visible { outline: 3px solid var(--bv-tag); outline-offset: 4px; border-radius: 1rem; }
+  .ritmo-rot { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .4rem; }
+  .ritmo-rot button { background: none; border: 0; font: inherit; font-size: 1rem; line-height: 1.3; color: var(--bv-muted); cursor: pointer; min-height: 2.75rem; padding: .2rem 0; }
+  .ritmo-rot button:nth-child(1) { text-align: left; } .ritmo-rot button:nth-child(2) { text-align: center; } .ritmo-rot button:nth-child(3) { text-align: right; }
+  .ritmo-rot button[aria-pressed="true"] { color: var(--bv-ink); font-weight: 600; }
+  .tile { background: var(--bv-card); border-radius: 1.6rem; padding: 1.4rem; margin: 1.6rem auto 0; width: min(100%, 17rem); aspect-ratio: 1; display: grid; place-items: center; box-sizing: border-box; }
+  .tile svg { width: 100%; height: 100%; }
+  .mascote { display: block; margin: 0 auto; width: 7.5rem; }
+  .mascote.p { width: 5.4rem; margin: 0; }
+  .pontos { display: flex; gap: .4rem; justify-content: center; margin: 0 0 .8rem; }
+  .pontos i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--bv-line); transition: all .3s; }
+  .pontos i.on { width: 1.5rem; border-radius: .3rem; background: var(--bv-pill); }
+  .splash { position: relative; overflow: hidden; }
+  .splash .deco { position: absolute; }
+  .marca { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; font-size: 3.1rem; letter-spacing: -.045em; margin: 0; line-height: 1; }
+  .splash .slogan { font-size: 1.15rem; line-height: 1.4; margin: .8rem 0 0; max-width: 17rem; font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.1rem 0 0; }
+  .chip { background: var(--bv-card); border-radius: 2rem; padding: .45rem .9rem; font-size: .92rem; }
+  .cartao { background: var(--bv-card); border-radius: 1.1rem; padding: 1rem 1.1rem; margin-top: 1rem; }
+  .cartao h2 { font-size: .98rem; margin: 0 0 .2rem; font-weight: 600; font-family: "IBM Plex Sans", system-ui, sans-serif; }
+  .num-g { font-size: 2.6rem; font-weight: 600; letter-spacing: -.03em; margin: .1rem 0 .6rem; line-height: 1; }
+  .gauge { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem; padding-top: .9rem; }
+  .gauge i { height: .45rem; border-radius: .3rem; background: var(--c); }
+  .gauge .mk { position: absolute; top: .25rem; width: 1.15rem; height: 1.15rem; margin-left: -.575rem; border-radius: 50%; background: var(--bv-bg); border: 3px solid var(--bv-ink); box-sizing: border-box; transition: left .6s cubic-bezier(.23,1,.32,1); }
+  .gauge-rot { display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem; font-size: .72rem; color: var(--bv-muted); margin-top: .35rem; text-align: center; }
+  .gauge-rot b { color: var(--bv-ink); font-weight: 600; }
+  .aviso { background: var(--bv-sel); border-radius: 1rem; padding: .9rem 1rem; margin-top: 1rem; }
+  .aviso b { display: flex; gap: .5rem; align-items: center; font-size: .98rem; }
+  .aviso b span { width: 1.3rem; height: 1.3rem; border-radius: 50%; background: var(--bv-tag); color: var(--bv-on-tag); display: grid; place-items: center; font-size: .8rem; flex: none; }
+  .aviso p { margin: .4rem 0 0; font-size: .9rem; line-height: 1.45; }
+  .par { display: flex; gap: .9rem; align-items: center; margin-top: 1rem; }
+  .par svg { width: 2rem; height: 2rem; flex: none; color: var(--bv-tag); }
+  .par small { display: block; color: var(--bv-muted); font-size: .82rem; }
+  .par div { font-size: 1.02rem; font-weight: 500; line-height: 1.3; }
+  .nota { color: var(--bv-muted); font-size: .76rem; margin: .5rem 0 0; }
+  .curva { background: var(--bv-card); border-radius: 1.6rem; margin: 1rem 0 0; padding: .6rem; }
+  .curva svg { width: 100%; height: auto; display: block; }
+  .ajustes { margin: 1rem 0 0; padding: 0; list-style: none; display: grid; gap: .5rem; }
+  .ajustes, .ajustes li { background-color: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+  .ajustes li { display: flex; gap: .6rem; font-size: .94rem; line-height: 1.4; padding: 0; border: 0; }
+  .ajustes li::before { content: ""; flex: none; width: 1.1rem; height: 1.1rem; margin-top: .12rem; border-radius: 50%; background: var(--bv-ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/70% no-repeat; }
+  .passos { display: grid; gap: .5rem; margin-top: .6rem; }
+  .passo-c { display: block; text-decoration: none; color: var(--bv-ink); background: var(--bv-card); border-radius: 1rem; padding: .8rem 1rem; }
+  .passo-c b { display: block; font-weight: 600; font-size: .96rem; }
+  .passo-c span { color: var(--bv-muted); font-size: .85rem; line-height: 1.4; }
+  .sec-h { font-size: .8rem; font-weight: 600; color: var(--bv-muted); margin: 1.4rem 0 0; }
+  @media (max-height: 640px) { .tile { width: 11rem; margin-top: .8rem; } .roda { height: 14rem; } .roda .esp { height: 5.25rem; } .perg { margin-top: 1rem; } }
+  @media (prefers-reduced-motion: reduce) { .cena, .cena.volta, .cena.sai { animation: none; } .barra i, .opc, .gauge .mk, .roda .it { transition: none; } }
 </style>
 </head>
 <body>
-<div class="bv">
-  <header class="bv-topo">
-    <div class="bv-linha">
-      <button class="bv-btn" id="voltar" type="button" aria-label="Voltar uma pergunta">Voltar</button>
-      <span class="bv-marca">Brain</span>
-      <button class="bv-btn" id="pular" type="button">Pular</button>
-    </div>
-    <div class="bv-prog" id="prog" role="progressbar" aria-label="Progresso das boas-vindas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+<div class="bv" id="bv">
+  <header class="topo vazio" id="topo">
+    <div class="tag-linha"><span class="tag" id="tag">Objetivo &amp; perfil</span><button class="pular" id="pular" type="button">Pular tudo</button></div>
+    <div class="barra" id="barra" role="progressbar" aria-label="Progresso das boas-vindas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
   </header>
   <main class="palco" id="palco" aria-live="polite"></main>
-  <section class="log" aria-label="Suas respostas"><h2>Suas respostas</h2><div class="chips" id="chips"></div></section>
+  <footer class="rod" id="rod" hidden>
+    <button class="volt" id="voltar" type="button" aria-label="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+    <button class="pill" id="prox" type="button">Próximo</button>
+  </footer>
+  <input type="file" id="arq" accept=".json,application/json" hidden aria-label="Arquivo de backup">
 </div>
 <script>
 (function () {
@@ -98,29 +162,50 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const refazer = /[?&]refazer=1/.test(location.search);
   const reduzido = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const resp = {};
-  let i = 0, prioTmp = [], eco = '';
+  const resp = { horas: 2, dias: 5 };
+  let i = 0;
 
-  const R = (c) => `<svg viewBox="0 0 160 110" role="img" aria-hidden="true">${c}</svg>`;
-  const ARTE = {
-    livro: R('<path class="f" d="M80 34C62 24 38 24 18 30v58c20-6 44-6 62 4z"/><path class="f" d="M80 34c18-10 42-10 62-4v58c-20-6-44-6-62 4z"/><path class="n" d="M80 34v58M30 44c10-3 22-3 34 1M30 56c10-3 22-3 34 1M96 45c12-4 24-4 34-1M96 57c12-4 24-4 34-1"/><path class="s" d="M112 28v22l6-5 6 5V26z"/>'),
-    lapis: R('<rect class="f" x="36" y="16" width="76" height="82" rx="7"/><path class="n" d="M50 38h48M50 54h48M50 70h30"/><g transform="rotate(32 118 58)"><rect class="s" x="110" y="14" width="14" height="58" rx="2"/><path class="f" d="M110 72h14l-7 16z"/></g>'),
-    ampulheta: R('<path class="n" d="M50 16h60M50 96h60"/><path class="f" d="M56 16c0 34 24 34 24 40s-24 6-24 40M104 16c0 34-24 34-24 40s24 6 24 40"/><path class="s" d="M66 90c4-14 24-14 28 0z"/><path class="n" d="M80 56v18"/>'),
-    degraus: R('<path class="f" d="M16 96h30V76h30V56h30V36h38v60z"/><path class="n" d="M126 36V12"/><path class="s" d="M126 12l20 6-20 6z"/>'),
-    lista: R('<rect class="f" x="42" y="16" width="76" height="86" rx="8"/><path class="n" d="M70 12h20v10H70z"/><path class="n" d="M54 44l5 5 9-10M54 64l5 5 9-10M54 84l5 5 9-10M78 44h28M78 64h28M78 84h18"/>'),
-    livros: R('<rect class="f" x="26" y="74" width="108" height="20" rx="3"/><rect class="f" x="38" y="52" width="92" height="20" rx="3"/><rect class="f" x="24" y="30" width="100" height="20" rx="3"/><path class="n" d="M40 84h40M52 62h40M38 40h40"/><path class="s" d="M104 30v20l5-4 5 4V30z"/>'),
-    moedas: R('<path class="f" d="M44 84v10a36 10 0 0 0 72 0V84z"/><path class="f" d="M44 66v10a36 10 0 0 0 72 0V66z"/><ellipse class="f" cx="80" cy="56" rx="36" ry="10"/><path class="f" d="M44 56v10a36 10 0 0 0 72 0V56z"/><ellipse class="f" cx="80" cy="44" rx="36" ry="10"/><path class="n" d="M80 40v8M76 42h8"/>'),
-    relogio: R('<circle class="f" cx="80" cy="56" r="40"/><path class="n" d="M80 22v6M80 84v6M46 56h6M108 56h6"/><path class="n" d="M80 56V34M80 56l16 10"/><circle class="s" cx="80" cy="56" r="3"/>'),
-    alvo: R('<circle class="f" cx="76" cy="60" r="40"/><circle class="n" cx="76" cy="60" r="26"/><circle class="f" cx="76" cy="60" r="12"/><path class="n" d="M76 60L130 14M122 14h8v8"/>'),
-    baloes: R('<path class="f" d="M24 22h78a8 8 0 0 1 8 8v28a8 8 0 0 1-8 8H56l-14 12V66H24a8 8 0 0 1-8-8V30a8 8 0 0 1 8-8z"/><path class="n" d="M32 38h60M32 50h40"/><path class="s" d="M84 76h50a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-10l-10 8v-8H84a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/>'),
-    montanha: R('<path class="f" d="M8 98L58 40l26 28 26-32 42 62z"/><path class="n" d="M58 40V16"/><path class="s" d="M58 16l22 6-22 6z"/>'),
+  /* ---------- arte original (formas planas) ---------- */
+  const SV = (vb, c, cls) => `<svg viewBox="${vb}" role="img" aria-hidden="true"${cls ? ` class="${cls}"` : ''}>${c}</svg>`;
+  const mascote = (pose, cls) => {
+    const corpo = '<circle cx="42" cy="44" r="17" fill="var(--bv-body)"/><circle cx="60" cy="38" r="19" fill="var(--bv-body)"/><circle cx="78" cy="44" r="17" fill="var(--bv-body)"/><ellipse cx="60" cy="74" rx="35" ry="36" fill="var(--bv-body)"/><path d="M60 22c-5 8 5 12 0 20" fill="none" stroke="var(--bv-body2)" stroke-width="3" stroke-linecap="round"/><circle cx="43" cy="80" r="6" fill="#f7bdb8"/><circle cx="77" cy="80" r="6" fill="#f7bdb8"/><path d="M44 70q6-7 12 0M64 70q6-7 12 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M53 82q7 7 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/>';
+    const pernas = '<path d="M48 108q-2 14-12 17M72 108q2 14 12 17" fill="none" stroke="var(--bv-body)" stroke-width="8" stroke-linecap="round"/>';
+    const braco = (d) => `<path d="${d}" fill="none" stroke="var(--bv-body)" stroke-width="8" stroke-linecap="round"/>`;
+    const bracos = { oi: braco('M26 82q-14 4-15 22') + braco('M94 74q18-6 18-30'), festa: braco('M26 76q-16-6-14-30') + braco('M94 76q16-6 14-30'), calmo: braco('M26 84q-12 8-8 22') + braco('M94 84q12 8 8 22') }[pose || 'oi'];
+    return SV('0 0 120 130', bracos + pernas + corpo, 'mascote' + (cls ? ' ' + cls : ''));
   };
-  const ARTE_Q = { foco: 'ampulheta', disc: 'degraus', tarefas: 'lista', estudos: 'livros', dinheiro: 'moedas', rotina: 'relogio' };
-  const ROTULO = { nome: 'Nome', foco: 'Foco', disc: 'Disciplina', tarefas: 'Tarefas', estudos: 'Estudos', dinheiro: 'Dinheiro', rotina: 'Rotina', prior: 'Prioridades', tom: 'Coach' };
+  const ic = {
+    livro: '<path d="M20 70V24c14-6 28-6 40 2v50c-12-8-26-8-40-6z" fill="#3b5b8c"/><path d="M60 26c12-8 26-8 40-2v46c-14-2-28-2-40 6z" fill="#5f86bd"/><path d="M60 26v50" stroke="#2c4570" stroke-width="3"/>',
+    lapis: '<g transform="rotate(35 60 60)"><rect x="52" y="8" width="16" height="84" rx="3" fill="#f0b45c"/><path d="M52 92l8 18 8-18z" fill="#f4d9b0"/><path d="M57 102l3 8 3-8z" fill="#2a2420"/><rect x="52" y="8" width="16" height="12" rx="3" fill="#ef9a95"/></g>',
+    relogio: '<circle cx="60" cy="60" r="38" fill="#fff" stroke="#2a2420" stroke-width="5"/><path d="M60 34v28l18 10" fill="none" stroke="#2a2420" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="60" cy="60" r="4" fill="#ef9a95"/>',
+    moeda: '<circle cx="60" cy="60" r="38" fill="#e8b94a"/><circle cx="60" cy="60" r="28" fill="none" stroke="#c99a2a" stroke-width="4"/><path d="M60 42v36M52 50c0-6 16-6 16 2s-16 6-16 14 16 8 16 2" fill="none" stroke="#a87c14" stroke-width="4" stroke-linecap="round"/>',
+    agenda: '<rect x="26" y="14" width="68" height="92" rx="8" fill="#232a3a"/><rect x="26" y="52" width="68" height="14" fill="#e9e4d8"/><rect x="78" y="14" width="7" height="92" fill="#11151f"/><path d="M42 104v12l7-5 7 5v-12" fill="#8892a6"/>',
+    lampada: '<path d="M60 14a30 30 0 0 0-14 56v14h28V70a30 30 0 0 0-14-56z" fill="#f5d36b"/><rect x="48" y="88" width="24" height="8" rx="3" fill="#6a645a"/><rect x="52" y="98" width="16" height="6" rx="3" fill="#6a645a"/><path d="M52 52l8 10 8-10" fill="none" stroke="#c99a2a" stroke-width="3.5" stroke-linecap="round"/>',
+    bandeira: '<path d="M32 108V18" stroke="#2a2420" stroke-width="5" stroke-linecap="round"/><path d="M32 20h56l-10 16 10 16H32z" fill="#e0675f"/>',
+    calc: '<rect x="30" y="12" width="60" height="96" rx="9" fill="#4a5470"/><rect x="38" y="22" width="44" height="20" rx="3" fill="#cfe4d6"/><g fill="#e9e4d8"><circle cx="45" cy="58" r="5"/><circle cx="60" cy="58" r="5"/><circle cx="75" cy="58" r="5"/><circle cx="45" cy="74" r="5"/><circle cx="60" cy="74" r="5"/><circle cx="75" cy="74" r="5"/></g><rect x="40" y="86" width="40" height="12" rx="6" fill="#ef9a95"/>',
+    clip: '<rect x="30" y="16" width="60" height="92" rx="8" fill="#f1ebdf" stroke="#2a2420" stroke-width="4"/><rect x="46" y="9" width="28" height="14" rx="5" fill="#3b5b8c"/><path d="M42 48l6 6 10-12M42 72l6 6 10-12M66 50h16M66 74h16" fill="none" stroke="#2a2420" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
+  };
+  const iconeSVG = (k, estilo) => `<svg viewBox="0 0 120 120" role="img" aria-hidden="true"${estilo ? ` style="${estilo}"` : ''}>${ic[k]}</svg>`;
+  const tile = (...ks) => `<div class="tile"><svg viewBox="0 0 240 240" role="img" aria-hidden="true">${ks.map((k, n) => `<g transform="translate(${(n % 2) * 120} ${Math.floor(n / 2) * 120})">${ic[k]}</g>`).join('')}</svg></div>`;
+  const ico = {
+    passo: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 30c-5 0-7-6-5-12 2-5 6-6 8-3s1 11-1 13zM12 36h8M32 24c-4-2-5-8-2-12 3-4 7-3 8 0s-1 10-4 12zM30 30h8"/></svg>',
+    bike: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="31" r="7"/><circle cx="37" cy="31" r="7"/><path d="M11 31l8-14h10l8 14M19 17l6 14H11M27 12h6"/></svg>',
+    foguete: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 8c6 0 8 2 8 8 0 8-8 16-16 18l-8-8C18 18 26 8 32 8zM16 26l-6 3 3 6M22 34l-3 6 6-3"/><circle cx="31" cy="17" r="2"/></svg>',
+    bandeira: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 42V8M12 10h24l-5 8 5 8H12"/></svg>',
+    coracao: '<svg viewBox="0 0 48 48" fill="currentColor" aria-hidden="true"><path d="M24 42S6 31 6 18a9 9 0 0 1 18-3 9 9 0 0 1 18 3c0 13-18 24-18 24z"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg>',
+  };
+  const deco = (k, t) => `<svg viewBox="0 0 120 120" width="${t}" height="${t}" aria-hidden="true">${ic[k]}</svg>`;
 
-  const passos = [{ t: 'intro' }, { t: 'mods' }, { t: 'nome' }]
-    .concat(O.PERGUNTAS.map((q) => ({ t: 'q', q })))
-    .concat([{ t: 'prior' }, { t: 'tom' }, { t: 'fim' }]);
+  /* ---------- roteiro ---------- */
+  const SEC = { a: 'Objetivo & perfil', b: 'Seu dia a dia', c: 'Prioridades' };
+  const passos = [
+    { t: 'splash' }, { t: 'intro', n: 0 }, { t: 'intro', n: 1 }, { t: 'intro', n: 2 }, { t: 'ola' }, { t: 'nome', s: 'a' },
+    { t: 'motivo', s: 'a' }, { t: 'motivacoes', s: 'a' }, { t: 'ritmo', s: 'a' }, { t: 'horas', s: 'a' }, { t: 'dias', s: 'a' }, { t: 'curva' },
+  ].concat(O.PERGUNTAS.map((q) => ({ t: 'q', q, s: 'b' })))
+   .concat([{ t: 'prior', s: 'c' }, { t: 'tom', s: 'c' }, { t: 'resumo' }, { t: 'fim' }]);
+  const primeira = passos.findIndex((p) => p.s);
+  const ultima = passos.findIndex((p) => p.t === 'tom');
 
   function sair() { location.replace('./'); }
   function concluir(aplicar) {
@@ -128,103 +213,202 @@
     else window.BrainPrefs.set({ onboarding: true });
   }
 
-  /** Respostas já dadas, como etiquetas curtas (aparecem na faixa de baixo). */
-  function respostas() {
-    const r = [];
-    if (resp.nome) r.push(['nome', resp.nome]);
-    for (const q of O.PERGUNTAS) if (resp[q.id]) r.push([q.id, q.opcoes.find((o) => o.v === resp[q.id]).t]);
-    if (resp.prioridade) r.push(['prior', resp.prioridade.map((k) => O.PRIORIDADES.find((x) => x[0] === k)[1]).join(' e ')]);
-    if (resp.tom) r.push(['tom', O.TONS.find((o) => o.v === resp.tom).t.split(':')[0]]);
-    return r;
-  }
-  function desenharLog(novo) {
-    const r = respostas();
-    $('chips').innerHTML = r.length
-      ? r.map(([k, v], n) => `<span class="chip"${novo && n < r.length - 1 ? ' style="animation:none"' : ''}><small>${ROTULO[k]}</small>${esc(v)}</span>`).join('')
-      : '<p class="vazio-log">As respostas aparecem aqui conforme você avança.</p>';
-    const lg = document.querySelector('.log'); lg.scrollTop = lg.scrollHeight;
+  /* ---------- componentes ---------- */
+  function cartoes(opcoes, atual, multi, aoMudar, max) {
+    const box = document.createElement('div'); box.className = 'opcs';
+    if (multi) box.setAttribute('role', 'group');
+    const sel = new Set(multi ? (atual || []) : []);
+    opcoes.forEach(([v, t]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opc';
+      const s = document.createElement('span'); s.textContent = t; b.appendChild(s);
+      if (multi) { const cx = document.createElement('span'); cx.className = 'cx'; cx.innerHTML = ico.check; b.appendChild(cx); b.setAttribute('role', 'checkbox'); b.setAttribute('aria-checked', String(sel.has(v))); }
+      else b.setAttribute('aria-pressed', String(atual === v));
+      b.onclick = () => {
+        if (multi) {
+          if (sel.has(v)) sel.delete(v); else { if (max && sel.size >= max) sel.delete([...sel][0]); sel.add(v); }
+          [...box.children].forEach((x, n) => x.setAttribute('aria-checked', String(sel.has(opcoes[n][0]))));
+          aoMudar([...sel]);
+        } else {
+          [...box.children].forEach((x) => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true');
+          aoMudar(v);
+        }
+      };
+      box.appendChild(b);
+    });
+    return box;
   }
 
+  /** Roda de seleção vertical com encaixe (scroll-snap). */
+  function roda(rotulo, valores, rotulos, atual, aoMudar) {
+    const el = document.createElement('div'); el.className = 'roda'; el.tabIndex = 0;
+    el.setAttribute('role', 'spinbutton'); el.setAttribute('aria-label', rotulo);
+    el.setAttribute('aria-valuemin', '0'); el.setAttribute('aria-valuemax', String(valores.length - 1));
+    el.innerHTML = '<div class="esp"></div>' + rotulos.map((r, n) => `<div class="it" data-i="${n}" data-t="${esc(r)}" aria-hidden="true"></div>`).join('') + '<div class="esp"></div>';
+    const h = () => el.querySelector('.it').offsetHeight || 56;
+    let idx = Math.max(0, valores.indexOf(atual)), trava = false, ate = 0;
+    const pintar = () => { el.querySelectorAll('.it').forEach((x, n) => { x.dataset.d = Math.min(2, Math.abs(n - idx)); }); el.setAttribute('aria-valuenow', String(idx)); el.setAttribute('aria-valuetext', rotulos[idx]); };
+    const ir = (n, suave) => { ate = Date.now() + (suave && !reduzido ? 450 : 80); idx = Math.max(0, Math.min(valores.length - 1, n)); el.scrollTo({ top: idx * h(), behavior: suave && !reduzido ? 'smooth' : 'auto' }); pintar(); aoMudar(valores[idx]); };
+    el.addEventListener('scroll', () => { if (trava || Date.now() < ate) return; trava = true; requestAnimationFrame(() => { trava = false; const n = Math.max(0, Math.min(valores.length - 1, Math.round(el.scrollTop / h()))); if (n !== idx) { idx = n; pintar(); aoMudar(valores[idx]); } }); });
+    el.addEventListener('click', (ev) => { const it = ev.target.closest('.it'); if (it) ir(Number(it.dataset.i), true); });
+    el.addEventListener('keydown', (ev) => { if (ev.key === 'ArrowDown' || ev.key === 'ArrowRight') { ev.preventDefault(); ir(idx + 1, true); } else if (ev.key === 'ArrowUp' || ev.key === 'ArrowLeft') { ev.preventDefault(); ir(idx - 1, true); } });
+    pintar(); requestAnimationFrame(() => { el.scrollTop = idx * h(); });
+    return el;
+  }
+
+  /* ---------- cenas ---------- */
   function cena(p) {
-    const n = resp.nome ? esc(resp.nome) : '';
-    const e = eco ? `<p class="eco">${esc(eco)}</p>` : '<p class="eco"></p>';
     const c = document.createElement('div'); c.className = 'cena';
-    const btn = (txt, cls, fn, pressed) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'opc ' + (cls || ''); b.textContent = txt; if (pressed !== undefined) b.setAttribute('aria-pressed', pressed); b.addEventListener('click', () => fn(b)); return b; };
-    const ctl = document.createElement('div'); ctl.className = 'ctl-bv';
-    let html = '';
-    if (p.t === 'intro') {
-      html = `<div class="arte">${ARTE.livro}</div><h1 class="perg">${refazer ? 'Vamos refazer as perguntas' : 'Olá, eu sou o Brain'}</h1><p class="sub">${refazer ? 'No final, metas, coach e tela inicial serão reajustados. Seus dados continuam como estão.' : 'Seu espaço pessoal para estudar, manter a disciplina e organizar a vida. Tudo fica neste aparelho.'}</p>`;
-      ctl.appendChild(btn('Próximo', 'pri', () => avancar()));
-    } else if (p.t === 'mods') {
-      html = `<h1 class="perg">O que você tem aqui</h1><div class="mods2">${O.MODULOS.map((m) => `<div><b>${m.nome}</b><span>${m.texto.split('.')[0]}.</span></div>`).join('')}</div><p class="sub">Agora algumas perguntas rápidas para ajustar tudo ao seu momento.</p>`;
-      ctl.appendChild(btn('Vamos começar', 'pri', () => avancar()));
+    const n = resp.nome ? esc(resp.nome) : '';
+    let html = '', depois = null, podeIr = true, mostrarProx = true, rotulo = '';
+
+    if (p.t === 'splash') {
+      html = `<div class="splash" style="flex:1;display:flex;flex-direction:column;justify-content:center;margin:0 -1.3rem;padding:0 1.6rem">
+        <span class="deco" style="top:5.5rem;left:1.4rem;transform:rotate(-14deg)">${deco('lapis', 86)}</span>
+        <span class="deco" style="top:3.2rem;right:-1.6rem;transform:rotate(10deg)">${deco('livro', 110)}</span>
+        <span class="deco" style="top:58%;left:-2.2rem">${deco('moeda', 100)}</span>
+        <span class="deco" style="top:73%;right:-.8rem">${deco('relogio', 74)}</span>
+        <h1 class="marca" style="margin-top:3rem">brain</h1>
+        <p class="serif slogan">${refazer ? 'Vamos refazer as perguntas.' : 'Seu sistema de estudo e disciplina, do jeito que você vive.'}</p>
+        <div style="position:absolute;left:0;right:0;bottom:8rem">${mascote('oi')}</div>
+        <div style="position:absolute;left:1.6rem;right:1.6rem;bottom:calc(1rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.2rem">
+          <button class="pill" id="comecar" type="button" style="flex:none;width:11rem">Começar</button>
+          ${refazer ? '' : '<div style="font-size:.88rem;color:var(--bv-muted)">Já usou o Brain? <button class="link" id="imp" type="button"><u>Importar backup</u></button></div>'}
+        </div></div>`;
+      mostrarProx = false;
+    } else if (p.t === 'intro') {
+      const t = [
+        ['Estudar com método faz toda a diferença', tile('livro', 'lapis', 'relogio', 'clip')],
+        ['Você é único, assim como o seu plano', `<div class="tile" style="background:transparent">${iconeSVG('agenda', 'width:56%;height:auto;display:inline-block')}${iconeSVG('lampada', 'width:40%;height:auto;display:inline-block;margin-left:-6%')}</div>`],
+        ['Parabéns por dar o primeiro passo!', tile('bandeira', 'moeda', 'calc', 'livro')],
+      ][p.n];
+      html = `<div class="meio centro">${t[1]}<h1 class="titulo" style="margin-top:1.8rem">${t[0]}</h1></div><div class="pontos" aria-hidden="true">${[0, 1, 2].map((x) => `<i class="${x === p.n ? 'on' : ''}"></i>`).join('')}</div>`;
+    } else if (p.t === 'ola') {
+      html = `<div class="meio"><div style="margin:0 0 1rem">${mascote('calmo', 'p')}</div><h1 class="titulo" style="text-align:left;margin:.5rem 0 .3rem">Você está no lugar certo!</h1><p class="sub">Vamos fazer algumas perguntas para montar metas, coach e tela inicial do seu jeito. Leva uns 2 minutos e as respostas ficam só neste aparelho.</p></div>`;
     } else if (p.t === 'nome') {
-      html = `<div class="arte">${ARTE.lapis}</div>${e}<h1 class="perg">Como você prefere ser chamado?</h1>`;
-      const inp = document.createElement('input'); inp.className = 'campo'; inp.maxLength = 24; inp.placeholder = 'Seu nome ou apelido'; inp.autocomplete = 'given-name'; inp.setAttribute('aria-label', 'Seu nome ou apelido');
-      ctl.appendChild(inp);
-      const ok = () => { const v = inp.value.replace(/\s+/g, ' ').trim(); if (v) { resp.nome = v; eco = `Prazer, ${v}.`; } else { delete resp.nome; eco = 'Sem problema.'; } avancar(); };
-      inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') ok(); });
-      ctl.appendChild(btn('Continuar', 'pri', ok));
-      ctl.appendChild(btn('Prefiro não dizer', 'suave', () => { delete resp.nome; eco = 'Sem problema.'; avancar(); }));
+      html = `<div class="meio" style="margin-top:2rem"><h1 class="perg" style="font-size:1.5rem">Vamos nos conhecer.<br>Como você prefere ser chamado?</h1><label class="rotc" for="nm">Nome ou apelido</label><input class="campo" id="nm" maxlength="24" autocomplete="given-name" value="${esc(resp.nome || '')}"></div>`;
+      depois = (el) => { const inp = el.querySelector('#nm'); inp.addEventListener('input', () => { const v = inp.value.replace(/\s+/g, ' ').trim(); if (v) resp.nome = v; else delete resp.nome; $('prox').disabled = !v; }); inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && inp.value.trim()) avancar(); }); };
+      podeIr = !!resp.nome;
+    } else if (p.t === 'motivo') {
+      html = `<h1 class="perg">${n ? n + ', o que' : 'O que'} traz você ao Brain?</h1><p class="sub">Isso ajuda a escolher por onde começar.</p>`;
+      depois = (el) => el.appendChild(cartoes(O.MOTIVOS, resp.motivo, false, (v) => { resp.motivo = v; setTimeout(() => { if (passos[i] === p) avancar(); }, 260); }));
+      mostrarProx = false;
+    } else if (p.t === 'motivacoes') {
+      html = '<h1 class="perg">O que mais motiva você a mudar?</h1><p class="sub">Escolha até 3. Vamos lembrar disso quando bater o desânimo.</p>';
+      depois = (el) => el.appendChild(cartoes(O.MOTIVACOES, resp.motivacoes, true, (v) => { if (v.length) resp.motivacoes = v; else delete resp.motivacoes; $('prox').disabled = !v.length; }, 3));
+      podeIr = !!(resp.motivacoes && resp.motivacoes.length);
+    } else if (p.t === 'ritmo') {
+      const r = O.RITMOS.map((x) => x[0]); const cur = Math.max(0, r.indexOf(resp.ritmo || 'medio')); resp.ritmo = r[cur];
+      html = `<h1 class="perg">Em que ritmo você quer chegar ao seu objetivo?</h1>
+        <div class="ritmo"><div class="ritmo-ic" aria-hidden="true"><span>${ico.passo}</span><span>${ico.bike}</span><span>${ico.foguete}</span></div>
+        <input type="range" id="rg" min="0" max="2" step="1" value="${cur}" aria-label="Ritmo">
+        <div class="ritmo-rot">${O.RITMOS.map((x, k) => `<button type="button" data-r="${k}">${esc(x[1])}</button>`).join('')}</div></div>
+        <p class="sub" id="rt-dica" style="margin-top:1.4rem"></p>`;
+      const dicas = ['Metas menores. Ideal para criar o hábito sem se cansar.', 'Equilíbrio entre avançar e manter a vida em dia.', 'Metas mais altas. Exige mais, então vale revisar a cada semana.'];
+      depois = (el) => {
+        const g = el.querySelector('#rg');
+        const atualizar = () => { const v = Number(g.value); g.style.setProperty('--p', `${v * 50}%`); g.setAttribute('aria-valuetext', O.RITMOS[v][1]); resp.ritmo = r[v]; el.querySelectorAll('.ritmo-ic svg').forEach((s, k) => s.classList.toggle('on', k === v)); el.querySelectorAll('.ritmo-rot button').forEach((b, k) => b.setAttribute('aria-pressed', String(k === v))); el.querySelector('#rt-dica').textContent = dicas[v]; };
+        g.addEventListener('input', atualizar); el.querySelectorAll('.ritmo-rot button').forEach((b) => b.addEventListener('click', () => { g.value = b.dataset.r; atualizar(); })); atualizar();
+      };
+    } else if (p.t === 'horas' || p.t === 'dias') {
+      const ehH = p.t === 'horas';
+      html = `<h1 class="perg">${ehH ? 'Quanto tempo você quer estudar por dia?' : 'Em quantos dias da semana?'}</h1><p class="sub">${ehH ? 'Pense no que é realista para uma semana comum.' : 'Descanso também faz parte do plano.'}</p><div class="roda-box" id="rb"></div><p class="dica centro" id="rd" style="margin-bottom:.8rem;min-height:1.2em"></p>`;
+      depois = (el) => {
+        const vals = ehH ? O.HORAS : [1, 2, 3, 4, 5, 6, 7]; const rots = ehH ? vals.map(O.rotuloHoras) : vals.map(String);
+        const dica = () => { const t = resp.horas * resp.dias; el.querySelector('#rd').textContent = ehH ? '' : `Total: ${O.rotuloHoras(resp.horas)} × ${resp.dias} = ${String(t).replace('.', ',')} h por semana`; };
+        const w = roda(ehH ? 'Horas de estudo por dia' : 'Dias por semana', vals, rots, ehH ? resp.horas : resp.dias, (v) => { resp[ehH ? 'horas' : 'dias'] = v; dica(); });
+        el.querySelector('#rb').appendChild(w);
+        if (!ehH) { const u = document.createElement('div'); u.className = 'roda-un'; u.textContent = 'dias'; el.querySelector('#rb').appendChild(u); }
+        dica();
+      };
+    } else if (p.t === 'curva') {
+      html = `<h1 class="titulo" style="margin-top:1.8rem">Vamos montar o seu plano personalizado</h1>
+        <div class="curva"><svg viewBox="0 0 320 250" role="img" aria-label="Ilustração: um plano genérico começa forte e cai; o plano do Brain sobe com constância."><path d="M24 70C70 78 90 200 150 206S210 100 292 44" fill="none" stroke="#b9b0a0" stroke-width="4" stroke-linecap="round"/>
+        <path d="M24 196C80 190 120 150 170 112S250 58 292 50" fill="none" stroke="var(--bv-ok)" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="24" cy="196" r="6" fill="var(--bv-bg)" stroke="var(--bv-ok)" stroke-width="4"/><circle cx="292" cy="50" r="6" fill="var(--bv-bg)" stroke="var(--bv-ok)" stroke-width="4"/>
+        <rect x="14" y="214" width="84" height="26" rx="8" fill="var(--bv-ok)"/><text x="56" y="232" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">Constância</text>
+        <rect x="166" y="14" width="140" height="26" rx="8" fill="#7b7468"/><text x="236" y="32" text-anchor="middle" font-size="12.5" font-weight="600" fill="#fff">Plano genérico</text>
+        <rect x="150" y="104" width="160" height="26" rx="8" fill="var(--bv-ok)"/><text x="230" y="122" text-anchor="middle" font-size="12.5" font-weight="600" fill="#fff">Seu plano no Brain</text></svg></div>
+        <p class="sub centro" style="margin-top:1.2rem">O Brain ajusta metas, lembretes e o tom do coach ao seu ritmo, para você manter o hábito mesmo nos dias ruins.</p><p class="nota centro">Ilustração do conceito, não é uma previsão.</p>`;
     } else if (p.t === 'q') {
-      const q = p.q; const pergunta = (n && q.id === 'foco') ? `${n}, ${q.texto.charAt(0).toLowerCase()}${q.texto.slice(1)}` : q.texto;
-      html = `<div class="arte">${ARTE[ARTE_Q[q.id]]}</div>${e}<h1 class="perg">${pergunta}</h1>`;
-      q.opcoes.forEach((o) => ctl.appendChild(btn(o.t, '', () => { resp[q.id] = o.v; eco = o.eco; avancar(); })));
+      const q = p.q;
+      html = `<h1 class="perg">${q.id === 'foco' && n ? n + ', ' + q.texto.charAt(0).toLowerCase() + q.texto.slice(1) : esc(q.texto)}</h1>`;
+      depois = (el) => el.appendChild(cartoes(q.opcoes.map((o) => [o.v, o.t]), resp[q.id], false, (v) => { resp[q.id] = v; setTimeout(() => { if (passos[i] === p) avancar(); }, 260); }));
+      mostrarProx = false;
     } else if (p.t === 'prior') {
-      prioTmp = [];
-      html = `<div class="arte">${ARTE.alvo}</div>${e}<h1 class="perg">Se pudesse melhorar até duas áreas agora, quais seriam?</h1>`;
-      const bs = O.PRIORIDADES.map(([k, nome]) => btn(nome, '', () => {
-        const ix = prioTmp.indexOf(k);
-        if (ix >= 0) prioTmp.splice(ix, 1); else { if (prioTmp.length >= 2) prioTmp.shift(); prioTmp.push(k); }
-        bs.forEach((x, m) => x.setAttribute('aria-pressed', prioTmp.includes(O.PRIORIDADES[m][0])));
-        cont.disabled = prioTmp.length === 0;
-      }, false));
-      bs.forEach((b) => ctl.appendChild(b));
-      const cont = btn('Continuar', 'pri', () => { resp.prioridade = prioTmp.slice(); eco = 'Essas áreas vêm primeiro nos seus passos.'; avancar(); });
-      cont.disabled = true; ctl.appendChild(cont);
-      ctl.appendChild(btn('Sem prioridade', 'suave', () => { delete resp.prioridade; eco = 'Tudo bem, vou equilibrar.'; avancar(); }));
+      html = '<h1 class="perg">Se pudesse melhorar até duas áreas agora, quais seriam?</h1><p class="sub">Elas aparecem primeiro nos seus passos iniciais.</p>';
+      depois = (el) => { el.insertBefore(cartoes(O.PRIORIDADES, resp.prioridade, true, (v) => { if (v.length) resp.prioridade = v; else delete resp.prioridade; }, 2), el.querySelector('.espaco')); el.querySelector('#sp').addEventListener('click', () => { delete resp.prioridade; avancar(); }); };
+      html += '<div class="espaco" style="flex:1"></div><div class="centro"><button class="link" id="sp" type="button"><u>Sem prioridade</u></button></div>';
     } else if (p.t === 'tom') {
-      html = `<div class="arte">${ARTE.baloes}</div>${e}<h1 class="perg">Como o coach deve falar com você?</h1>`;
-      O.TONS.forEach((o) => ctl.appendChild(btn(o.t, '', () => { resp.tom = o.v; eco = o.eco; avancar(); })));
+      html = '<h1 class="perg">Como o coach deve falar com você?</h1>';
+      depois = (el) => el.appendChild(cartoes(O.TONS.map((o) => [o.v, o.t]), resp.tom, false, (v) => { resp.tom = v; setTimeout(() => { if (passos[i] === p) avancar(); }, 260); }));
+      mostrarProx = false;
+    } else if (p.t === 'resumo') {
+      const cs = O.constancia(resp); const cores = ['#d9a05c', '#c9b458', '#8fb36a', '#4f8f62'];
+      const rit = (O.RITMOS.find((x) => x[0] === resp.ritmo) || [0, ''])[1];
+      const mot = (O.MOTIVOS.find((x) => x[0] === resp.motivo) || [0, ''])[1];
+      const mvs = (resp.motivacoes || []).map((v) => O.MOTIVACOES.find((x) => x[0] === v)[1]).join(', ');
+      const dicaNivel = cs.pct <= 25 ? 'Você está começando, e tudo bem. Vamos de metas pequenas e de retomar sem culpa quando falhar.' : cs.pct <= 50 ? 'Você já tem partes do hábito. Metas moderadas e o registro diário vão consolidar o resto.' : cs.pct <= 75 ? 'Boa base. Dá para subir as metas aos poucos e usar as revisões a seu favor.' : 'Você já tem constância. O Brain entra para medir, revisar e manter o ritmo.';
+      const seg = Math.min(3, Math.floor((Math.max(1, cs.pct) - 1) / 25));
+      html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem"><h1 class="titulo" style="text-align:left;margin:1.6rem 0 0">${n ? n + ', seu' : 'Seu'} resumo pessoal</h1>${mascote('festa', 'p')}</div>
+        <div class="chips"><span class="chip">${esc(O.rotuloHoras(resp.horas))} por dia</span><span class="chip">${resp.dias} ${resp.dias === 1 ? 'dia' : 'dias'} por semana</span>${rit ? `<span class="chip">${esc(rit)}</span>` : ''}</div>
+        <div class="cartao" style="margin-top:1.2rem"><h2>Índice de constância</h2><div class="num-g">${cs.pct}<span style="font-size:1rem;font-weight:500;color:var(--bv-muted)"> / 100</span></div>
+        <div class="gauge">${cores.map((x) => `<i style="--c:${x}"></i>`).join('')}<span class="mk" id="mk" style="left:3%"></span></div>
+        <div class="gauge-rot">${['Começando', 'Em formação', 'Boa base', 'Firme'].map((x, k) => (k === seg ? `<b>${x}</b>` : `<span>${x}</span>`)).join('')}</div></div>
+        <div class="aviso"><b><span aria-hidden="true">!</span>${esc(cs.nivel)}</b><p>${dicaNivel}</p></div>
+        <p class="nota">Estimativa calculada só com as suas respostas, para ajustar metas. Não é avaliação nem diagnóstico.</p>
+        ${mot ? `<div class="par">${ico.bandeira}<div><small>Meta</small>${esc(mot)}</div></div>` : ''}
+        ${mvs ? `<div class="par">${ico.coracao}<div><small>Motivação</small>${esc(mvs)}</div></div>` : ''}`;
+      depois = (el) => setTimeout(() => { const m = el.querySelector('#mk'); if (m) m.style.left = Math.max(3, Math.min(97, cs.pct)) + '%'; }, 150);
     } else if (p.t === 'fim') {
-      const pl = O.plano(resp);
-      html = `<div class="arte">${ARTE.montanha}</div><h1 class="perg">${n ? n + ', montei' : 'Montei'} o Brain para você</h1>
-        <ul class="ajustes">${pl.ajustes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
-        <div class="passos">${pl.passos.map((s, k) => `<a class="passo-c" href="${s.href}"><b>${k + 1}. ${esc(s.titulo)}</b><span>${esc(s.texto)}</span></a>`).join('')}</div>`;
-      ctl.appendChild(btn('Ir para o início', 'pri', sair));
+      const pl = O.plano(resp); rotulo = 'Ir para o início';
+      html = `<div style="margin-top:1.4rem">${mascote('festa', 'p')}</div><h1 class="titulo" style="text-align:left;margin:.8rem 0 0">${n ? n + ', o' : 'O'} Brain está pronto</h1>
+        <p class="sub">Ajustei isto para você (dá para mudar depois em ⚙):</p><ul class="ajustes">${pl.ajustes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
+        <h2 class="sec-h">Seus primeiros passos</h2><div class="passos">${pl.passos.map((s, m) => `<a class="passo-c" href="${s.href}"><b>${m + 1}. ${esc(s.titulo)}</b><span>${esc(s.texto)}</span></a>`).join('')}</div><div style="height:.6rem"></div>`;
     }
-    c.innerHTML = html; c.appendChild(ctl);
-    return c;
+    c.innerHTML = html;
+    if (depois) depois(c);
+    return { el: c, podeIr, mostrarProx, rotulo };
   }
 
+  /* ---------- navegação ---------- */
   let ocupado = false;
   function mostrar(sentido) {
-    const palco = $('palco'); const p = passos[i];
-    palco.innerHTML = ''; palco.scrollTop = 0;
-    palco.appendChild(cena(p));
+    const p = passos[i]; const palco = $('palco');
+    const r = cena(p);
+    if (sentido === 'tras' && !reduzido) r.el.classList.add('volta');
+    palco.innerHTML = ''; palco.scrollTop = 0; palco.appendChild(r.el);
+    $('topo').classList.toggle('vazio', !p.s);
+    if (p.s) {
+      $('tag').textContent = SEC[p.s];
+      const pct = Math.round(((i - primeira) / (ultima - primeira + 1)) * 100);
+      $('barra').firstElementChild.style.width = Math.max(4, pct) + '%'; $('barra').setAttribute('aria-valuenow', pct);
+    }
+    $('rod').hidden = p.t === 'splash';
+    $('voltar').hidden = i <= 1;
+    $('prox').hidden = !r.mostrarProx; $('prox').disabled = !r.podeIr;
+    $('prox').textContent = r.rotulo || 'Próximo';
+    $('prox').onclick = () => (p.t === 'fim' ? sair() : avancar());
     if (p.t === 'fim') concluir(true);
-    $('prog').innerHTML = passos.slice(0, -1).map((_, k) => `<i class="${k < i || p.t === 'fim' ? 'on' : (k === i ? 'on' : '')}"></i>`).join('');
-    const pct = Math.round(i / (passos.length - 1) * 100); $('prog').setAttribute('aria-valuenow', pct);
-    document.querySelector('.bv').classList.toggle('final', p.t === 'fim');
-    $('voltar').disabled = i === 0 || p.t === 'fim';
-    $('pular').hidden = p.t === 'fim';
-    desenharLog(sentido === 'frente');
+    if (p.t === 'splash') {
+      r.el.querySelector('#comecar').onclick = () => avancar();
+      const im = r.el.querySelector('#imp'); if (im) im.onclick = () => $('arq').click();
+    }
+    if (document.activeElement && document.activeElement !== document.body && !r.el.contains(document.activeElement)) { try { document.activeElement.blur(); } catch (e) {} }
   }
   function trocar(fn, sentido) {
     if (ocupado) return; ocupado = true;
     const atual = $('palco').firstElementChild;
     const feito = () => { fn(); mostrar(sentido); ocupado = false; };
-    if (atual && !reduzido) { atual.classList.add('sai'); setTimeout(feito, 170); } else feito();
+    if (atual && !reduzido) { atual.classList.add('sai'); setTimeout(feito, 160); } else feito();
   }
   function avancar() { trocar(() => { i = Math.min(i + 1, passos.length - 1); }, 'frente'); }
-
-  $('voltar').addEventListener('click', () => trocar(() => {
-    if (i === 0) return; i--; const p = passos[i];
-    if (p.t === 'q') delete resp[p.q.id]; if (p.t === 'nome') delete resp.nome; if (p.t === 'prior') delete resp.prioridade; if (p.t === 'tom') delete resp.tom;
-    eco = '';
-  }, 'tras'));
+  $('voltar').addEventListener('click', () => trocar(() => { if (i > 0) i--; }, 'tras'));
   $('pular').addEventListener('click', () => { if (!refazer) concluir(false); sair(); });
-
+  $('arq').addEventListener('change', async (ev) => {
+    const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+    try { await window.BrainLocal.importar(await f.text()); window.BrainPrefs.set({ onboarding: true }); sair(); }
+    catch (e) { alert(e && e.message ? e.message : 'Não consegui restaurar esse arquivo.'); }
+  });
   if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   mostrar('frente');
 })();

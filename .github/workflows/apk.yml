@@ -1,0 +1,107 @@
+name: Gerar APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Copiar o site para o app
+        run: |
+          rm -rf apk/www apk/android
+          mkdir -p apk/www
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'apk' --exclude '*.md' ./ apk/www/
+
+      - name: Criar o projeto Android (Capacitor)
+        working-directory: apk
+        run: |
+          npm ci
+          npx cap add android
+          npx cap sync android
+
+      # A assinatura precisa ser sempre a mesma para o app atualizar sem perder dados.
+      # 1) Se existir o segredo KEYSTORE_B64 (+ KEYSTORE_PASS), usa ele. 2) Senão, cria uma chave e guarda em cache.
+      - name: Restaurar chave de assinatura (cache)
+        id: ks_cache
+        uses: actions/cache@v4
+        with:
+          path: ~/brain-ks
+          key: brain-keystore-v1
+
+      - name: Preparar chave de assinatura
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_B64 }}
+          KS_SEGREDO: ${{ secrets.KEYSTORE_PASS }}
+        run: |
+          mkdir -p ~/brain-ks
+          if [ -n "$KS_B64" ] && [ -n "$KS_SEGREDO" ]; then
+            echo "$KS_B64" | base64 -d > ~/brain-ks/brain.keystore
+            echo -n "$KS_SEGREDO" > ~/brain-ks/pass.txt
+            echo "Usando a chave dos segredos."
+          elif [ ! -f ~/brain-ks/brain.keystore ]; then
+            openssl rand -hex 16 | tr -d '\n' > ~/brain-ks/pass.txt
+            keytool -genkeypair -v -keystore ~/brain-ks/brain.keystore -alias brain -keyalg RSA -keysize 2048 \
+              -validity 36500 -storepass "$(cat ~/brain-ks/pass.txt)" -keypass "$(cat ~/brain-ks/pass.txt)" \
+              -dname "CN=Brain, O=Pessoal, C=BR"
+            echo "Chave nova criada (guardada em cache)."
+          else
+            echo "Chave restaurada do cache."
+          fi
+
+      - name: Ajustar ícones, manifesto e assinatura
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 apk/preparar.py apk/android .
+
+      - name: Compilar APK assinado
+        working-directory: apk/android
+        env:
+          KS_PATH: /home/runner/brain-ks/brain.keystore
+        run: |
+          export KS_PASS="$(cat ~/brain-ks/pass.txt)"
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Organizar o arquivo
+        run: |
+          cp apk/android/app/build/outputs/apk/release/app-release.apk brain.apk
+          ls -la brain.apk
+          sha256sum brain.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brain-apk
+          path: brain.apk
+
+      - name: Publicar link de download (Releases)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest brain.apk \
+            --title "Brain (Android)" \
+            --notes "APK assinado, gerado automaticamente a partir do commit ${GITHUB_SHA::7}. Baixe brain.apk no celular e instale." \
+            --target "$GITHUB_SHA"
