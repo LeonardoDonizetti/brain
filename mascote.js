@@ -80,6 +80,59 @@
 
   // ===== acessórios com mais detalhe =====
   /** Chapéu de aniversário: cone listrado, bolinhas, aba, pompom felpudo. */
+  // ===== Guia do tutorial: gesticula e muda de expressão a cada passo, como quem explica =====
+  const gOlhos = (dx, dy, rx, ry) => `<g class="m-pisca"><ellipse cx="55" cy="${66 + dy}" rx="${rx}" ry="${ry}" fill="${T}"/><ellipse cx="85" cy="${66 + dy}" rx="${rx}" ry="${ry}" fill="${T}"/><circle cx="${57.4 + dx}" cy="${63 + dy}" r="2.6" fill="#fff"/><circle cx="${87.4 + dx}" cy="${63 + dy}" r="2.6" fill="#fff"/></g>`;
+  const sobr = (d) => `<path class="m-sobr" d="${d}" fill="none" stroke="${T}" stroke-width="2.6" stroke-linecap="round"/>`;
+  const bocaFala = (d, preenche) => `<g class="m-boca"><path d="${d}" fill="${preenche || '#b8453f'}" stroke="${T}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></g>`;
+  const dedo = (d) => `<path d="${d}" fill="none" stroke="${B}" stroke-width="5" stroke-linecap="round"/>`;
+  const GUIAS = {
+    // 0 acolhe: sorriso aberto e aceno
+    guia0: {
+      bal: true, vb: [-14, -14, 168, 142],
+      rosto: gOlhos(0, 0, 6.4, 7.4) + sobr('M47 55q8-5 14 0M79 55q8-5 14 0') + bocaFala('M62 74q8 12 16 0z'),
+      bracos: bracoP('M18 70q-10 8-8 22') + mao(10, 93) + `<g class="m-acena" style="transform-origin:122px 64px">${bracoP('M122 64q14-4 13-24')}${mao(135, 38)}</g>`,
+      frente: '<path d="M128 18q5-5 10 0M123 8q8-8 16 0" fill="none" stroke="#ffb21f" stroke-width="3" stroke-linecap="round"/>'
+    },
+    // 1 aponta: olha para o destaque, sobrancelha erguida, dedo indicador
+    guia1: {
+      bal: true, vb: [-14, -22, 172, 150],
+      rosto: gOlhos(2.4, -1, 6.4, 7.4) + sobr('M46 56l12-3') + `<path class="m-sobr m-sobr-alta" d="M80 52q8-5 14 0" fill="none" stroke="${T}" stroke-width="2.6" stroke-linecap="round"/>` + bocaFala('M64 75q6 8 13-1z'),
+      bracos: bracoP('M18 72q-10 8 2 20') + mao(24, 91) + `<g class="m-aponta" style="transform-origin:122px 64px">${bracoP('M122 64q16-8 22-28')}${dedo('M144 36l6-12')}${mao(144, 38)}</g>`,
+      frente: '<path d="M118 -10q2-6 8-4M110 -6l-4-5M132 -12l3-7" fill="none" stroke="#3b5bdb" stroke-width="2.6" stroke-linecap="round" class="m-c"/>'
+    },
+    // 2 explica: olhos sorrindo, mãos abertas alternando
+    guia2: {
+      bal: true, vb: [-18, -12, 176, 140],
+      rosto: `<path d="M48 67q7-9 14 0M78 67q7-9 14 0" fill="none" stroke="${T}" stroke-width="3" stroke-linecap="round"/>` + bocaFala('M61 74q9 13 18 0z'),
+      bracos: `<g class="m-explica-e" style="transform-origin:18px 70px">${bracoP('M18 70q-14 2-18-14')}<ellipse cx="-1" cy="53" rx="6.5" ry="8" fill="${B}" transform="rotate(-18 -1 53)"/></g>` + `<g class="m-explica-d" style="transform-origin:122px 64px">${bracoP('M122 64q14 2 18-14')}<ellipse cx="141" cy="47" rx="6.5" ry="8" fill="${B}" transform="rotate(18 141 47)"/></g>`,
+      frente: '<path d="M32 22l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#a78bfa" class="m-c"/>'
+    },
+    // 3 pensa: olha para cima, mão no queixo, lâmpada acende
+    guia3: {
+      bal: true, vb: [-14, -26, 168, 154],
+      rosto: gOlhos(-2.4, -2, 6.4, 7.4) + sobr('M47 55l12-3M81 52l12 3') + bocaFala('M65 75q5 7 10 0q-5-5-10 0z'),
+      bracos: bracoP('M18 72q-8 10 2 20') + mao(24, 91) + bracoP('M122 70q-4 20-34 15') + mao(86, 84),
+      frente: `<g class="m-lampada"><path d="M104 -2c-9 0-13 8-9 14 2 3 3 4 3 7h12c0-3 1-4 3-7 4-6 0-14-9-14z" fill="#ffd54a" stroke="#e0a800" stroke-width="2" stroke-linejoin="round"/><path d="M99 22h10M100 26h8" stroke="#8a6d00" stroke-width="2.4" stroke-linecap="round"/><path d="M104 -12v-5M92 -8l-4-4M116 -8l4-4M88 4h-6M120 4h6" stroke="#ffb21f" stroke-width="2.6" stroke-linecap="round"/></g>`
+    },
+    // 4 aprova: piscadinha e polegar para cima
+    guia4: {
+      bal: true, vb: [-14, -18, 172, 146],
+      rosto: `<ellipse cx="55" cy="66" rx="6.4" ry="7.4" fill="${T}"/><circle cx="57.4" cy="63" r="2.6" fill="#fff"/><path class="m-pisca-d" d="M78 67q7-8 14 0" fill="none" stroke="${T}" stroke-width="3" stroke-linecap="round"/>` + sobr('M47 55q8-5 14 0') + bocaFala('M62 74q8 12 16 0z'),
+      bracos: bracoP('M18 70q-10 8-8 22') + mao(10, 93) + `<g class="m-polegar">${bracoP('M122 66q14-2 14-18')}<circle cx="136" cy="46" r="8" fill="${B}"/><path d="M136 40v-10" stroke="${B}" stroke-width="7" stroke-linecap="round"/><path d="M130 44h12" stroke="${D}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/></g>`,
+      frente: '<path d="M118 14l4 8 8 4-8 4-4 8-4-8-8-4 8-4z" fill="#ffb21f" class="m-c"/>'
+    },
+    // 5 destaca: olhos grandes, dedo em riste e exclamação
+    guia5: {
+      bal: true, vb: [-14, -24, 168, 152],
+      rosto: gOlhos(0, 0, 7.4, 8.6) + sobr('M45 53q9-7 16-1M79 52q8-6 16 1') + bocaFala('M64 75q6 9 12 0q-6-4-12 0z'),
+      bracos: bracoP('M18 72q-10 8 2 20') + mao(24, 91) + `<g class="m-dedo" style="transform-origin:122px 64px">${bracoP('M122 64q10-12 10-32')}${dedo('M132 32v-14')}${mao(132, 34)}</g>`,
+      frente: '<g class="m-exc"><path d="M110 -4q-1-10 3-10t3 10l-2 10h-2z" fill="#ef4444"/><circle cx="113" cy="12" r="2.6" fill="#ef4444"/></g>'
+    }
+  };
+  const N_GUIAS = Object.keys(GUIAS).length;
+  /** Guia do tutorial: um gesto e uma expressão diferentes por passo; no último, festa. */
+  function guia(i, px, ultimo, cls) { return svg(ultimo ? 'festa' : 'guia' + (((i % N_GUIAS) + N_GUIAS) % N_GUIAS), px, cls); }
+
   function chapeu() {
     const H = 28, R = 13, w = (h) => R * (1 - h / H);
     const banda = (h1, h2, f) => `<path d="M${(-w(h1)).toFixed(2)} ${-h1}L${w(h1).toFixed(2)} ${-h1}L${w(h2).toFixed(2)} ${-h2}L${(-w(h2)).toFixed(2)} ${-h2}Z" fill="${f}"/>`;
@@ -109,7 +162,7 @@
 
   function svg(humor, px, cls) {
     humor = humor || 'feliz';
-    const PO = POSES[humor] || POSES[POSE_PAG[humor]] || null;
+    const PO = POSES[humor] || GUIAS[humor] || POSES[POSE_PAG[humor]] || null;
     const corpo = `<g fill="${B}"><circle cx="36" cy="52" r="22"/><circle cx="62" cy="36" r="25"/><circle cx="90" cy="40" r="22"/><circle cx="106" cy="60" r="17"/><circle cx="40" cy="74" r="19"/><circle cx="72" cy="78" r="22"/><circle cx="98" cy="76" r="17"/><ellipse cx="70" cy="62" rx="46" ry="26"/></g>
       <g fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 50c6-8 14-4 18-12"/><path d="M52 22c8 4 6 12 14 14"/><path d="M80 24c8 2 8 10 16 10"/><path d="M104 48c6 2 8 8 14 8"/><path d="M96 92c6-2 10-8 14-6"/><path d="M26 74c6 4 10 0 14 6"/></g>
       <circle cx="44" cy="77" r="7.5" fill="#f9a9a4" opacity=".85"/><circle cx="96" cy="77" r="7.5" fill="#f9a9a4" opacity=".85"/>`;
@@ -137,7 +190,7 @@
     const festa = humor === 'festa';
     const w = px || 80;
     const vb = PO && PO.vb ? PO.vb : festa ? [-10, -27, 160, 151] : [-10, -4, 160, 128];
-    return `<svg viewBox="${vb.join(' ')}" width="${w}" height="${Math.round(w * vb[3] / vb[2])}" role="img" aria-hidden="true" class="mascote-b${PO ? ' m-pose' : ''}${PO && PO.salta ? ' m-salta' : ''}${cls ? ' ' + cls : ''}">${chao}${PO && PO.tras ? PO.tras : ''}${PO && PO.salta ? '<g class="m-all">' : ''}${bracos}${PO && PO.pernas === false ? '' : pernas}${corpo}${volume}${rosto}${PO ? PO.frente : ''}${PO && PO.salta ? '</g>' : ''}${festa ? chapeu() + confetes() : ''}</svg>`;
+    return `<svg viewBox="${vb.join(' ')}" width="${w}" height="${Math.round(w * vb[3] / vb[2])}" role="img" aria-hidden="true" class="mascote-b${PO ? ' m-pose' : ''}${PO && PO.salta ? ' m-salta' : ''}${cls ? ' ' + cls : ''}">${chao}${PO && PO.tras ? PO.tras : ''}${PO && (PO.salta || PO.bal) ? `<g class="${PO.salta ? 'm-all' : 'm-bal'}">` : ''}${bracos}${PO && PO.pernas === false ? '' : pernas}${corpo}${volume}${rosto}${PO ? PO.frente : ''}${PO && (PO.salta || PO.bal) ? '</g>' : ''}${festa ? chapeu() + confetes() : ''}</svg>`;
   }
 
   function paginaAtual() { return (typeof document !== 'undefined' && document.documentElement.getAttribute('data-pg')) || 'inicio'; }
@@ -174,7 +227,7 @@
     new MutationObserver((ms) => { for (const m of ms) { if (m.addedNodes.length) { decorar(document); break; } if (m.type === 'attributes') { decorar(document); break; } } })
       .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
   }
-  const API = { svg, decorar, companheiro, poseDaPagina, POSES: Object.keys(POSES) };
+  const API = { svg, guia, N_GUIAS, decorar, companheiro, poseDaPagina, POSES: Object.keys(POSES) };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else {
     raiz.BrainMascote = API;

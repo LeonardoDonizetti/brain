@@ -145,11 +145,12 @@
   }
 
   function desenharCard(passo, i, total, ultimo) {
-    const m = raiz.BrainMascote ? raiz.BrainMascote.svg(ultimo ? 'festa' : raiz.BrainMascote.poseDaPagina(), 56) : '';
+    const m = raiz.BrainMascote ? raiz.BrainMascote.guia(i, 96, ultimo) : '';
     const pontos = Array.from({ length: total }, (_, k) => `<i class="${k <= i ? 'f' : ''}"></i>`).join('');
     est.card.innerHTML = `<div class="tr-topo">${m}<div><div class="tr-pas">Passo ${i + 1} de ${total}</div><div class="tr-pontos" aria-hidden="true">${pontos}</div></div></div>
       <h3></h3><p></p>
       <div class="tr-bts"><button type="button" class="tr-pular">Pular</button>${i > 0 ? '<button type="button" class="tr-volta">Voltar</button>' : ''}<button type="button" class="tr-prox">${ultimo ? 'Entendi!' : 'Próximo'}</button></div>`;
+    const sv = est.card.querySelector('.tr-topo svg'); if (sv) setTimeout(() => sv.classList.add('m-quieto'), Math.min(4200, 1400 + passo.x.length * 32));
     est.card.querySelector('h3').textContent = passo.t;
     est.card.querySelector('p').textContent = passo.x;
     est.card.querySelector('.tr-pular').onclick = () => fechar(true);
