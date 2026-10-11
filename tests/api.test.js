@@ -297,8 +297,17 @@ test('prefs: gradientes válidos e cores antigas continuam', () => {
 
 test('estudos: leitura de texto, ciclo, revisão, estatísticas e backup', async () => {
   const E = require('../site/estudos.js');
-  const m = E.modeloFoto();
-  assert.ok(m.materias.length === 7 && m.blocos.length > 50);
+  const m = (() => { // semana de exemplo montada aqui no teste
+    const nomes = ['Física', 'Biologia', 'Química', 'Matemática', 'Português', 'História', 'Geografia'];
+    const materias = nomes.map((nome, i) => ({ id: i + 1, nome, cor: i, prioridade: 2, meta_h: 0 }));
+    const b = []; let id = 100;
+    const add = (dia, ini, fim, titulo, tipo, mat) => b.push({ id: id++, dia, ini, fim, titulo, tipo, materia_id: mat || null });
+    const manha = { 1: 1, 2: 2, 3: 3, 4: 1, 5: 3 };
+    for (let d = 1; d <= 5; d++) { add(d, '05:00', '06:00', nomes[manha[d] - 1], 'estudo', manha[d]); add(d, '07:30', '12:30', 'Escola', 'escola'); add(d, '14:00', '17:00', 'Trabalho', 'trabalho'); add(d, '18:30', '22:10', 'Aulas', 'aula'); }
+    for (let i = 0; i < 5; i++) add(6, E.hhmm(14 * 60 + 30 + i * 60), E.hhmm(15 * 60 + 30 + i * 60), 'Ciclo de estudos', 'estudo');
+    return E.sanitizar({ materias, blocos: b });
+  })();
+  assert.ok(m.materias.length === 7 && m.blocos.length >= 25);
   assert.strictEqual(E.conflitos(m.blocos).length, 0);
   const r = E.lerTexto('seg a sex 05:00-06:00 física\nter e qui das 14h às 16h30 matemática\nsábado 14h por 3h ciclo de estudos\nfim de semana 8h-9h redação\nlixo sem horário\nseg, qua e sex 6h às 7h academia', m.materias);
   assert.strictEqual(r.ignoradas.length, 1);
@@ -664,4 +673,32 @@ test('ofensiva: dia passado só com ação simples gasta o escudo (não conta)',
   const r = JG.calcular(e, {}, hoje());
   assert.equal(r.semana.find((s) => s.data === dia(1)) ? r.semana.find((s) => s.data === dia(1)).estado : 'escudo', 'escudo');
   assert.equal(r.sequencia, 3);
+});
+
+test('estudos: cronograma personalizado encaixa os estudos nos horários livres', () => {
+  const E = require('../site/estudos.js');
+  const fixos = [];
+  for (let d = 1; d <= 5; d++) { fixos.push({ dia: d, ini: '07:30', fim: '12:30', titulo: 'Escola', tipo: 'escola' }, { dia: d, ini: '14:00', fim: '17:00', titulo: 'Trabalho', tipo: 'trabalho' }); }
+  const mats = [{ id: 1, nome: 'Matemática', prioridade: 3, meta_h: 0 }, { id: 2, nome: 'Física', prioridade: 2, meta_h: 0 }, { id: 3, nome: 'Redação', prioridade: 1, meta_h: 0 }, { id: 4, nome: 'Química', prioridade: 2, meta_h: 0 }];
+  const r = E.montarCronograma(fixos, { horasSemana: 10, materias: mats, diasLivres: [0], foco: ['redação'] });
+  assert.ok(r.blocos.length >= 7);
+  assert.ok(r.resumo.minutos >= 9 * 60 && r.resumo.minutos <= 11 * 60, 'perto da meta: ' + r.resumo.minutos);
+  assert.ok(!r.blocos.some((b) => b.dia === 0), 'domingo livre');
+  assert.strictEqual(E.conflitos(fixos.concat(r.blocos)).length, 0, 'sem choque com aula/trabalho');
+  assert.ok(r.blocos.every((b) => b.tipo === 'estudo' && b.ini < b.fim));
+  assert.ok(new Set(r.blocos.map((b) => b.titulo)).size >= 4);
+  for (const d of [1, 2, 3, 4, 5, 6]) { const l = r.blocos.filter((b) => b.dia === d); for (let i = 1; i < l.length; i++) assert.notStrictEqual(l[i].titulo, l[i - 1].titulo); }
+  // prioridade alta recebe mais tempo que baixa, mesmo com o foco em Redação
+  assert.ok((r.resumo.porMateria['Matemática'] || 0) >= (r.resumo.porMateria['Química'] || 0));
+  // sem matérias cadastradas usa as padrão
+  const p = E.montarCronograma([], { horasSemana: 6 });
+  assert.ok(p.blocos.length > 0 && E.MATERIAS_PADRAO.includes(p.blocos[0].titulo));
+  // semana toda ocupada: avisa
+  const cheio = []; for (let d = 0; d < 7; d++) cheio.push({ dia: d, ini: '05:00', fim: '22:30', titulo: 'Ocupado', tipo: 'outro' });
+  const v = E.montarCronograma(cheio, { horasSemana: 5 });
+  assert.strictEqual(v.blocos.length, 0); assert.ok(v.avisos.length >= 1);
+  // planilha
+  const csv = E.planilhaTexto(r.blocos); assert.ok(csv.startsWith('\ufeffHorário;Segunda;Terça'));
+  assert.ok(E.planilhaTexto(r.blocos, 'tsv').split('\r\n')[0].split('\t').length === 8);
+  assert.ok(E.grade(r.blocos).linhas.length > 4);
 });

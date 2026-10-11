@@ -296,46 +296,136 @@
     return (l.length ? l.join(' ') + ' ' : '') + `Estudo registrado: hoje ${fmtMin(st.hoje)}, na semana ${fmtMin(st.semana)}.`;
   }
 
-  // ---------------------------------------------------------- modelo a partir da foto do usuário
-  function modeloFoto() {
-    const materias = ['Física', 'Biologia', 'Química', 'Matemática', 'Português', 'História', 'Geografia'].map((nome, i) => ({ id: i + 1, nome, cor: i, prioridade: 2, meta_h: 0 }));
-    const M = Object.fromEntries(materias.map((m) => [m.nome, m.id]));
-    const b = [];
-    let id = 100;
-    const add = (dia, ini, fim, titulo, tipo, mat) => b.push({ id: id++, dia, ini, fim, titulo, tipo, materia_id: mat ? M[mat] : null });
-    const manha = { 1: 'Física', 2: 'Biologia', 3: 'Química', 4: 'Física', 5: 'Química' };
-    const profs = {
-      1: ['Davi', 'Theodoro', 'Mário', 'Mário'], 2: ['Cris Bastos', 'Cris Bastos/Rocha', 'Rocha', 'Tchelo'], 3: ['Math Cury', 'Léo Ribas', 'Beto', 'Rogério'],
-      4: ['Fábio Simon', 'Fábio Simon', 'Maurinho', 'Jojo'], 5: ['Eufrásio', 'Mavi', 'Gui Mourão', 'Gui Mourão'],
-    };
-    const horas = [['18:30', '19:20'], ['19:20', '20:10'], ['20:30', '21:20'], ['21:20', '22:10']];
-    for (let d = 1; d <= 5; d++) {
-      add(d, '05:00', '06:00', manha[d], 'estudo', manha[d]);
-      add(d, '06:00', '07:00', 'Academia', 'treino');
-      add(d, '07:30', '12:30', 'Escola (EM)', 'escola');
-      add(d, '12:30', '13:30', 'Almoço', 'refeicao');
-      add(d, '14:00', '17:00', 'Trabalho', 'trabalho');
-      add(d, '17:00', '18:30', 'Deslocamento', 'deslocamento');
-      profs[d].forEach((p, i) => add(d, horas[i][0], horas[i][1], `Aula: ${p}`, 'aula'));
-      add(d, '22:10', '23:00', 'Deslocamento', 'deslocamento');
-    }
-    add(6, '06:00', '06:30', 'Café', 'refeicao');
-    add(6, '06:30', '07:30', 'Biologia', 'estudo', 'Biologia');
-    add(6, '08:30', '09:30', 'Deslocamento', 'deslocamento');
-    add(6, '09:30', '11:30', 'Aulas: Bruno Arruda, Maion, Castro, Renata', 'aula');
-    add(6, '12:30', '14:00', 'Almoço', 'refeicao');
-    for (let i = 0; i < 5; i++) add(6, hhmm(14 * 60 + 30 + i * 60), hhmm(15 * 60 + 30 + i * 60), 'Ciclo de estudos', 'estudo');
-    add(0, '07:30', '09:00', 'Português', 'aula', 'Português');
-    add(0, '09:00', '11:00', 'Matemática', 'aula', 'Matemática');
-    add(0, '11:00', '12:30', 'Geografia', 'aula', 'Geografia');
-    add(0, '12:30', '14:00', 'Almoço', 'refeicao');
-    add(0, '14:00', '15:30', 'Português', 'aula', 'Português');
-    add(0, '16:00', '17:30', 'História', 'aula', 'História');
-    add(0, '18:00', '19:30', 'Matemática', 'aula', 'Matemática');
-    const e = sanitizar({ materias, blocos: b });
-    return e;
+  // ---------------------------------------------------------- cronograma personalizado (encaixa os estudos nas janelas livres da rotina)
+  const MATERIAS_PADRAO = ['Matemática', 'Física', 'Química', 'Biologia', 'Português', 'Redação', 'História', 'Geografia', 'Inglês'];
+
+  /** Janelas livres de um dia: [ini, fim] em minutos, tirando os compromissos (com uma folga em volta). */
+  function janelasLivres(fixos, dia, ini, fim, folga) {
+    const ocup = fixos.filter((b) => b.dia === dia).map((b) => [Math.max(ini, minutos(b.ini) - folga), Math.min(fim, minutos(b.fim) + folga)]).filter((x) => x[1] > x[0]).sort((a, b) => a[0] - b[0]);
+    const livres = []; let cur = ini;
+    for (const [i, f] of ocup) { if (i > cur) livres.push([cur, i]); cur = Math.max(cur, f); }
+    if (cur < fim) livres.push([cur, fim]);
+    return livres;
   }
 
-  const api = { TIPOS, DIAS, DIAS_CURTO, ORDEM_SEMANA, INTERVALOS, MOTIVOS, CORES_MATERIA, DICA_ERRO, estadoVazio, sanitizar, novoId, lerTexto, agoraProximo, conflitos, gerarPlano, estatisticas, inicioSemana, fmtMin, criarRevisao, concluirRevisao, avaliarRevisao, revisoesDevidas, proximoVestibular, mensagens, responder, modeloFoto, minutos, hhmm, somaDias, isoDe, norm };
+  /** Quanto o horário "vale" para estudar (manhã cedo e fim de tarde rendem; muito tarde, não). */
+  function notaHorario(m) {
+    const h = m / 60;
+    if (h >= 6 && h < 11.5) return 3;
+    if (h >= 14 && h < 18) return 2.4;
+    if (h >= 18 && h < 21) return 1.8;
+    if (h >= 11.5 && h < 14) return 1.4;
+    if (h >= 5 && h < 6) return 1.6;
+    if (h >= 21 && h < 22) return 0.8;
+    return 0.2;
+  }
+
+  /** Monta o cronograma. fixos = blocos que já ocupam a semana (aulas, trabalho...). Devolve só os blocos de estudo.
+      opts: { horasSemana, materias, foco:[texto], diasLivres:[0-6], janelaIni:'05:00', janelaFim:'22:30', sessaoMin:60, pausaMin:10, folgaMin:15, maxDiaMin:240 } */
+  function montarCronograma(fixos, opts) {
+    opts = opts || {};
+    fixos = (fixos || []).filter((b) => b && ehHora(b.ini) && ehHora(b.fim));
+    const alvo = Math.round(Math.max(1, Math.min(60, Number(opts.horasSemana) || 10)) * 60);
+    const sessao = Math.max(30, Math.min(150, Math.round(Number(opts.sessaoMin) || 60)));
+    const pausa = Math.max(0, Math.min(30, Math.round(opts.pausaMin === undefined ? 10 : Number(opts.pausaMin) || 0)));
+    const folga = Math.max(0, Math.min(60, Math.round(opts.folgaMin === undefined ? 15 : Number(opts.folgaMin) || 0)));
+    const maxDia = Math.max(sessao, Math.min(480, Math.round(Number(opts.maxDiaMin) || 240)));
+    const jIni = minutos(ehHora(opts.janelaIni) ? opts.janelaIni : '05:00'), jFim = Math.max(jIni + 60, minutos(ehHora(opts.janelaFim) ? opts.janelaFim : '22:30'));
+    const livres = new Set((opts.diasLivres || []).map(Number));
+    const dias = ORDEM_SEMANA.filter((d) => !livres.has(d));
+    const avisos = [];
+    if (!dias.length) return { blocos: [], resumo: { minutos: 0, porMateria: {}, porDia: {} }, avisos: ['Todos os dias estão marcados como descanso.'] };
+
+    // 1) candidatos: sessões de ~sessao min dentro das janelas livres de cada dia
+    const cand = new Map(dias.map((d) => [d, []]));
+    for (const d of dias) {
+      for (const [i, f] of janelasLivres(fixos, d, jIni, jFim, folga)) {
+        let t = i, k = 0;
+        while (f - t >= Math.min(sessao, 40)) {
+          const dur = Math.min(sessao, f - t);
+          if (dur < 40) break;
+          cand.get(d).push({ dia: d, ini: t, fim: t + dur, nota: notaHorario(t) + (k === 0 ? 0.3 : -0.15 * k) });
+          t += dur + pausa; k += 1;
+        }
+      }
+    }
+    // 2) escolhe os melhores horários, espalhando entre os dias
+    const esc = [], porDia = new Map(dias.map((d) => [d, 0]));
+    let total = 0;
+    for (let guard = 0; total < alvo && guard < 400; guard++) {
+      const abertos = dias.filter((d) => cand.get(d).length && porDia.get(d) + sessao <= maxDia + 1);
+      if (!abertos.length) break;
+      abertos.sort((a, b) => (porDia.get(a) - porDia.get(b)) || (Math.max(...cand.get(b).map((x) => x.nota)) - Math.max(...cand.get(a).map((x) => x.nota))));
+      const d = abertos[0];
+      const lista = cand.get(d).sort((a, b) => b.nota - a.nota);
+      const c = lista.shift();
+      const dur = Math.min(c.fim - c.ini, alvo - total + 10);
+      if (alvo - total < 25 && esc.length) break;
+      esc.push({ dia: c.dia, ini: c.ini, fim: c.ini + Math.max(30, dur) });
+      porDia.set(d, porDia.get(d) + (c.fim - c.ini));
+      total += c.fim - c.ini;
+      // não deixa sessões coladas sem pausa
+      cand.set(d, lista.filter((x) => x.ini >= c.fim + pausa || x.fim <= c.ini - pausa));
+    }
+    esc.sort((a, b) => (ORDEM_SEMANA.indexOf(a.dia) - ORDEM_SEMANA.indexOf(b.dia)) || (a.ini - b.ini));
+
+    // 3) distribui as matérias (prioridade e foco pesam mais; intercala para não repetir em sequência)
+    const mats = (opts.materias && opts.materias.length ? opts.materias : MATERIAS_PADRAO.map((nome) => ({ nome, prioridade: 2, meta_h: 0 }))).slice(0, 20);
+    const focoTxt = (opts.foco || []).map(norm).filter(Boolean);
+    const peso = (m) => ({ 1: 1, 2: 2, 3: 3 }[m.prioridade] || 2) * (focoTxt.some((f) => norm(m.nome).includes(f) || f.includes(norm(m.nome))) ? 1.6 : 1) * (m.meta_h > 0 ? 1.15 : 1);
+    const soma = mats.reduce((s, m) => s + peso(m), 0);
+    const dado = new Map(mats.map((m) => [m.nome, 0]));
+    const ultimo = new Map(); let anterior = null;
+    const totalMin = esc.reduce((s, x) => s + x.fim - x.ini, 0);
+    const blocos = [];
+    // última sessão da semana vira revisão (fixa o que foi visto, como a revisão espaçada)
+    const revisaoIdx = esc.length >= 6 ? esc.length - 1 : -1;
+    esc.forEach((x, i) => {
+      const dur = x.fim - x.ini;
+      if (i === revisaoIdx) { blocos.push({ dia: x.dia, ini: hhmm(x.ini), fim: hhmm(x.ini + Math.min(dur, 45)), titulo: 'Revisão da semana', tipo: 'estudo', materia_id: null, nome: null }); return; }
+      let melhor = null, ms = -Infinity;
+      for (const m of mats) {
+        let sc = (peso(m) / soma) * totalMin - dado.get(m.nome);
+        if (ultimo.get(x.dia) === m.nome) sc -= 10000;
+        if (anterior === m.nome) sc -= 500;
+        if (sc > ms) { ms = sc; melhor = m; }
+      }
+      dado.set(melhor.nome, dado.get(melhor.nome) + dur); ultimo.set(x.dia, melhor.nome); anterior = melhor.nome;
+      blocos.push({ dia: x.dia, ini: hhmm(x.ini), fim: hhmm(x.fim), titulo: melhor.nome, tipo: 'estudo', materia_id: melhor.id || null, nome: melhor.nome });
+    });
+    const porMateria = {}; const porDiaOut = {};
+    for (const b of blocos) { const dm = minutos(b.fim) - minutos(b.ini); porMateria[b.titulo] = (porMateria[b.titulo] || 0) + dm; porDiaOut[b.dia] = (porDiaOut[b.dia] || 0) + dm; }
+    const feito = blocos.reduce((s, b) => s + minutos(b.fim) - minutos(b.ini), 0);
+    if (feito < alvo - 30) avisos.push(`Só encontrei horário livre para ${fmtMin(feito)} dos ${fmtMin(alvo)} pedidos. Libere mais dias, aumente a janela do dia ou reduza a meta.`);
+    if (!blocos.length) avisos.push('Não encontrei horários livres. Confira a foto, os dias de descanso e a janela do dia.');
+    return { blocos, resumo: { minutos: feito, porMateria, porDia: porDiaOut }, avisos };
+  }
+
+  /** Grade tipo planilha: linhas de 30 min, colunas segunda a domingo. Cada célula traz o título do bloco que cobre o horário. */
+  function grade(blocos, passo) {
+    passo = passo || 30;
+    const bl = (blocos || []).filter((b) => ehHora(b.ini) && ehHora(b.fim));
+    if (!bl.length) return { linhas: [], dias: ORDEM_SEMANA };
+    const ini = Math.floor(Math.min(...bl.map((b) => minutos(b.ini))) / passo) * passo;
+    const fim = Math.ceil(Math.max(...bl.map((b) => minutos(b.fim))) / passo) * passo;
+    const linhas = [];
+    for (let t = ini; t < fim; t += passo) {
+      linhas.push({ hora: hhmm(t), celulas: ORDEM_SEMANA.map((d) => bl.find((b) => b.dia === d && minutos(b.ini) < t + passo && minutos(b.fim) > t) || null) });
+    }
+    return { linhas, dias: ORDEM_SEMANA };
+  }
+
+  const celula = (v, sep) => { v = String(v == null ? '' : v); return new RegExp(`[${sep}"\\n]`).test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+  /** Texto da planilha. CSV em português usa ";" e BOM para o Excel abrir acentos certinho; TSV cola direto no Google Sheets. */
+  function planilhaTexto(blocos, formato) {
+    const sep = formato === 'tsv' ? '\t' : ';';
+    const g = grade(blocos);
+    const linhas = [['Horário'].concat(ORDEM_SEMANA.map((d) => DIAS[d].replace(/^./, (c) => c.toUpperCase())))];
+    for (const l of g.linhas) linhas.push([l.hora].concat(l.celulas.map((b) => (b ? b.titulo : ''))));
+    const corpo = linhas.map((r) => r.map((v) => celula(v, sep)).join(sep)).join('\r\n');
+    return formato === 'tsv' ? corpo : '﻿' + corpo;
+  }
+
+  const api = { TIPOS, DIAS, DIAS_CURTO, ORDEM_SEMANA, INTERVALOS, MOTIVOS, CORES_MATERIA, DICA_ERRO, estadoVazio, sanitizar, novoId, lerTexto, agoraProximo, conflitos, gerarPlano, estatisticas, inicioSemana, fmtMin, criarRevisao, concluirRevisao, avaliarRevisao, revisoesDevidas, proximoVestibular, mensagens, responder, montarCronograma, grade, planilhaTexto, janelasLivres, MATERIAS_PADRAO, minutos, hhmm, somaDias, isoDe, norm };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.BrainEstudos = api;
 })(typeof window !== 'undefined' ? window : globalThis);

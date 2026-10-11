@@ -222,6 +222,29 @@
   details.tec p { font-size: .92rem; line-height: 1.55; }
   .aviso2 { font-size: .9rem; line-height: 1.45; padding: .7rem .9rem; }
   .rev-i { font-size: 1rem; }
+  .cr-g { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem .7rem; margin-top: .7rem; }
+  .cr-g label, .cr-foco { display: grid; gap: .2rem; font-size: .8rem; font-weight: 650; color: var(--muted); }
+  .cr-g input, .cr-g select, .cr-foco input, #ia-chave { font: inherit; font-weight: 500; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: .55rem; background: var(--surface); color: var(--ink); min-height: 2.6rem; width: 100%; box-sizing: border-box; }
+  .cr-foco { margin-top: .6rem; }
+  .cr-dias { display: flex; gap: .3rem; margin: .5rem 0 .2rem; }
+  .cr-dias button { flex: 1; min-height: 2.5rem; border-radius: .6rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 650; font-size: .8rem; padding: 0; }
+  .cr-dias button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .cr-rot { font-size: .8rem; font-weight: 650; color: var(--muted); margin-top: .7rem; }
+  .cr-ck { display: flex; gap: .5rem; align-items: flex-start; font-size: .86rem; margin-top: .55rem; }
+  .cr-ck input { width: auto; margin-top: .15rem; }
+  .cr-thumb { display: flex; gap: .7rem; align-items: center; margin-top: .7rem; font-size: .84rem; color: var(--muted); }
+  .cr-thumb img { width: 4.4rem; height: 4.4rem; object-fit: cover; border-radius: .55rem; border: 1px solid var(--line); cursor: zoom-in; flex: none; }
+  .cr-b { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  #cr-saida h4 { margin: 1rem 0 .2rem; font-size: .95rem; }
+  .cr-res { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+  .planilha-w { overflow: auto; border: 1px solid var(--line); border-radius: .6rem; margin-top: .6rem; max-height: 27rem; -webkit-overflow-scrolling: touch; }
+  table.planilha { border-collapse: separate; border-spacing: 0; font-size: .72rem; min-width: 36rem; width: 100%; }
+  table.planilha th { position: sticky; top: 0; z-index: 2; background: var(--surface); padding: .4rem .3rem; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); font-weight: 700; }
+  table.planilha td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: .15rem .3rem; vertical-align: top; line-height: 1.2; }
+  table.planilha td.h { color: var(--muted); white-space: nowrap; width: 2.6rem; font-variant-numeric: tabular-nums; position: sticky; left: 0; z-index: 1; background: var(--surface); }
+  table.planilha td.e { color: #fff; font-weight: 650; }
+  table.planilha td.e small { display: block; font-weight: 500; opacity: .9; }
+  table.planilha td.f { background: var(--bg); color: var(--muted); }
 </style>
 </head>
 <body>
@@ -409,7 +432,7 @@ function abaHoje(w) {
   const v = ES.proximoVestibular(E, HOJE);
   const m = now.getHours() * 60 + now.getMinutes();
   if (!E.blocos.length) {
-    html(w, `<div class="es vazio-i">${ICONE_LIVRO}<b>Monte seu plano de estudos</b><p style="margin:0 0 .8rem">Escreva como vai estudar, leia a foto da sua grade ou comece pelo modelo.</p><div class="linhas" style="justify-content:center"><button class="btn2 pri" data-ir="plano">Montar meu plano</button><button class="btn2" id="usar-modelo">Usar modelo da minha foto</button></div></div>`);
+    html(w, `<div class="es vazio-i">${ICONE_LIVRO}<b>Monte seu plano de estudos</b><p style="margin:0 0 .8rem">Escreva como vai estudar ou tire uma foto da sua rotina e eu monto o cronograma.</p><div class="linhas" style="justify-content:center"><button class="btn2 pri" data-ir="plano">Montar meu plano</button><button class="btn2" id="usar-foto">Montar com uma foto</button></div></div>`);
   } else if (atual) {
     const ini = ES.minutos(atual.ini), fim = ES.minutos(atual.fim);
     html(w, `<div class="hero-es"><div class="k">Agora · ${ES.TIPOS[atual.tipo]}</div><div class="t">${esc(atual.titulo)}</div><div class="r">${atual.ini} às ${atual.fim} · faltam ${ES.fmtMin(fim - m)}</div><div class="bar"><i style="width:${Math.max(3, Math.min(100, ((m - ini) / (fim - ini)) * 100))}%"></i></div>${atual.tipo === 'estudo' ? `<button type="button" data-foco="${atual.materia_id || ''}">Iniciar foco</button>` : ''}${proximo ? `<p class="prox">Depois: ${esc(proximo.titulo)} às ${proximo.ini}</p>` : ''}</div>`);
@@ -595,18 +618,12 @@ const TECNICAS = [
 ];
 function abaPlano(w) {
   const v = E.vestibulares.slice().sort((a, b) => a.data.localeCompare(b.data));
+  cartaoCronograma(w);
   html(w, `<div class="es"><h3>Como vou estudar</h3><p class="sub">Escreva livremente: objetivo, dias, horários, o que precisa focar. Fica salvo aqui e o coach usa o seu plano.</p><textarea id="nota" rows="5" maxlength="3000" placeholder="Ex.: Foco no ENEM e na UFSC. Estudo de manhã cedo (5h às 6h) e no ciclo de sábado. Redação aos domingos.">${esc(E.nota)}</textarea><div class="linhas"><button class="btn2" id="nota-ok">Salvar anotação</button></div></div>`);
 
-  html(w, `<div class="es"><h3>Meu horário (texto)</h3><p class="sub">Uma linha por compromisso. Eu entendo dias e horas e transformo em blocos da semana. Exemplos:</p><div class="previa" style="max-height:none;font-family:ui-monospace,monospace;font-size:.78rem">seg a sex 05:00-06:00 física<br>ter e qui das 14h às 16h30 matemática<br>sábado 14h por 3h ciclo de estudos<br>todos os dias 22:00-23:00 descanso</div><textarea id="txt-plano" rows="5" placeholder="Cole ou escreva aqui"></textarea><div class="linhas"><button class="btn2 pri" id="ler">Entender</button><button class="btn2" id="modelo">Usar modelo da minha foto</button></div><div id="previa"></div></div>`);
+  html(w, `<div class="es"><h3>Meu horário (texto)</h3><p class="sub">Uma linha por compromisso. Eu entendo dias e horas e transformo em blocos da semana. Exemplos:</p><div class="previa" style="max-height:none;font-family:ui-monospace,monospace;font-size:.78rem">seg a sex 05:00-06:00 física<br>ter e qui das 14h às 16h30 matemática<br>sábado 14h por 3h ciclo de estudos<br>todos os dias 22:00-23:00 descanso</div><textarea id="txt-plano" rows="5" placeholder="Cole ou escreva aqui"></textarea><div class="linhas"><button class="btn2 pri" id="ler">Entender</button></div><div id="previa"></div></div>`);
 
-  const chave = (() => { try { return localStorage.getItem('brain-gemini-key') || ''; } catch (e) { return ''; } })();
-  html(w, `<div class="es"><h3>Foto do meu horário</h3><p class="sub">Escolha a foto da sua grade, a IA lê e eu mostro os blocos para você conferir antes de adicionar.</p>
-${E.foto ? `<img class="foto" id="foto" src="${E.foto}" alt="Foto do meu horário de estudos">` : '<p class="vazio">Nenhuma foto guardada.</p>'}<div class="linhas"><label class="btn2" style="display:inline-flex;align-items:center;cursor:pointer">${E.foto ? 'Trocar foto' : 'Adicionar foto'}<input type="file" id="foto-in" accept="image/*" hidden></label>${E.foto ? '<button class="btn2 perigo" id="foto-del">Remover</button>' : ''}</div>
-    <div style="border-top:1px solid var(--line);margin-top:1rem;padding-top:.8rem"><h3 style="font-size:.95rem">Ler a foto com IA (grátis)</h3>
-    <p class="sub">Usa a API gratuita do Google Gemini com a sua própria chave, sem cartão. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:650">Pegar chave grátis</a>. A chave fica só neste aparelho e não entra no backup.</p>
-    <input id="ia-chave" type="password" autocomplete="off" placeholder="Cole sua chave (AIza...)" value="${esc(chave)}" aria-label="Chave da API do Google AI Studio">
-    <p class="dica2" style="margin:.5rem 0 0">Privacidade: a imagem é enviada ao Google para ser lida. No plano gratuito o Google pode usar o conteúdo para melhorar seus produtos. Mande só o horário, sem dados pessoais.</p>
-    <div class="linhas"><button class="btn2 pri" id="ia-ler">${E.foto ? 'Ler a foto guardada' : 'Escolher foto e ler'}</button></div><div id="ia-status" class="dica2" role="status" aria-live="polite"></div></div></div>`);
+
 
   html(w, `<div class="es"><div class="es-topo"><h3>Vestibulares e provas</h3><button class="linkb" id="nova-vest">+ Adicionar</button></div>${v.length ? v.map((x) => { const d = Math.round((new Date(x.data + 'T12:00') - new Date(HOJE + 'T12:00')) / 86400000); return `<div class="item"><div>${esc(x.nome)}${x.foco ? '<span class="chip">foco</span>' : ''}<small>${x.data.split('-').reverse().join('/')} · ${d < 0 ? 'já passou' : d === 0 ? 'hoje' : d + ' dias'}</small></div><button class="lapis2" data-vest="${x.id}" aria-label="Editar ${esc(x.nome)}">${LAPIS}</button></div>`; }).join('') : '<p class="vazio">Cadastre ENEM, UFSC, FUVEST ou qualquer prova para ter a contagem regressiva.</p>'}</div>`);
 
@@ -619,27 +636,8 @@ ${E.foto ? `<img class="foto" id="foto" src="${E.foto}" alt="Foto do meu horári
     const r = ES.lerTexto($('txt-plano').value, E.materias);
     previa = { ...r, origem: 'texto' }; mostrarPrevia();
   };
-  $('modelo').onclick = () => {
-    const m = ES.modeloFoto();
-    previa = { blocos: m.blocos, ignoradas: [], origem: 'modelo', materias: m.materias }; mostrarPrevia();
-  };
   if (previa) mostrarPrevia();
-  const foto = $('foto'); if (foto) foto.onclick = () => { $('foto-grande').src = E.foto; $('foto-grande').classList.remove('grande'); $('dlg-foto').showModal(); };
-  $('foto-in').onchange = async (ev) => { const f = ev.target.files[0]; if (!f) return; try { E.foto = await reduzirFoto(f); await salvar(); aviso('Foto guardada.'); } catch (err) { aviso('Não consegui usar essa imagem.', true); } };
-  const fd = $('foto-del'); if (fd) fd.onclick = async () => { E.foto = null; await salvar(); };
-  $('ia-chave').oninput = () => { try { localStorage.setItem('brain-gemini-key', $('ia-chave').value.trim()); } catch (e) {} };
-  $('ia-ler').onclick = async () => {
-    const st = $('ia-status'); const k = $('ia-chave').value.trim();
-    try { localStorage.setItem('brain-gemini-key', k); } catch (e) {}
-    if (!E.foto) { $('foto-in').click(); st.textContent = 'Escolha a foto; depois toque em "Ler a foto guardada".'; return; }
-    st.textContent = 'Lendo a foto... pode levar alguns segundos.'; $('ia-ler').disabled = true;
-    try {
-      const r = await BrainLeitor.lerFoto({ chave: k, imagem: E.foto, materias: E.materias });
-      previa = { blocos: r.blocos, ignoradas: r.ignoradas, origem: 'ia' }; mostrarPrevia();
-      st.textContent = r.blocos.length ? `Pronto: ${r.blocos.length} blocos lidos (modelo ${r.modelo}). Confira abaixo, em "Meu horário (texto)".` : 'A IA não encontrou blocos nessa foto.';
-      const el = $('previa'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } catch (err) { st.textContent = err.message; } finally { $('ia-ler').disabled = false; }
-  };
+  ligarCronograma(w);
   $('nova-vest').onclick = () => abrirVest(null);
   w.querySelectorAll('[data-vest]').forEach((b) => { b.onclick = () => abrirVest(E.vestibulares.find((x) => x.id === Number(b.dataset.vest))); });
   $('nova-mat').onclick = () => abrirMat(null);
@@ -652,17 +650,168 @@ ${E.foto ? `<img class="foto" id="foto" src="${E.foto}" alt="Foto do meu horári
     await salvar(); aviso(`${r.atribuicoes.length} blocos preenchidos. Veja na aba Semana.`);
   };
 }
+// ---------- cronograma personalizado (foto da rotina -> IA lê -> encaixo os estudos nos horários livres)
+const cronOpt = { horas: null, sessao: 60, ini: '05:00', fim: '22:00', livres: [], foco: '', considerar: true, incluir: true, substituir: false };
+const cron = { rotina: null, ignoradas: [], plano: null };
+function horasPadrao() { try { const p = (window.BrainPrefs && window.BrainPrefs.get().perfil) || {}; const h = Number(p.horas) * Number(p.dias); if (h >= 1 && h <= 60) return Math.round(h); } catch (e) { /* sem perfil */ } return 10; }
+const chaveIA = () => { try { return localStorage.getItem('brain-gemini-key') || ''; } catch (e) { return ''; } };
+const optsHtml = (lista, atual) => lista.map(([v, t]) => `<option value="${v}"${String(v) === String(atual) ? ' selected' : ''}>${t}</option>`).join('');
+
+function cartaoCronograma(w) {
+  if (cronOpt.horas === null) cronOpt.horas = horasPadrao();
+  const nBlocos = E.blocos.length;
+  html(w, `<div class="es" id="cron-card"><h3>Cronograma com IA</h3>
+    <p class="sub">Tire uma foto ou anexe a imagem da sua rotina (grade da escola, agenda, horário do trabalho). A IA lê os compromissos e eu encaixo os estudos nos horários livres, numa planilha que você pode baixar.</p>
+    ${E.foto ? `<div class="cr-thumb"><img id="cr-img" src="${E.foto}" alt="Foto da sua rotina"><div>Foto da rotina guardada.<br><button class="linkb" id="cr-tirar-foto" type="button">Remover foto</button></div></div>` : ''}
+    <div class="linhas"><label class="btn2 pri cr-b">${E.foto ? 'Tirar outra foto' : 'Tirar foto'}<input type="file" accept="image/*" capture="environment" id="cr-cam" hidden></label><label class="btn2 cr-b">${E.foto ? 'Anexar outra imagem' : 'Anexar imagem'}<input type="file" accept="image/*" id="cr-arq" hidden></label></div>
+    <div class="cr-g">
+      <label>Horas de estudo por semana<input type="number" id="cr-horas" min="1" max="60" inputmode="numeric" value="${cronOpt.horas}"></label>
+      <label>Duração de cada sessão<select id="cr-sessao">${optsHtml([[45, '45 min'], [60, '1 hora'], [90, '1h30'], [120, '2 horas']], cronOpt.sessao)}</select></label>
+      <label>Começar a partir de<select id="cr-ini">${optsHtml(['05:00', '06:00', '07:00', '08:00', '09:00'].map((h) => [h, h]), cronOpt.ini)}</select></label>
+      <label>Terminar até<select id="cr-fim">${optsHtml(['19:00', '20:00', '21:00', '22:00', '23:00'].map((h) => [h, h]), cronOpt.fim)}</select></label>
+    </div>
+    <div class="cr-rot" id="cr-dl">Dias de descanso (sem estudo)</div>
+    <div class="cr-dias" role="group" aria-labelledby="cr-dl">${ES.ORDEM_SEMANA.map((d) => `<button type="button" data-d="${d}" aria-pressed="${cronOpt.livres.includes(d)}" aria-label="${ES.DIAS[d]}">${ES.DIAS_CURTO[d].slice(0, 3)}</button>`).join('')}</div>
+    <label class="cr-foco">Foco (opcional)<input id="cr-foco" maxlength="80" placeholder="Ex.: ENEM, Matemática, Redação" value="${esc(cronOpt.foco)}"></label>
+    ${nBlocos ? `<label class="cr-ck"><input type="checkbox" id="cr-considerar"${cronOpt.considerar ? ' checked' : ''}> Respeitar também os blocos que já estão na minha semana (${nBlocos})</label>` : ''}
+    <div style="border-top:1px solid var(--line);margin-top:1rem;padding-top:.8rem"><div class="cr-rot" style="margin-top:0">Chave grátis do Google (para a IA ler a foto)</div>
+      <p class="sub" style="margin:.2rem 0 .5rem">Usa o Google Gemini com a sua própria chave, sem cartão. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:650">Pegar chave grátis</a>. Ela fica só neste aparelho e não entra no backup.</p>
+      <input id="ia-chave" type="password" autocomplete="off" placeholder="Cole sua chave (AIza...)" value="${esc(chaveIA())}" aria-label="Chave da API do Google AI Studio">
+      <p class="dica2" style="margin:.5rem 0 0">Privacidade: a imagem é enviada ao Google para ser lida. No plano gratuito o Google pode usar o conteúdo para melhorar seus produtos. Mande só o horário, sem dados pessoais.</p></div>
+    <div class="linhas"><button class="btn2 pri" id="cr-montar" type="button">Montar cronograma</button></div>
+    <div id="cr-status" class="dica2" role="status" aria-live="polite"></div>
+    <div id="cr-saida"></div></div>`);
+}
+
+function lerOpcoes() {
+  const v = (id) => { const e = $(id); return e ? e.value : null; };
+  const h = Number(v('cr-horas')); if (h >= 1 && h <= 60) cronOpt.horas = Math.round(h);
+  cronOpt.sessao = Number(v('cr-sessao')) || 60; cronOpt.ini = v('cr-ini') || '05:00'; cronOpt.fim = v('cr-fim') || '22:00';
+  cronOpt.foco = (v('cr-foco') || '').slice(0, 80);
+  const c = $('cr-considerar'); if (c) cronOpt.considerar = c.checked;
+  cronOpt.livres = [...document.querySelectorAll('.cr-dias [aria-pressed="true"]')].map((b) => Number(b.dataset.d));
+}
+
+async function novaFotoRotina(f) {
+  if (!f) return;
+  try { E.foto = await reduzirFoto(f); cron.rotina = null; cron.plano = null; await salvar(); aviso('Foto guardada. Toque em "Montar cronograma".'); }
+  catch (err) { aviso('Não consegui usar essa imagem.', true); }
+}
+
+function ligarCronograma(w) {
+  const card = $('cron-card'); if (!card) return;
+  $('cr-cam').onchange = (ev) => { const f = ev.target.files[0]; ev.target.value = ''; lerOpcoes(); novaFotoRotina(f); };
+  $('cr-arq').onchange = (ev) => { const f = ev.target.files[0]; ev.target.value = ''; lerOpcoes(); novaFotoRotina(f); };
+  const img = $('cr-img'); if (img) img.onclick = () => { $('foto-grande').src = E.foto; $('foto-grande').classList.remove('grande'); $('dlg-foto').showModal(); };
+  const rm = $('cr-tirar-foto'); if (rm) rm.onclick = async () => { lerOpcoes(); E.foto = null; cron.rotina = null; cron.plano = null; await salvar(); };
+  card.querySelectorAll('.cr-dias button').forEach((b) => { b.onclick = () => { b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); lerOpcoes(); }; });
+  card.querySelectorAll('input, select').forEach((el) => { if (el.type !== 'file' && el.id !== 'ia-chave') el.addEventListener('change', lerOpcoes); });
+  $('ia-chave').oninput = () => { try { localStorage.setItem('brain-gemini-key', $('ia-chave').value.trim()); } catch (e) { /* sem storage */ } };
+  $('cr-montar').onclick = montarCron;
+  if (cron.plano) desenharCron();
+}
+
+async function montarCron() {
+  const st = $('cr-status'), btn = $('cr-montar');
+  lerOpcoes();
+  const chave = $('ia-chave').value.trim();
+  try { localStorage.setItem('brain-gemini-key', chave); } catch (e) { /* sem storage */ }
+  btn.disabled = true;
+  try {
+    if (E.foto && !cron.rotina) {
+      if (chave.length < 20) { st.textContent = 'Cole sua chave grátis do Google acima para a IA ler a foto.'; $('ia-chave').focus(); return; }
+      st.textContent = 'A IA está lendo a foto... pode levar alguns segundos.';
+      const r = await BrainLeitor.lerFoto({ chave, imagem: E.foto, materias: E.materias });
+      cron.rotina = r.blocos; cron.ignoradas = r.ignoradas;
+      if (!r.blocos.length) { st.textContent = 'A IA não encontrou compromissos nessa foto. Tente uma foto mais nítida, de frente e com boa luz.'; return; }
+    }
+    let fixos = (cron.rotina || []).slice();
+    if (cronOpt.considerar && E.blocos.length) fixos = fixos.concat(E.blocos);
+    const plano = ES.montarCronograma(fixos, {
+      horasSemana: cronOpt.horas, sessaoMin: cronOpt.sessao, janelaIni: cronOpt.ini, janelaFim: cronOpt.fim, diasLivres: cronOpt.livres,
+      foco: cronOpt.foco.split(/[,;]/).map((x) => x.trim()).filter(Boolean), materias: E.materias,
+    });
+    cron.plano = { ...plano, rotina: cron.rotina || [], semFoto: !cron.rotina };
+    st.textContent = cron.rotina ? `A IA leu ${cron.rotina.length} compromissos da foto.${cron.ignoradas.length ? ` ${cron.ignoradas.length} não deu para entender.` : ''}` : (fixos.length ? 'Usei os blocos que já estão na sua semana.' : 'Sem foto nem blocos, usei a semana toda livre. Anexe a foto da sua rotina para um plano sob medida.');
+    desenharCron();
+    const o = $('cr-saida'); if (o) o.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) { st.textContent = err.message || 'Não consegui montar agora.'; }
+  finally { btn.disabled = false; }
+}
+
+function celulaGrade(b) {
+  if (b.tipo === 'estudo') {
+    const m = b.materia_id ? E.materias.find((x) => x.id === b.materia_id) : E.materias.find((x) => ES.norm(x.nome) === ES.norm(b.titulo));
+    const cor = m ? ES.CORES_MATERIA[m.cor % ES.CORES_MATERIA.length] : (b.titulo === 'Revisão da semana' ? '#5f6b7a' : ES.CORES_MATERIA[Math.abs([...b.titulo].reduce((a, c) => a + c.charCodeAt(0), 0)) % ES.CORES_MATERIA.length]);
+    return { cls: 'e', style: `background:${cor}` };
+  }
+  return { cls: 'f', style: '' };
+}
+
+function tabelaCron(blocos) {
+  const g = ES.grade(blocos);
+  const skip = g.dias.map(() => 0);
+  let h = '<table class="planilha"><thead><tr><th scope="col">Hora</th>' + g.dias.map((d) => `<th scope="col">${ES.DIAS_CURTO[d]}</th>`).join('') + '</tr></thead><tbody>';
+  g.linhas.forEach((l, r) => {
+    h += `<tr><td class="h">${l.hora}</td>`;
+    l.celulas.forEach((b, c) => {
+      if (skip[c] > 0) { skip[c]--; return; }
+      if (!b) { h += '<td></td>'; return; }
+      let n = 1; while (g.linhas[r + n] && g.linhas[r + n].celulas[c] === b) n++;
+      skip[c] = n - 1;
+      const k = celulaGrade(b);
+      h += `<td class="${k.cls}" rowspan="${n}" style="${k.style}">${esc(b.titulo)}${b.tipo === 'estudo' ? `<small>${b.ini}–${b.fim}</small>` : ''}</td>`;
+    });
+    h += '</tr>';
+  });
+  return h + '</tbody></table>';
+}
+
+function desenharCron() {
+  const p = cron.plano, o = $('cr-saida'); if (!p || !o) return;
+  const todos = p.rotina.concat(cronOpt.considerar ? E.blocos.filter((b) => b.tipo !== 'estudo') : []).concat(p.blocos);
+  const nomes = Object.entries(p.resumo.porMateria).sort((a, b) => b[1] - a[1]);
+  o.innerHTML = `<h4>Seu cronograma</h4>
+    ${p.avisos.map((a) => `<div class="aviso2">${esc(a)}</div>`).join('')}
+    ${p.blocos.length ? `<p class="sub" style="margin:.2rem 0">${p.blocos.length} sessões, ${ES.fmtMin(p.resumo.minutos)} por semana. Cinza = seus compromissos; colorido = estudo.</p>
+    <div class="cr-res">${nomes.map(([n, m]) => `<span class="chip">${esc(n)} · ${ES.fmtMin(m)}</span>`).join('')}</div>
+    <div class="planilha-w" tabindex="0" role="region" aria-label="Planilha do cronograma">${tabelaCron(todos)}</div>
+    ${p.rotina.length ? '<label class="cr-ck"><input type="checkbox" id="cr-incl" checked> Adicionar também os compromissos lidos da foto à minha semana</label>' : ''}
+    ${E.blocos.some((b) => b.tipo === 'estudo') ? '<label class="cr-ck"><input type="checkbox" id="cr-subst"> Substituir os blocos de estudo que já tenho</label>' : ''}
+    <div class="linhas"><button class="btn2 pri" id="cr-aplicar" type="button">Adicionar à minha semana</button><button class="btn2" id="cr-baixar" type="button">Baixar planilha</button><button class="btn2" id="cr-copiar" type="button">Copiar para o Sheets</button></div>
+    <div id="cr-msg" class="dica2" role="status" aria-live="polite"></div>` : ''}`;
+  const msg = (t) => { const e = $('cr-msg'); if (e) e.textContent = t; };
+  const a = $('cr-aplicar'); if (a) a.onclick = async () => {
+    const incl = $('cr-incl') ? $('cr-incl').checked : false, subst = $('cr-subst') ? $('cr-subst').checked : false;
+    if (subst) E.blocos = E.blocos.filter((b) => b.tipo !== 'estudo');
+    const idDe = (nome) => { let m = E.materias.find((x) => ES.norm(x.nome) === ES.norm(nome)); if (!m) { m = { id: ES.novoId(E), nome, cor: E.materias.length % ES.CORES_MATERIA.length, prioridade: 2, meta_h: 0 }; E.materias.push(m); } return m.id; };
+    const igual = (x, y) => x.dia === y.dia && x.ini === y.ini && x.fim === y.fim && ES.norm(x.titulo) === ES.norm(y.titulo);
+    let n = 0;
+    if (incl) for (const b of p.rotina) if (!E.blocos.some((x) => igual(x, b))) { E.blocos.push({ id: ES.novoId(E), dia: b.dia, ini: b.ini, fim: b.fim, titulo: b.titulo, tipo: b.tipo, materia_id: null }); n++; }
+    for (const b of p.blocos) { E.blocos.push({ id: ES.novoId(E), dia: b.dia, ini: b.ini, fim: b.fim, titulo: b.titulo, tipo: 'estudo', materia_id: b.nome ? idDe(b.nome) : null }); n++; }
+    cron.plano = null; cron.rotina = null;
+    await salvar(); aviso(`${n} blocos adicionados. Veja na aba Semana.`); aba = 'semana'; desenhar();
+  };
+  const nome = `cronograma-de-estudos-${HOJE}.csv`;
+  const b = $('cr-baixar'); if (b) b.onclick = async () => {
+    const blob = new Blob([ES.planilhaTexto(todos)], { type: 'text/csv;charset=utf-8' });
+    try { const f = new File([blob], nome, { type: 'text/csv' }); if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: 'Cronograma de estudos' }); msg('Planilha pronta. Abra no Excel ou no Google Sheets.'); return; } }
+    catch (e) { if (e && e.name === 'AbortError') { msg('Compartilhamento cancelado.'); return; } }
+    try { const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = nome; document.body.append(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(l.href), 60000); msg('Planilha baixada. Confira em Downloads e abra no Excel ou no Google Sheets.'); }
+    catch (e) { msg('Não consegui baixar. Use "Copiar para o Sheets".'); }
+  };
+  const c = $('cr-copiar'); if (c) c.onclick = async () => {
+    try { await navigator.clipboard.writeText(ES.planilhaTexto(todos, 'tsv')); msg('Copiado. Abra o Google Sheets e cole na célula A1.'); }
+    catch (e) { msg('O navegador não deixou copiar. Use "Baixar planilha".'); }
+  };
+}
+
 function mostrarPrevia() {
   const el = $('previa'); if (!el || !previa) return;
   const n = previa.blocos.length;
-  el.innerHTML = `${n ? `<p class="sub" style="margin:.6rem 0 .2rem">Entendi ${n} ${n === 1 ? 'bloco' : 'blocos'}${previa.origem === 'modelo' ? ' (transcritos da sua foto; confira os horários, alguns podem estar aproximados)' : previa.origem === 'ia' ? ' (lidos por IA: confira horários e títulos antes de adicionar)' : ''}:</p><div class="previa">${previa.blocos.slice(0, 80).map((b) => `<div>${ES.DIAS_CURTO[b.dia]} ${b.ini}-${b.fim} · ${esc(b.titulo)} <span class="chip">${ES.TIPOS[b.tipo]}</span></div>`).join('')}${n > 80 ? `<div>... e mais ${n - 80}</div>` : ''}</div>` : '<div class="aviso2">Não consegui entender nenhuma linha. Use o formato: dias, horário e atividade. Ex.: "seg a sex 05:00-06:00 física".</div>'}${previa.ignoradas.length ? `<div class="aviso2">Não entendi: ${previa.ignoradas.slice(0, 4).map(esc).join(' | ')}${previa.ignoradas.length > 4 ? ' ...' : ''}</div>` : ''}${n ? `<div class="linhas"><button class="btn2 pri" id="aplicar-add">Adicionar à semana</button>${E.blocos.length ? '<button class="btn2" id="aplicar-sub">Substituir tudo</button>' : ''}</div>` : ''}`;
+  el.innerHTML = `${n ? `<p class="sub" style="margin:.6rem 0 .2rem">Entendi ${n} ${n === 1 ? 'bloco' : 'blocos'}${previa.origem === 'ia' ? ' (lidos por IA: confira horários e títulos antes de adicionar)' : ''}:</p><div class="previa">${previa.blocos.slice(0, 80).map((b) => `<div>${ES.DIAS_CURTO[b.dia]} ${b.ini}-${b.fim} · ${esc(b.titulo)} <span class="chip">${ES.TIPOS[b.tipo]}</span></div>`).join('')}${n > 80 ? `<div>... e mais ${n - 80}</div>` : ''}</div>` : '<div class="aviso2">Não consegui entender nenhuma linha. Use o formato: dias, horário e atividade. Ex.: "seg a sex 05:00-06:00 física".</div>'}${previa.ignoradas.length ? `<div class="aviso2">Não entendi: ${previa.ignoradas.slice(0, 4).map(esc).join(' | ')}${previa.ignoradas.length > 4 ? ' ...' : ''}</div>` : ''}${n ? `<div class="linhas"><button class="btn2 pri" id="aplicar-add">Adicionar à semana</button>${E.blocos.length ? '<button class="btn2" id="aplicar-sub">Substituir tudo</button>' : ''}</div>` : ''}`;
   const aplicar = async (substituir) => {
     if (substituir && !confirm('Substituir todos os blocos atuais pelos novos?')) return;
-    if (previa.origem === 'modelo') { // traz também as matérias do modelo que ainda não existem
-      const map = {};
-      for (const m of previa.materias) { let ex = E.materias.find((x) => ES.norm(x.nome) === ES.norm(m.nome)); if (!ex) { ex = { id: ES.novoId(E), nome: m.nome, cor: E.materias.length % ES.CORES_MATERIA.length, prioridade: 2, meta_h: 0 }; E.materias.push(ex); } map[m.id] = ex.id; }
-      previa.blocos = previa.blocos.map((b) => ({ ...b, materia_id: b.materia_id ? map[b.materia_id] : null }));
-    }
     if (substituir) E.blocos = [];
     previa.blocos.forEach((b) => E.blocos.push({ id: ES.novoId(E), dia: b.dia, ini: b.ini, fim: b.fim, titulo: b.titulo, tipo: b.tipo, materia_id: b.materia_id || null }));
     const n2 = previa.blocos.length; previa = null; await salvar(); aviso(`${n2} blocos adicionados. Veja na aba Semana.`); aba = 'semana'; desenhar();
@@ -707,7 +856,7 @@ $('f-mat').addEventListener('submit', async (e) => { e.preventDefault(); const d
 function ligar(w) {
   w.querySelectorAll('[data-ir]').forEach((b) => { b.onclick = () => { aba = b.dataset.ir; desenhar(); }; });
   w.querySelectorAll('[data-foco]').forEach((b) => { b.onclick = () => { matSel = b.dataset.foco; aba = 'foco'; desenhar(); }; });
-  const um = $('usar-modelo'); if (um) um.onclick = () => { aba = 'plano'; desenhar(); $('modelo').click(); };
+  const um = $('usar-foto'); if (um) um.onclick = () => { aba = 'plano'; desenhar(); const c = $('cron-card'); if (c) c.scrollIntoView({ block: 'start' }); };
 }
 window.addEventListener('pagehide', () => { clearInterval(tick); });
 if (lerFoco()) aba = 'foco';
