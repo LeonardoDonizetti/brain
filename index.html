@@ -416,7 +416,8 @@ function rotuloGrupo(k) {
   if (k === iso(somar(doIso(HOJE), 1))) return ['Amanhã', fmtCurto(k)];
   return [fmtCurto(k), ''];
 }
-function desenharTabela() {
+function desenharTabela() { if (window.BrainAnim) window.BrainAnim.preservar(desenharTabela0); else desenharTabela0(); }
+function desenharTabela0() {
   const lista = TAREFAS.filter((t) => mostrarFeitas || !t.feita);
   const pend = TAREFAS.filter((t) => !t.feita).length;
   $('tab-total').textContent = `${pend} ${plural(pend, 'pendente', 'pendentes')}`;

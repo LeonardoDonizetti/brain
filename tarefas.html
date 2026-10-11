@@ -269,7 +269,8 @@ async function carregar() {
 
 const filtradas = () => (listaSel ? tarefas.filter((t) => (t.lista || '').toLowerCase() === listaSel.toLowerCase()) : tarefas);
 
-function desenhar() {
+function desenhar() { if (window.BrainAnim) window.BrainAnim.preservar(desenhar0); else desenhar0(); }
+function desenhar0() {
   $('data-topo').textContent = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, (c) => c.toUpperCase());
   desenharResumo();
   desenharListas();

@@ -374,7 +374,8 @@ const corDe = (b) => { const m = b.materia_id && mat(b.materia_id); return m ? E
 
 // =================================================================== abas
 document.querySelectorAll('#abas button').forEach((b) => { b.onclick = () => { aba = b.dataset.aba; try { sessionStorage.setItem('estudos-aba', aba); } catch (e) {} desenhar(); }; });
-function desenhar() {
+function desenhar() { if (window.BrainAnim) window.BrainAnim.preservar(desenhar0); else desenhar0(); }
+function desenhar0() {
   document.querySelectorAll('#abas button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.aba === aba)));
   const nrev = ES.revisoesDevidas(E, HOJE).length; const br = document.querySelector('#abas [data-aba=rev]'); br.innerHTML = 'Revisões' + (nrev ? `<span class="bd">${nrev}</span>` : '');
   const p = $('painel');

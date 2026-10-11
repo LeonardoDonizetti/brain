@@ -38,8 +38,13 @@
     const a = lim(anterior(chave, pct, 0));
     if (!el) return;
     if (!anima() || a === pct) { el.style.transition = 'none'; el.style[eixo] = pct + '%'; return; }
-    el.style.transition = 'none'; el.style[eixo] = a + '%'; void el.offsetWidth;
-    el.style.transition = `${eixo} ${dur || 850}ms ${EASE}`; el.style[eixo] = pct + '%';
+    el.style.transition = 'none'; el.style[eixo] = a + '%';
+    depois(el, () => { el.style.transition = `${eixo} ${dur || 850}ms ${EASE}`; el.style[eixo] = pct + '%'; });
+  }
+  /** Roda fn depois de o navegador ter "visto" o estado inicial (se o elemento ainda não está na página, espera ele entrar). */
+  function depois(el, fn) {
+    if (el.isConnected) { void el.offsetWidth; fn(); return; }
+    requestAnimationFrame(() => requestAnimationFrame(() => { void el.offsetWidth; fn(); }));
   }
 
   /** Anel SVG com pathLength 100 (stroke-dasharray "p resto"). Retorna { subiu, completou }. */
@@ -50,8 +55,8 @@
     const poe = (v) => { circulo.style.strokeDasharray = `${v} ${100 - v}`; circulo.setAttribute('stroke-dasharray', `${v} ${100 - v}`); };
     const subiu = pct > a, completou = pct >= 100 && a < 100;
     if (!anima() || a === pct) { circulo.style.transition = 'none'; poe(pct); return { subiu: false, completou: false }; }
-    circulo.style.transition = 'none'; poe(a); void circulo.getBoundingClientRect();
-    circulo.style.transition = `stroke-dasharray ${o.dur || 900}ms ${EASE}, stroke .3s ease`; poe(pct);
+    circulo.style.transition = 'none'; poe(a);
+    depois(circulo, () => { circulo.style.transition = `stroke-dasharray ${o.dur || 900}ms ${EASE}, stroke .3s ease`; poe(pct); });
     if (subiu) setTimeout(() => pulsar(o.pulso || circulo.closest('.anel') || circulo.parentNode), 520);
     if (completou && o.celebrar !== false && root.BrainCelebrar) setTimeout(() => root.BrainCelebrar.micro(o.pulso || circulo, { texto: o.texto || 'Meta batida!', super: true }), 760);
     return { subiu, completou };
@@ -79,5 +84,16 @@
     raiz.querySelectorAll('[data-ak]').forEach((el) => barra(el, el.dataset.ak, Number(el.dataset.pct), el.dataset.eixo || 'width'));
   }
 
-  root.BrainAnim = { barra, anel, contar, varrer, pulsar, anterior };
+  /** Redesenha sem a página "subir sozinha": segura a altura enquanto o conteúdo é trocado e devolve a rolagem. */
+  function preservar(fn) {
+    const y = root.scrollY, h = document.documentElement.scrollHeight, corpo = document.body;
+    const ant = corpo.style.minHeight;
+    if (y > 0) corpo.style.minHeight = h + 'px';
+    try { fn(); }
+    finally {
+      if (y > 0) { root.scrollTo({ top: y, left: 0, behavior: 'instant' }); requestAnimationFrame(() => { corpo.style.minHeight = ant; if (Math.abs(root.scrollY - y) > 2) root.scrollTo({ top: y, left: 0, behavior: 'instant' }); }); }
+    }
+  }
+
+  root.BrainAnim = { barra, anel, contar, varrer, pulsar, anterior, preservar };
 })(typeof self !== 'undefined' ? self : this);

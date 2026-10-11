@@ -215,7 +215,8 @@ async function carregar() {
   desenhar();
 }
 
-function desenhar() {
+function desenhar() { if (window.BrainAnim) window.BrainAnim.preservar(desenhar0); else desenhar0(); }
+function desenhar0() {
   const eHoje = dia === iso(new Date());
   $('data-topo').textContent = (eHoje ? 'Hoje · ' : '') + paraData(dia).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   $('dia-prox').disabled = eHoje;
@@ -249,7 +250,7 @@ function desenhar() {
     col.className = 'col' + (s.data === iso(new Date()) ? ' hoje' : '');
     const p = s.total ? Math.round((s.feitos / s.total) * 100) : 0;
     col.innerHTML = '<div class="trilho-bar"><i></i></div><small></small>';
-    col.querySelector('i').style.height = `${Math.max(p, 4)}%`;
+    { const bi = col.querySelector('i'), alvo = Math.max(p, 4); if (window.BrainAnim) window.BrainAnim.barra(bi, 'rot-sem-' + s.data, alvo, 'height', 1000); else bi.style.height = alvo + '%'; }
     col.querySelector('small').textContent = paraData(s.data).toLocaleDateString('pt-BR', { weekday: 'narrow' }).toUpperCase();
     col.title = `${paraData(s.data).toLocaleDateString('pt-BR')}: ${s.feitos}/${s.total}`;
     sem.append(col);

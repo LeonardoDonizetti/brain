@@ -246,7 +246,8 @@ async function carregar() {
   desenhar();
 }
 
-function desenhar() {
+function desenhar() { if (window.BrainAnim) window.BrainAnim.preservar(desenhar0); else desenhar0(); }
+function desenhar0() {
   $('data-topo').textContent = paraData(dados.hoje).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   desenharHero();
   desenharStats();
