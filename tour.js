@@ -101,15 +101,21 @@
     const s = document.createElement('style'); s.id = 'tr-css';
     s.textContent = `
       .tr-veil { position: fixed; inset: 0; z-index: 10000; background: transparent; touch-action: none; }
-      .tr-hole { position: fixed; z-index: 10001; pointer-events: none; border-radius: 1rem; box-shadow: 0 0 0 3px #fff, 0 0 0 9999px rgba(8,12,28,.78); transition: top .3s ease, left .3s ease, width .3s ease, height .3s ease; }
-      .tr-card { position: fixed; z-index: 10002; left: 50%; transform: translateX(-50%); width: min(calc(100vw - 1.5rem), 25rem); box-sizing: border-box; background: #fff; color: #1c2330; border: 2px solid var(--accent, #1565d8); border-radius: 1.25rem; box-shadow: 0 6px 0 var(--chunk, #0d4aa8), 0 18px 40px rgba(0,0,0,.35); padding: 1rem 1.1rem 1rem; font-family: inherit; }
-      .tr-card.topo { top: max(.75rem, env(safe-area-inset-top)); }
+      /* o destaque é movido por transform (GPU) e a sombra gigante escurece o resto da tela */
+      .tr-hole { position: fixed; z-index: 10001; left: 0; top: 0; pointer-events: none; border-radius: 1rem; will-change: transform, width, height;
+        box-shadow: 0 0 0 3px rgba(255,255,255,0), 0 0 0 9999px rgba(8,12,28,0); transition: box-shadow .32s ease; }
+      .tr-hole.on { box-shadow: 0 0 0 3px #fff, 0 0 0 9999px rgba(8,12,28,.78); }
+      .tr-card { position: fixed; z-index: 10002; left: 50%; width: min(calc(100vw - 1.5rem), 25rem); box-sizing: border-box; background: #fff; color: #1c2330; border: 2px solid var(--accent, #1565d8); border-radius: 1.25rem; box-shadow: 0 6px 0 var(--chunk, #0d4aa8), 0 18px 40px rgba(0,0,0,.35); padding: 1rem 1.1rem 1rem; font-family: inherit;
+        opacity: 0; transform: translate(-50%, 14px); transition: opacity .22s ease, transform .26s cubic-bezier(.2,.8,.2,1); will-change: opacity, transform; }
+      .tr-card.vis { opacity: 1; transform: translate(-50%, 0); }
+      .tr-card.topo { top: max(.75rem, env(safe-area-inset-top)); transform: translate(-50%, -14px); }
+      .tr-card.topo.vis { transform: translate(-50%, 0); }
       .tr-card.base { bottom: max(.75rem, env(safe-area-inset-bottom)); }
       .tr-topo { display: flex; align-items: center; gap: .6rem; margin-bottom: .45rem; }
       .tr-topo svg { flex: none; }
       .tr-pas { font-size: .8rem; font-weight: 700; color: #4b5565; letter-spacing: .02em; }
       .tr-pontos { display: flex; gap: .25rem; margin-top: .3rem; }
-      .tr-pontos i { width: .5rem; height: .5rem; border-radius: 50%; background: #d5dbe6; }
+      .tr-pontos i { width: .5rem; height: .5rem; border-radius: 50%; background: #d5dbe6; transition: background .3s; }
       .tr-pontos i.f { background: var(--accent, #1565d8); }
       .tr-card h3 { margin: 0 0 .25rem; font-size: 1.15rem; font-weight: 800; color: var(--accent, #1565d8); letter-spacing: -.01em; }
       .tr-card p { margin: 0 0 .9rem; font-size: 1rem; line-height: 1.5; color: #1c2330; }
@@ -121,15 +127,18 @@
       .tr-bts button:active { transform: translateY(2px); box-shadow: none; }
       .tr-bts button:focus-visible { outline: 3px solid #1c2330; outline-offset: 2px; }
       .tr-ajuda { cursor: pointer; font-weight: 800; font-size: 1.15rem; }
-      @media (prefers-reduced-motion: reduce) { .tr-hole { transition: none; } }
+      @media (prefers-reduced-motion: reduce) { .tr-hole, .tr-card, .tr-pontos i { transition: none; } }
     `;
     document.head.append(s);
   }
 
-  function montar(passos) {
+  const suave = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2); // easeInOutCubic
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  function montar() {
     css();
     const veil = document.createElement('div'); veil.className = 'tr-veil';
-    const hole = document.createElement('div'); hole.className = 'tr-hole'; hole.style.cssText = 'top:-100px;left:-100px;width:10px;height:10px';
+    const hole = document.createElement('div'); hole.className = 'tr-hole';
     const card = document.createElement('div'); card.className = 'tr-card base'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-live', 'polite');
     document.body.append(veil, hole, card);
     return { veil, hole, card };
@@ -146,62 +155,98 @@
     est.card.querySelector('.tr-pular').onclick = () => fechar(true);
     const v = est.card.querySelector('.tr-volta'); if (v) v.onclick = () => ir(-1);
     est.card.querySelector('.tr-prox').onclick = () => ir(1);
-    est.card.querySelector('.tr-prox').focus({ preventScroll: true });
   }
 
-  function atualizarBuraco() {
-    if (!est || !est.alvo) return;
-    const r = est.alvo.getBoundingClientRect();
-    const p = 6, vw = innerWidth, vh = innerHeight;
+  /** Retângulo do destaque (em coordenadas da tela) para um elemento. */
+  function retDe(el) {
+    const r = el.getBoundingClientRect(); const p = 6, vw = innerWidth, vh = innerHeight;
     const l = Math.max(2, r.left - p), t = Math.max(2, r.top - p);
-    const w = Math.min(vw - 4, r.right + p) - l, h = Math.min(vh - 4, r.bottom + p) - t;
-    Object.assign(est.hole.style, { left: l + 'px', top: t + 'px', width: Math.max(10, w) + 'px', height: Math.max(10, h) + 'px' });
+    return { x: l, y: t, w: Math.max(10, Math.min(vw - 4, r.right + p) - l), h: Math.max(10, Math.min(vh - 4, r.bottom + p) - t) };
   }
-  function laco() { if (!est) return; atualizarBuraco(); est.raf = requestAnimationFrame(laco); }
+  function poe(r) {
+    est.rect = r;
+    est.hole.style.width = r.w + 'px'; est.hole.style.height = r.h + 'px';
+    est.hole.style.transform = `translate3d(${r.x}px, ${r.y}px, 0)`;
+  }
+  // com a tela parada, o destaque acompanha o elemento (redimensionar, conteúdo que muda de altura)
+  function laco() {
+    if (!est) return;
+    if (!est.movendo && est.alvo && est.alvo.isConnected) { const r = retDe(est.alvo); if (!est.rect || Math.abs(r.x - est.rect.x) + Math.abs(r.y - est.rect.y) + Math.abs(r.w - est.rect.w) + Math.abs(r.h - est.rect.h) > 0.5) poe(r); }
+    est.raf = requestAnimationFrame(laco);
+  }
 
-  async function rolarPara(el) {
-    if (fixo(el)) return;
-    const card = est.card.getBoundingClientRect();
-    const r = el.getBoundingClientRect();
-    const vh = innerHeight, livre = vh - card.height - 36; // área acima do cartão (que fica embaixo)
-    let alvoY;
-    if (r.height <= livre) alvoY = window.scrollY + r.top - Math.max(16, (livre - r.height) / 2);
-    else alvoY = window.scrollY + r.top - 16;
-    const max = Math.max(0, document.documentElement.scrollHeight - vh);
-    const dest = Math.min(max, Math.max(0, alvoY));
-    if (Math.abs(window.scrollY - dest) < 2) return;
-    window.scrollTo({ top: dest, behavior: reduz() ? 'auto' : 'smooth' });
-    for (let k = 0; k < 30; k++) { await espera(60); if (Math.abs(window.scrollY - dest) < 2) break; }
-    await espera(60);
+  /** Rola a página e move o destaque no mesmo compasso (mesma curva), sem pulos. */
+  function animar(el, dest, mostrarCard, dur) {
+    return new Promise((resolve) => {
+      const ticket = est.ticket;
+      const y0 = window.scrollY; const A = est.rect || retDe(el);
+      const t0 = performance.now(); let cardOk = false;
+      est.movendo = true;
+      const passo = (agora) => {
+        if (!est || ticket !== est.ticket) return resolve(false);
+        const p = dur <= 0 ? 1 : Math.min(1, (agora - t0) / dur); const e = suave(p);
+        if (dest !== null) window.scrollTo(0, lerp(y0, dest, e));
+        if (!el.isConnected) return resolve(false);
+        const B = retDe(el);
+        poe({ x: lerp(A.x, B.x, e), y: lerp(A.y, B.y, e), w: lerp(A.w, B.w, e), h: lerp(A.h, B.h, e) });
+        if (!cardOk && p >= 0.55) { cardOk = true; mostrarCard(); }
+        if (p < 1) requestAnimationFrame(passo); else { est.movendo = false; if (!cardOk) mostrarCard(); resolve(true); }
+      };
+      requestAnimationFrame(passo);
+    });
+  }
+
+  function fixo(el) {
+    for (let n = el; n && n !== document.body; n = n.parentElement) { const p = getComputedStyle(n).position; if (p === 'fixed' || p === 'sticky') return true; }
+    return false;
   }
 
   async function mostrar(i, dir) {
     const passos = est.passos; const ticket = ++est.ticket;
+    est.card.classList.remove('vis');                       // texto antigo some enquanto o destaque viaja
     let pos = est.visiveis.indexOf(i);
-    // pula passos cujo alvo não existe nesta tela
     while (pos >= 0 && pos < est.visiveis.length) {
       const idx = est.visiveis[pos]; const p = passos[idx];
       if (p.antes) { try { p.antes(); } catch (e) { /* ignora */ } await espera(380); }
       const el = await esperarAlvo(p, p.antes ? 1200 : 400);
-      if (ticket !== est.ticket) return;
+      if (!est || ticket !== est.ticket) return;
       if (el) {
-        est.i = idx; est.alvo = el;
+        est.i = idx;
         desenharCard(p, pos, est.visiveis.length, pos === est.visiveis.length - 1);
-        await rolarPara(el);
-        if (ticket !== est.ticket) return;
+        est.card.classList.add('base'); est.card.classList.remove('topo');
+        // para onde a página precisa rolar (o cartão fica embaixo; o alvo vai para a área livre acima dele)
+        const cardH = est.card.getBoundingClientRect().height, vh = innerHeight, livre = vh - cardH - 36;
         const r = el.getBoundingClientRect();
-        est.card.className = 'tr-card ' + ((r.top + r.height / 2) > innerHeight * 0.52 ? 'topo' : 'base');
-        atualizarBuraco();
+        let dest = null;
+        if (!fixo(el)) {
+          const alvoY = r.height <= livre ? window.scrollY + r.top - Math.max(16, (livre - r.height) / 2) : window.scrollY + r.top - 16;
+          const max = Math.max(0, document.documentElement.scrollHeight - vh);
+          dest = Math.min(max, Math.max(0, alvoY));
+          if (Math.abs(dest - window.scrollY) < 2) dest = null;
+        }
+        const topoFinal = r.top - ((dest === null ? window.scrollY : dest) - window.scrollY);
+        const lado = (topoFinal + r.height / 2) > vh * 0.52 ? 'topo' : 'base';
+        const dist = dest === null ? 0 : Math.abs(dest - window.scrollY);
+        const dur = reduz() ? 0 : Math.round(Math.min(760, Math.max(420, 380 + dist * 0.28)));
+        est.alvo = el;
+        const ok = await animar(el, dest, () => {
+          if (!est || ticket !== est.ticket) return;
+          est.card.classList.toggle('topo', lado === 'topo'); est.card.classList.toggle('base', lado === 'base');
+          void est.card.offsetWidth;                           // reinicia a transição de entrada
+          est.card.classList.add('vis');
+          const b = est.card.querySelector('.tr-prox'); if (b) b.focus({ preventScroll: true });
+        }, dur);
+        if (!ok && est && ticket === est.ticket) { est.movendo = false; }
         return;
       }
-      est.visiveis.splice(pos, 1);          // sem alvo: tira da contagem
-      if (dir < 0) pos -= 1;                // indo para trás, recua; indo para frente, o próximo já ocupa a posição
+      est.visiveis.splice(pos, 1);
+      if (dir < 0) pos -= 1;
     }
     if (dir > 0) fechar(true); else if (est.visiveis.length) mostrar(est.visiveis[0], 1);
   }
 
   async function ir(dir) {
-    if (!est) return;
+    if (!est || est.movendo) return;
     const pos = est.visiveis.indexOf(est.i);
     const prox = pos + dir;
     if (prox >= est.visiveis.length) return fechar(true);
@@ -221,14 +266,25 @@
     const e = est; est = null;
     cancelAnimationFrame(e.raf);
     document.removeEventListener('keydown', tecla, true);
-    removeEventListener('resize', atualizarBuraco);
-    e.veil.remove(); e.hole.remove(); e.card.remove();
-    document.documentElement.style.overflow = e.overflowAntes;
-    window.scrollTo({ top: 0, behavior: reduz() ? 'auto' : 'smooth' });
+    removeEventListener('resize', onResize);
     if (marcar) { try { localStorage.setItem(CHAVE(e.pg), '1'); } catch (x) { /* sem storage */ } }
-    if (e.foco && e.foco.focus) { try { e.foco.focus({ preventScroll: true }); } catch (x) { /* ignora */ } }
-    document.dispatchEvent(new CustomEvent('brain-tour-fim', { detail: { pagina: e.pg } }));
+    // saída suave: cartão e escurecimento desaparecem, a tela volta ao topo
+    e.card.classList.remove('vis'); e.hole.classList.remove('on');
+    const y0 = window.scrollY, t0 = performance.now(), dur = reduz() ? 0 : Math.min(500, 200 + y0 * 0.15);
+    const volta = (agora) => {
+      const p = dur <= 0 ? 1 : Math.min(1, (agora - t0) / dur);
+      window.scrollTo(0, lerp(y0, 0, suave(p)));
+      if (p < 1) requestAnimationFrame(volta); else terminar();
+    };
+    const terminar = () => {
+      e.veil.remove(); e.hole.remove(); e.card.remove();
+      document.documentElement.style.overflow = e.overflowAntes;
+      if (e.foco && e.foco.focus) { try { e.foco.focus({ preventScroll: true }); } catch (x) { /* ignora */ } }
+      document.dispatchEvent(new CustomEvent('brain-tour-fim', { detail: { pagina: e.pg } }));
+    };
+    setTimeout(() => requestAnimationFrame(volta), 80);
   }
+  function onResize() { if (est && est.alvo && !est.movendo) poe(retDe(est.alvo)); }
 
   function paginaAtual() { return document.documentElement.getAttribute('data-pg') || ''; }
 
@@ -245,18 +301,20 @@
       await espera(800);
     }
     if (est) return false;
-    const ui = montar(lista);
-    est = { pg, passos: lista, ...ui, ticket: 0, i: 0, alvo: null, foco: document.activeElement, overflowAntes: document.documentElement.style.overflow };
+    await esperarAlvo(lista[0], 2500);
+    const ui = montar();
+    est = { pg, passos: lista, ...ui, ticket: 0, i: 0, alvo: null, rect: null, movendo: false, foco: document.activeElement, overflowAntes: document.documentElement.style.overflow };
     document.documentElement.style.overflow = 'hidden';
     window.scrollTo({ top: 0 });
     document.addEventListener('keydown', tecla, true);
-    addEventListener('resize', atualizarBuraco);
-    // só entram passos que existem de verdade nesta tela (as abas abrem durante o caminho, então testa com a ação)
-    await esperarAlvo(lista[0], 2500);
+    addEventListener('resize', onResize);
     est.visiveis = lista.map((_, k) => k).filter((k) => lista[k].antes || achar(lista[k].alvo));
+    if (!est.visiveis.length) return fechar(false);
+    // o destaque nasce "dentro" do primeiro alvo (zoom suave) enquanto a tela escurece
+    const primeiro = achar(lista[est.visiveis[0]].alvo);
+    if (primeiro) { const r = retDe(primeiro); poe({ x: r.x - 30, y: r.y - 30, w: r.w + 60, h: r.h + 60 }); }
+    requestAnimationFrame(() => est && est.hole.classList.add('on'));
     est.raf = requestAnimationFrame(laco);
-    est.card.innerHTML = '<p style="margin:0">Preparando…</p>';
-    if (!est.visiveis.length) return fechar(true);
     mostrar(est.visiveis[0], 1);
     return true;
   }
