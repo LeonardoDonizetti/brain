@@ -98,8 +98,8 @@
 @keyframes cel-meta-in { from { transform: translate(-50%, -140%) scale(.9); opacity: 0; } to { transform: translate(-50%, 0) scale(1); opacity: 1; } }
 @keyframes cel-meta-out { to { transform: translate(-50%, -140%); opacity: 0; } }
 
-.cel-dia { position: absolute; inset: 0; z-index: 1; pointer-events: auto; display: grid; place-items: center; overflow: hidden; padding: env(safe-area-inset-top, 0px) 1rem env(safe-area-inset-bottom, 0px); background: radial-gradient(circle at 50% 36%, #fff9e6 0%, #ffe9bd 42%, #ffcf86 100%); animation: cel-fundo .3s ease-out both; }
-.cel-dia.marco { background: radial-gradient(circle at 50% 36%, #4a3aa8 0%, #2b2178 50%, #150f45 100%); color: #fff; }
+.cel-dia { position: absolute; inset: 0; z-index: 1; pointer-events: auto; display: grid; place-items: center; overflow: hidden; padding: env(safe-area-inset-top, 0px) 1rem env(safe-area-inset-bottom, 0px); background: #ffe7bf; animation: cel-fundo .3s ease-out both; }
+.cel-dia.marco { background: #2b2178; color: #fff; }
 .cel-dia.sai { animation: cel-fundo-sai .28s ease-in both; }
 .cel-raios { position: absolute; left: 50%; top: 36%; width: 130vmax; height: 130vmax; margin: -65vmax 0 0 -65vmax; background: repeating-conic-gradient(from 0deg, rgba(255,255,255,.6) 0 6deg, transparent 6deg 18deg); -webkit-mask: radial-gradient(circle, #000 0, transparent 52%); mask: radial-gradient(circle, #000 0, transparent 52%); animation: cel-gira 28s linear infinite, cel-surge .8s ease-out both; pointer-events: none; }
 .cel-dia.marco .cel-raios { background: repeating-conic-gradient(from 0deg, rgba(255,214,90,.34) 0 6deg, transparent 6deg 18deg); }
@@ -228,7 +228,7 @@
   }
   const FORMAS = ['ret', 'bola', 'tri', 'estrela', 'fita'];
   const explosao = (x, y, o) => emitir(Object.assign({ x, y, n: 18, angulo: -90, abertura: 180, vel: [160, 420], tam: [5, 10], g: 760, vida: [.7, 1.1], cores: PALETA, formas: FORMAS }, o));
-  const canhao = (lado, o) => emitir(Object.assign({ x: lado === 'e' ? -6 : W + 6, y: H * .9, n: 38, angulo: lado === 'e' ? -62 : -118, abertura: 20, vel: [520, 1050], tam: [6, 12], g: 980, arrasto: .975, vida: [1.5, 2.4], cores: PALETA, formas: FORMAS }, o));
+  const canhao = (lado, o) => emitir(Object.assign({ x: lado === 'e' ? -6 : W + 6, y: H * .9, n: 26, angulo: lado === 'e' ? -62 : -118, abertura: 20, vel: [520, 1050], tam: [6, 12], g: 980, arrasto: .975, vida: [1.5, 2.4], cores: PALETA, formas: FORMAS }, o));
   const chuva = (n, o) => emitir(Object.assign({ x: W / 2, dx: W / 2, y: -14, n, angulo: 90, abertura: 22, vel: [90, 300], tam: [6, 12], g: 300, arrasto: .992, vida: [2.2, 3.4], cores: PALETA, formas: FORMAS }, o));
 
   /* ---------------- 1) micro-recompensa ---------------- */
@@ -307,8 +307,7 @@
     const masc = root.BrainMascote ? root.BrainMascote.svg(marco ? 'rei' : 'vitoria', 160) : '';
     const sem = ui && ui.faixa && rj && rj.semana ? ui.faixa(rj) : '';
     const de = Math.max(0, n - 1);
-    d.innerHTML = `${movimento ? '<div class="cel-raios" aria-hidden="true"></div><i class="cel-onda" style="animation-delay:.2s"></i><i class="cel-onda" style="animation-delay:.5s"></i>' : ''}
-      <div class="cel-cena">
+    d.innerHTML = `      <div class="cel-cena">
         ${marco ? '<span class="cel-selo">NOVA MARCA</span>' : ''}
         <div class="cel-faixa"><span class="cel-chama" aria-hidden="true">${chama}</span>
           <div class="cel-numbloco"><span class="cel-odo" aria-hidden="true"><i class="vai">${de}</i><i class="vem">${n}</i></span><span class="cel-un">${n === 1 ? 'dia' : 'dias'} de ofensiva</span></div></div>
@@ -316,7 +315,7 @@
         <h2></h2><p class="sub"></p>
         <div class="cel-sem">${sem}</div>
         <button type="button" class="cel-btn">Continuar</button>
-      </div>${movimento ? '<i class="cel-flash" aria-hidden="true"></i>' : ''}`;
+      </div>`;
     d.querySelector('h2').textContent = titulo; d.querySelector('p.sub').textContent = sub;
     if (!movimento) d.querySelector('.cel-odo .vai').remove();
     r.insertBefore(d, r.firstChild);
@@ -334,8 +333,8 @@
     if (movimento) {
       const ouro = ['#ffd23f', '#ffb21f', '#fff3b0', '#ff7a00'], cores = marco ? ouro.concat(['#ffffff', '#b794ff']) : PALETA;
       setTimeout(() => { canhao('e', { cores }); canhao('d', { cores }); }, 130);
-      setTimeout(() => explosao(W / 2, H * .3, { n: marco ? 46 : 30, cores: marco ? ouro : cores, formas: ['estrela', 'estrela', 'bola', 'tri'], vel: [220, 600], tam: [6, 13], vida: [1, 1.7] }), 700);
-      setTimeout(() => chuva(marco ? 60 : 36, { cores }), 950);
+      setTimeout(() => explosao(W / 2, H * .3, { n: marco ? 34 : 20, cores: marco ? ouro : cores, formas: ['estrela', 'estrela', 'bola', 'tri'], vel: [220, 600], tam: [6, 13], vida: [1, 1.7] }), 700);
+      setTimeout(() => chuva(marco ? 44 : 24, { cores }), 950);
       if (marco) { setTimeout(() => { canhao('e', { cores: ouro, n: 30 }); canhao('d', { cores: ouro, n: 30 }); }, 1500); setTimeout(() => chuva(40, { cores: ouro, formas: ['estrela', 'bola'] }), 1900); }
       vibrar(marco ? [30, 50, 30, 50, 90] : [24, 40, 24, 40, 60]);
     }

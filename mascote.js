@@ -46,34 +46,19 @@
       frente: `<g class="m-moeda" style="transform-origin:112px 78px"><circle cx="112" cy="74" r="19" fill="#ffc83d" stroke="#c98100" stroke-width="3"/><circle cx="112" cy="74" r="13.5" fill="none" stroke="#e0a010" stroke-width="2"/><text x="112" y="80" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="800" font-size="16" fill="#9a6200">$</text></g>${mao(97, 91)}
         <g class="m-brilho"><path d="M130 48l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#ffb21f"/><path d="M14 30l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z" fill="#16a34a" opacity=".85"/></g>`
     },
-    // Ofensiva: olhos de estrela, grito de vitória, punhos para o alto e chamas na cabeça
+    // Ofensiva: comemoração simples (mesmo rosto da festa, sem chapéu), punhos para o alto e pulinho
     vitoria: {
-      vb: [-10, -30, 160, 154], salta: true,
-      tras: '<defs><radialGradient id="m-au1"><stop offset="0" stop-color="#ffb21f" stop-opacity=".55"/><stop offset=".6" stop-color="#ffb21f" stop-opacity=".22"/><stop offset="1" stop-color="#ffb21f" stop-opacity="0"/></radialGradient></defs><circle class="m-aura" cx="70" cy="62" r="78" fill="url(#m-au1)"/>',
-      rosto: `<path d="M44 52q9-6 17-1M79 51q9-5 17 1" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/>
-        <g class="m-olho"><path d="M55 54l2.6 6.2 6.6.5-5 4.4 1.6 6.5-5.8-3.5-5.8 3.5 1.6-6.5-5-4.4 6.6-.5z" fill="#ffd23f" stroke="#e08a00" stroke-width="1.6" stroke-linejoin="round"/></g>
-        <g class="m-olho m-olho2"><path d="M85 54l2.6 6.2 6.6.5-5 4.4 1.6 6.5-5.8-3.5-5.8 3.5 1.6-6.5-5-4.4 6.6-.5z" fill="#ffd23f" stroke="#e08a00" stroke-width="1.6" stroke-linejoin="round"/></g>
-        <path d="M58 73q12 20 24 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2.2" stroke-linejoin="round"/><path d="M63 86q7-8 14 0q-7 4-14 0z" fill="#ff8fa3"/><path d="M60 74h20" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`,
-      bracos: `<g class="m-puno-e" style="transform-origin:18px 66px">${bracoP('M18 66q-14-4-14-26')}<circle cx="4" cy="38" r="7" fill="${B}"/><path d="M0 36h8M0 40h8" stroke="${D}" stroke-width="1.6" stroke-linecap="round"/></g>
-        <g class="m-puno-d" style="transform-origin:122px 66px">${bracoP('M122 66q14-4 14-26')}<circle cx="136" cy="38" r="7" fill="${B}"/><path d="M132 36h8M132 40h8" stroke="${D}" stroke-width="1.6" stroke-linecap="round"/></g>`,
-      frente: `<g class="m-tufos">
-        <path class="m-tufo" style="transform-origin:48px 20px" d="M48 20c-8-4-5-12-1-17c1 5 3 6 5 7c1-3 4-6 4-9c6 8 6 16-8 19z" fill="#ff7a00"/><path class="m-tufo" style="transform-origin:48px 20px;animation-delay:-.3s" d="M48 19c-3-2-2-6 0-8c1 2 2 3 3 3c0 4-1 5-3 5z" fill="#ffd23f"/>
-        <path class="m-tufo m-tufo2" style="transform-origin:72px 14px" d="M72 14c-11-5-8-17-2-26c2 7 5 9 8 10c2-4 5-8 5-12c9 11 9 24-11 28z" fill="#ff5a0a"/><path class="m-tufo m-tufo2" style="transform-origin:72px 14px;animation-delay:-.4s" d="M72 13c-5-3-3-9 0-13c2 3 3 4 5 5c1 5-1 8-5 8z" fill="#ffd23f"/>
-        <path class="m-tufo" style="transform-origin:96px 22px;animation-delay:-.6s" d="M96 22c-8-4-5-12-1-17c1 5 3 6 5 7c1-3 4-6 4-9c6 8 6 16-8 19z" fill="#ff7a00"/></g>
-        <g class="m-brilho"><path d="M12 14l2.2 5 5 2.2-5 2.2-2.2 5-2.2-5-5-2.2 5-2.2z" fill="#ffd23f"/><path d="M130 6l1.8 4.2 4.2 1.8-4.2 1.8-1.8 4.2-1.8-4.2-4.2-1.8 4.2-1.8z" fill="#fff"/><path d="M146 70l1.6 3.6 3.6 1.6-3.6 1.6-1.6 3.6-1.6-3.6-3.6-1.6 3.6-1.6z" fill="#ffd23f"/></g>`
+      vb: [-10, -14, 160, 142], salta: true,
+      rosto: `<path d="M48 68q7-9 14 0M78 68q7-9 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M62 75q8 12 16 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/><path d="M66 79q4 3 8 0" fill="none" stroke="#ef8a85" stroke-width="2" stroke-linecap="round"/>`,
+      bracos: `<g class="m-puno-e" style="transform-origin:18px 62px">${bracoP('M18 62q-12-6-10-22')}${mao(8, 39)}</g><g class="m-puno-d" style="transform-origin:122px 62px">${bracoP('M122 62q12-6 12-22')}${mao(134, 39)}</g>`,
+      frente: '<g class="m-brilho"><path d="M14 22l2 4.6 4.6 2-4.6 2-2 4.6-2-4.6-4.6-2 4.6-2z" fill="#ffb21f"/><path d="M128 18l1.8 4.2 4.2 1.8-4.2 1.8-1.8 4.2-1.8-4.2-4.2-1.8 4.2-1.8z" fill="#ffb21f"/></g>'
     },
-    // Marco: coroa, óculos escuros, sorriso de quem chegou lá e troféu na mão
+    // Marco: igual, com uma coroa dourada
     rei: {
-      vb: [-10, -30, 160, 154], salta: true,
-      tras: '<defs><radialGradient id="m-au2"><stop offset="0" stop-color="#ffd23f" stop-opacity=".6"/><stop offset=".6" stop-color="#ffd23f" stop-opacity=".25"/><stop offset="1" stop-color="#ffd23f" stop-opacity="0"/></radialGradient></defs><circle class="m-aura" cx="70" cy="62" r="78" fill="url(#m-au2)"/>',
-      rosto: `<g><rect x="42" y="56" width="26" height="17" rx="6" fill="#1f2937"/><rect x="72" y="56" width="26" height="17" rx="6" fill="#1f2937"/><path d="M68 62h4" stroke="#1f2937" stroke-width="3"/><path d="M42 61l-6-2M98 61l6-2" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/>
-        <path d="M47 60l7 0M77 60l7 0" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".7"/><path d="M49 64l3 0M79 64l3 0" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></g>
-        <path d="M60 79q10 9 22-3" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M83 74q3 1 3 4" fill="none" stroke="#2a2420" stroke-width="2.2" stroke-linecap="round"/>`,
-      bracos: `${bracoP('M18 68q-14 0-14 20')}<circle cx="4" cy="90" r="7" fill="${B}"/><rect x="-1.5" y="72" width="6" height="11" rx="3" fill="${B}" transform="rotate(-8 2 78)"/>
-        <g class="m-puno-d" style="transform-origin:122px 66px">${bracoP('M122 66q14-4 14-26')}<circle cx="136" cy="38" r="7" fill="${B}"/></g>`,
-      frente: `<g class="m-trofeu" style="transform-origin:136px 34px"><path d="M126 8h20v10q0 12-10 14q-10-2-10-14z" fill="#ffd23f" stroke="#c98100" stroke-width="2.4" stroke-linejoin="round"/><path d="M126 11q-8 0-8 7t9 9M146 11q8 0 8 7t-9 9" fill="none" stroke="#c98100" stroke-width="2.4" stroke-linecap="round"/><path d="M136 32v6M129 40h14" stroke="#c98100" stroke-width="3" stroke-linecap="round"/><path d="M130 12v10" stroke="#fff3b0" stroke-width="2.4" stroke-linecap="round"/></g>
-        <g transform="translate(70 14) rotate(-5)"><path d="M-24 6l4-22l10 12l10-18l10 18l10-12l4 22z" fill="#ffd23f" stroke="#c98100" stroke-width="2.4" stroke-linejoin="round"/><rect x="-24" y="4" width="48" height="8" rx="2.5" fill="#ffb21f" stroke="#c98100" stroke-width="2.2"/><circle cx="-10" cy="8" r="2.2" fill="#ef4444"/><circle cx="0" cy="8" r="2.4" fill="#3b82f6"/><circle cx="10" cy="8" r="2.2" fill="#22c55e"/><circle cx="-20" cy="-16" r="2.4" fill="#fff3b0"/><circle cx="0" cy="-20" r="2.6" fill="#fff3b0"/><circle cx="20" cy="-16" r="2.4" fill="#fff3b0"/></g>
-        <g class="m-brilho"><path d="M12 14l2.2 5 5 2.2-5 2.2-2.2 5-2.2-5-5-2.2 5-2.2z" fill="#ffd23f"/><path d="M118 -4l1.8 4.2 4.2 1.8-4.2 1.8-1.8 4.2-1.8-4.2-4.2-1.8 4.2-1.8z" fill="#fff"/></g>`
+      vb: [-10, -22, 160, 150], salta: true,
+      rosto: `<path d="M48 68q7-9 14 0M78 68q7-9 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M62 75q8 12 16 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/><path d="M66 79q4 3 8 0" fill="none" stroke="#ef8a85" stroke-width="2" stroke-linecap="round"/>`,
+      bracos: `<g class="m-puno-e" style="transform-origin:18px 62px">${bracoP('M18 62q-12-6-10-22')}${mao(8, 39)}</g><g class="m-puno-d" style="transform-origin:122px 62px">${bracoP('M122 62q12-6 12-22')}${mao(134, 39)}</g>`,
+      frente: '<g transform="translate(70 15) rotate(-4)"><path d="M-21 9L-24 -11L-11 -2L0 -16L11 -2L24 -11L21 9Z" fill="#ffd23f" stroke="#c98100" stroke-width="2.4" stroke-linejoin="round"/><path d="M-21 4h42" stroke="#c98100" stroke-width="2"/><circle cx="-11" cy="6.6" r="1.9" fill="#ef4444"/><circle cx="0" cy="6.6" r="2.1" fill="#3b82f6"/><circle cx="11" cy="6.6" r="1.9" fill="#22c55e"/></g><g class="m-brilho"><path d="M14 22l2 4.6 4.6 2-4.6 2-2 4.6-2-4.6-4.6-2 4.6-2z" fill="#ffb21f"/><path d="M128 18l1.8 4.2 4.2 1.8-4.2 1.8-1.8 4.2-1.8-4.2-4.2-1.8 4.2-1.8z" fill="#ffb21f"/></g>'
     },
     // Jornada: bandeira no alto
     bandeira: {

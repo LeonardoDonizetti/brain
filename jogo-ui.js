@@ -33,48 +33,22 @@
   }
 
   // ------------------------------------------------------------ fogo de verdade (SVG original, línguas independentes)
-  /** Uma língua de fogo: base larga em y=78, ponta em (tx, 78-h). Todos os quadros têm a mesma estrutura, para o SMIL interpolar. */
-  function lingua(cx, a, h, tx, k) {
-    const y0 = 78, ty = y0 - h, f = (v) => v.toFixed(1);
-    return `M${f(tx)} ${f(ty)}C${f(tx + k)} ${f(y0 - h * .72)} ${f(cx + a)} ${f(y0 - h * .58)} ${f(cx + a)} ${f(y0 - h * .3)}C${f(cx + a)} ${f(y0 - h * .1)} ${f(cx + a * .55)} ${y0} ${f(cx)} ${y0}C${f(cx - a * .55)} ${y0} ${f(cx - a)} ${f(y0 - h * .1)} ${f(cx - a)} ${f(y0 - h * .3)}C${f(cx - a)} ${f(y0 - h * .56)} ${f(tx - k)} ${f(y0 - h * .7)} ${f(tx)} ${f(ty)}Z`;
-  }
+  /** Chama de desenho plano: contorno único (gota com uma curva na ponta) em três camadas de cor.
+      Os quadros têm a mesma estrutura, então o SMIL interpola o balanço da ponta com suavidade. */
+  const F1 = 'M32 2C34 14 52 26 52 48C52 66 43 78 32 78C21 78 12 67 12 50C12 40 17 33 22 27C23 34 26 38 29 38C26 26 28 12 32 2Z';
+  const F2 = 'M35 5C35 16 52 27 52 48C52 66 43 78 32 78C21 78 12 67 12 50C12 41 16 35 20 29C22 35 26 40 29 40C27 28 31 15 35 5Z';
+  const F3 = 'M29 4C32 15 52 25 52 48C52 66 43 78 32 78C21 78 12 67 12 50C12 40 18 31 24 25C24 33 27 37 30 37C25 25 26 13 29 4Z';
   let reduzMov = null;
   const semMovimento = () => { if (reduzMov === null) { try { reduzMov = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduzMov = false; } } return reduzMov; };
   function fogo(id, tam, vb, risco, anim) {
     const mexe = anim && !semMovimento();
-    // [centro, meia-largura, altura, [quadros: ponta x, curva, altura extra]]
-    const L = risco ? [
-      ['o', 32, 21, 66, [[32, 3, 0], [35, -2, -4], [29, 3, 2]], 1.5, '0'],
-      ['m', 32, 12, 40, [[32, 2, 0], [30, 3, 3], [34, -1, -3]], 1.2, '-.4'],
-    ] : [
-      ['sl', 13, 8, 34, [[11, 2, 0], [15, -2, -5], [10, 3, 3], [14, 1, -2]], 1.35, '-.3'],
-      ['sr', 51, 8, 29, [[53, 2, 0], [49, -2, 4], [54, 3, -3], [50, 1, 2]], 1.05, '-.7'],
-      ['o', 32, 22, 76, [[32, 3, 0], [37, -2, -5], [27, 4, 3], [34, 2, -2]], 1.15, '0'],
-      ['m', 32, 15, 56, [[32, 3, 0], [28, 3, 4], [36, -2, -4], [31, 2, 2]], .95, '-.35'],
-      ['i', 32, 9.5, 38, [[32, 2, 0], [35, -2, -3], [29, 3, 3], [33, 1, -1]], .8, '-.2'],
-      ['c', 32, 5, 22, [[32, 2, 0], [31, 1, 2], [33, -1, -2], [32, 1, 1]], .7, '-.5'],
-    ];
-    const cor = risco
-      ? { o: ['#f59e3a', '#fbc56a'], m: ['#fbbf5a', '#ffe2a6'] }
-      : { sl: ['#ff4d0a', '#ff9a1a'], sr: ['#ff4d0a', '#ff9a1a'], o: ['#ff3d00', '#ffa51f'], m: ['#ff8a00', '#ffd23f'], i: ['#ffc21f', '#fff0a0'], c: ['#fff1a6', '#ffffff'] };
-    const defs = Object.keys(cor).map((k) => `<linearGradient id="${id}${k}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${cor[k][0]}"/><stop offset="1" stop-color="${cor[k][1]}"/></linearGradient>`).join('')
-      + `<radialGradient id="${id}g" cx=".5" cy=".62" r=".5"><stop offset="0" stop-color="#ffb43a" stop-opacity="${risco ? .3 : .6}"/><stop offset="1" stop-color="#ffb43a" stop-opacity="0"/></radialGradient>`;
-    const camadas = L.map(([k, cx, a, h, qs, dur, ini]) => {
-      const q = qs.map(([tx, kk, dh]) => lingua(cx, a, h + dh, tx, kk));
-      const kt = q.map((_, i) => (i / q.length).toFixed(3)).concat('1').join(';'), vals = q.concat(q[0]).join(';');
-      const sp = q.map(() => '.45 0 .55 1').join(';');
-      const an = mexe ? `<animate attributeName="d" dur="${dur}s" begin="${ini}s" repeatCount="indefinite" calcMode="spline" keyTimes="${kt}" keySplines="${sp}" values="${vals}"/>` : '';
-      return `<path d="${q[0]}" fill="url(#${id}${k})">${an}</path>`;
-    }).join('');
-    let brasas = '';
-    if (!risco) {
-      const B = [[22, 2.1, 2.4, '0'], [42, 1.6, 2.9, '-1.1'], [31, 1.4, 2.2, '-.6'], [48, 1.9, 3.2, '-2'], [16, 1.3, 2.7, '-1.6']];
-      brasas = B.map(([x, r, d, ini]) => mexe
-        ? `<circle cx="${x}" cy="46" r="${r}" fill="#ffd23f" opacity="0"><animate attributeName="cy" dur="${d}s" begin="${ini}s" repeatCount="indefinite" values="52;-14"/><animate attributeName="cx" dur="${d}s" begin="${ini}s" repeatCount="indefinite" values="${x};${x + 5};${x - 4};${x + 3}"/><animate attributeName="opacity" dur="${d}s" begin="${ini}s" repeatCount="indefinite" values="0;1;.8;0" keyTimes="0;.15;.6;1"/><animate attributeName="r" dur="${d}s" begin="${ini}s" repeatCount="indefinite" values="${r};${r};0.2" keyTimes="0;.5;1"/></circle>`
-        : `<circle cx="${x}" cy="${20 + r * 8}" r="${r * .8}" fill="#ffd23f" opacity=".85"/>`).join('');
-    }
-    const brilho = `<circle cx="32" cy="50" r="40" fill="url(#${id}g)">${mexe ? '<animate attributeName="opacity" dur="1.6s" repeatCount="indefinite" values=".7;1;.75;1;.7"/>' : ''}</circle>`;
-    return `<svg ${vb} ${tam} role="img" aria-hidden="true" class="chama ${risco ? 'r' : 'a'}${anim ? ' anim' : ''}"><defs>${defs}</defs>${brilho}${camadas}${brasas}</svg>`;
+    const cores = risco ? ['#f5a742', '#fbc56a', '#ffe9b8'] : ['#ff6a00', '#ffb020', '#ffe680'];
+    const camada = (cor, esc, dur, ini) => {
+      const mov = mexe ? `<animate attributeName="d" dur="${dur}s" begin="${ini}s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.33;.66;1" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1" values="${F1};${F2};${F3};${F1}"/>` : '';
+      const g = esc === 1 ? '' : ` transform="translate(32 78) scale(${esc}) translate(-32 -78)"`;
+      return `<g${g}><path d="${F1}" fill="${cor}">${mov}</path></g>`;
+    };
+    return `<svg ${vb} ${tam} role="img" aria-hidden="true" class="chama ${risco ? 'r' : 'a'}${anim ? ' anim' : ''}">${camada(cores[0], 1, 1.5, 0)}${camada(cores[1], .68, 1.2, -.4)}${camada(cores[2], .38, 1, -.7)}</svg>`;
   }
   const ESCUDO = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V5z" fill="currentColor"/></svg>';
   const CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
