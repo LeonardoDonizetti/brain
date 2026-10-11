@@ -98,8 +98,8 @@
   .ritmo-rot button[aria-pressed="true"] { color: var(--bv-ink); font-weight: 600; }
   .tile { background: var(--bv-card); border-radius: 1.6rem; padding: 1.4rem; margin: 1.6rem auto 0; width: min(100%, 17rem); aspect-ratio: 1; display: grid; place-items: center; box-sizing: border-box; }
   .tile svg { width: 100%; height: 100%; }
-  .mascote { display: block; margin: 0 auto; width: 7.5rem; }
-  .mascote.p { width: 5.4rem; margin: 0; }
+  .mascote { display: block; margin: 0 auto; width: 8.5rem; }
+  .mascote.p { width: 6rem; margin: 0; }
   .pontos { display: flex; gap: .4rem; justify-content: center; margin: 0 0 .8rem; }
   .pontos i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--bv-line); transition: all .3s; }
   .pontos i.on { width: 1.5rem; border-radius: .3rem; background: var(--bv-pill); }
@@ -108,9 +108,9 @@
   .splash .deco { position: absolute; }
   .splash .bloco { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; min-height: 0; }
   .splash .masc { margin: 0 0 1rem; }
-  .splash .masc .mascote { margin: 0; width: 6.2rem; }
+  .splash .masc .mascote { margin: 0; width: 7.4rem; }
   .splash .base { flex: none; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
-  @media (max-height: 700px) { .splash .faixa { height: 5.2rem; } .splash .d2 { display: none; } .splash .masc .mascote { width: 4.8rem; } }
+  @media (max-height: 700px) { .splash .faixa { height: 6rem; } .splash .d2 { top: 2.7rem !important; } .splash .d2 svg { width: 2.6rem; height: 2.6rem; } .splash .deco.d2:last-child { top: 3.5rem !important; right: .2rem !important; } .splash .masc .mascote { width: 5.8rem; } }
   .marca { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; font-size: 3.1rem; letter-spacing: -.045em; margin: 0; line-height: 1; }
   .splash .slogan { font-size: 1.15rem; line-height: 1.4; margin: .8rem 0 0; max-width: 17rem; font-weight: 500; }
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.1rem 0 0; }
@@ -174,11 +174,17 @@
   /* ---------- arte original (formas planas) ---------- */
   const SV = (vb, c, cls) => `<svg viewBox="${vb}" role="img" aria-hidden="true"${cls ? ` class="${cls}"` : ''}>${c}</svg>`;
   const mascote = (pose, cls) => {
-    const corpo = '<circle cx="42" cy="44" r="17" fill="var(--bv-body)"/><circle cx="60" cy="38" r="19" fill="var(--bv-body)"/><circle cx="78" cy="44" r="17" fill="var(--bv-body)"/><ellipse cx="60" cy="74" rx="35" ry="36" fill="var(--bv-body)"/><path d="M60 22c-5 8 5 12 0 20" fill="none" stroke="var(--bv-body2)" stroke-width="3" stroke-linecap="round"/><circle cx="43" cy="80" r="6" fill="#f7bdb8"/><circle cx="77" cy="80" r="6" fill="#f7bdb8"/><path d="M44 70q6-7 12 0M64 70q6-7 12 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M53 82q7 7 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/>';
-    const pernas = '<path d="M48 108q-2 14-12 17M72 108q2 14 12 17" fill="none" stroke="var(--bv-body)" stroke-width="8" stroke-linecap="round"/>';
-    const braco = (d) => `<path d="${d}" fill="none" stroke="var(--bv-body)" stroke-width="8" stroke-linecap="round"/>`;
-    const bracos = { oi: braco('M26 82q-14 4-15 22') + braco('M94 74q18-6 18-30'), festa: braco('M26 76q-16-6-14-30') + braco('M94 76q16-6 14-30'), calmo: braco('M26 84q-12 8-8 22') + braco('M94 84q12 8 8 22') }[pose || 'oi'];
-    return SV('0 0 120 130', bracos + pernas + corpo, 'mascote' + (cls ? ' ' + cls : ''));
+    const B = 'var(--bv-body)', D = 'var(--bv-body2)';
+    // cérebro visto de lado: largo, em nuvem, com dobras (giros) e rostinho
+    const corpo = `<g fill="${B}"><circle cx="36" cy="52" r="22"/><circle cx="62" cy="36" r="25"/><circle cx="90" cy="40" r="22"/><circle cx="106" cy="60" r="17"/><circle cx="40" cy="74" r="19"/><circle cx="72" cy="78" r="22"/><circle cx="98" cy="76" r="17"/><ellipse cx="70" cy="62" rx="46" ry="26"/></g>
+      <g fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 50c6-8 14-4 18-12"/><path d="M52 22c8 4 6 12 14 14"/><path d="M80 24c8 2 8 10 16 10"/><path d="M104 48c6 2 8 8 14 8"/><path d="M96 92c6-2 10-8 14-6"/><path d="M26 74c6 4 10 0 14 6"/></g>
+      <circle cx="50" cy="72" r="6" fill="#f7bdb8"/><circle cx="90" cy="72" r="6" fill="#f7bdb8"/>
+      <circle cx="56" cy="62" r="4.2" fill="#2a2420"/><circle cx="84" cy="62" r="4.2" fill="#2a2420"/><circle cx="57.4" cy="60.6" r="1.4" fill="#fff"/><circle cx="85.4" cy="60.6" r="1.4" fill="#fff"/>
+      <path d="M63 73q7 7 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/>`;
+    const pernas = `<path d="M54 98v14M86 98v14" fill="none" stroke="${B}" stroke-width="9" stroke-linecap="round"/><path d="M48 114h12M80 114h12" fill="none" stroke="${D}" stroke-width="5" stroke-linecap="round"/>`;
+    const braco = (d) => `<path d="${d}" fill="none" stroke="${B}" stroke-width="8" stroke-linecap="round"/>`;
+    const bracos = { oi: braco('M18 70q-10 8-8 22') + braco('M122 62q12-6 12-22'), festa: braco('M18 62q-12-6-10-22') + braco('M122 62q12-6 12-22'), calmo: braco('M18 72q-8 8-4 22') + braco('M122 72q8 8 4 22') }[pose || 'oi'];
+    return SV('0 0 140 120', bracos + pernas + corpo, 'mascote' + (cls ? ' ' + cls : ''));
   };
   const ic = {
     livro: '<path d="M20 70V24c14-6 28-6 40 2v50c-12-8-26-8-40-6z" fill="#3b5b8c"/><path d="M60 26c12-8 26-8 40-2v46c-14-2-28-2-40 6z" fill="#5f86bd"/><path d="M60 26v50" stroke="#2c4570" stroke-width="3"/>',
