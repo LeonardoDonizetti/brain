@@ -16,43 +16,64 @@
 <script src="api-local.js"></script>
 <script src="onboarding.js"></script>
 <style>
-  body { padding-bottom: 2rem; }
-  .bv { max-width: 34rem; margin: 0 auto; padding: 0 1rem; display: flex; flex-direction: column; min-height: 100dvh; }
-  .bv-topo { position: sticky; top: 0; background: var(--bg); padding: calc(.8rem + env(safe-area-inset-top)) 0 .6rem; z-index: 2; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { padding: 0; }
+  .bv { max-width: 34rem; margin: 0 auto; height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; padding: 0 1rem; }
+  .bv-topo { padding: calc(.7rem + env(safe-area-inset-top)) 0 .4rem; }
   .bv-linha { display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-height: 2.2rem; }
   .bv-marca { font-weight: 650; letter-spacing: -.01em; }
-  .bv-btn { background: none; border: 0; color: var(--muted); font: inherit; font-size: .88rem; font-weight: 600; padding: .4rem .2rem; min-height: 2.2rem; cursor: pointer; }
+  .bv-btn { background: none; border: 0; color: var(--muted); font: inherit; font-size: .88rem; font-weight: 600; padding: .4rem .2rem; min-height: 2.2rem; min-width: 3.4rem; cursor: pointer; }
+  .bv-btn:last-child { text-align: right; }
   .bv-btn:disabled { opacity: .35; cursor: default; }
-  .bv-prog { height: 3px; background: var(--line); border-radius: 2px; margin-top: .4rem; overflow: hidden; }
-  .bv-prog i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s cubic-bezier(.23,1,.32,1); }
-  .bv-chat { flex: 1; display: flex; flex-direction: column; gap: .5rem; padding: 1rem 0 1rem; }
-  .bolha { max-width: 88%; padding: .65rem .85rem; border-radius: .75rem; line-height: 1.45; font-size: .95rem; animation: bv-in .35s cubic-bezier(.23,1,.32,1) both; }
-  .bolha.bot { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: .2rem; align-self: flex-start; }
-  .bolha.eu { background: var(--accent); color: var(--on-accent); border-bottom-right-radius: .2rem; align-self: flex-end; }
-  .bolha.eco { color: var(--muted); background: none; border: 0; padding: .1rem .3rem; font-size: .88rem; }
-  .bolha b { font-weight: 600; }
-  @keyframes bv-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  .bv ul { background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
-  .bv li { display: list-item; padding: 0; }
-  .bv li + li { border-top: 0; }
-  .bv .mods li + li { border-top: 1px solid var(--line); }
-  .mods { list-style: none; margin: .5rem 0 0; padding: 0; }
-  .bv .mods li { display: block; padding: .45rem 0; border-top: 1px solid var(--line); font-size: .88rem; color: var(--muted); }
-  .mods li:first-child { border-top: 0; }
-  .mods b { color: var(--ink); display: block; font-size: .92rem; }
-  .ctl-bv { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; animation: bv-in .35s .12s cubic-bezier(.23,1,.32,1) both; }
+  .bv-btn[hidden] { display: block; visibility: hidden; }
+  .bv-prog { display: flex; gap: 3px; margin-top: .3rem; }
+  .bv-prog i { flex: 1; height: 3px; border-radius: 2px; background: var(--line); transition: background .3s; }
+  .bv-prog i.on { background: var(--accent); }
+  .palco { overflow-y: auto; display: flex; flex-direction: column; justify-content: center; padding: .5rem 0; }
+  .cena { display: flex; flex-direction: column; gap: .7rem; animation: bv-in .38s cubic-bezier(.23,1,.32,1) both; }
+  .cena.sai { animation: bv-out .16s ease-in both; pointer-events: none; }
+  @keyframes bv-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes bv-out { to { opacity: 0; transform: translateX(-14px); } }
+  .arte { height: clamp(84px, 19dvh, 132px); display: flex; justify-content: center; color: var(--accent); }
+  .arte svg { height: 100%; width: auto; max-width: 100%; }
+  .arte .f { fill: var(--accent-soft); }
+  .arte .s { fill: var(--accent); stroke: var(--accent); }
+  .arte svg * { vector-effect: non-scaling-stroke; }
+  .arte svg path, .arte svg rect, .arte svg circle, .arte svg ellipse, .arte svg line { stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .arte svg .f { fill: var(--accent-soft); }
+  .arte svg .n { fill: none; }
+  .arte svg .s { fill: var(--accent); }
+  .eco { color: var(--muted); font-size: .86rem; text-align: center; margin: 0; min-height: 1.2em; }
+  .perg { font-size: 1.28rem; font-weight: 600; letter-spacing: -.015em; line-height: 1.25; margin: 0; text-align: center; }
+  .sub { color: var(--muted); font-size: .9rem; margin: 0; text-align: center; line-height: 1.45; }
+  .ctl-bv { display: flex; flex-direction: column; gap: .45rem; margin-top: .2rem; }
   .opc { font: inherit; text-align: left; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: .6rem; padding: .7rem .9rem; min-height: 2.8rem; cursor: pointer; font-weight: 500; }
   .opc:active { transform: scale(.985); }
   .opc[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
   .opc.pri { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; text-align: center; }
-  .opc.suave { border-color: transparent; background: none; color: var(--muted); text-align: center; }
-  .campo { font: inherit; width: 100%; padding: .7rem .85rem; border: 1px solid var(--line-strong); border-radius: .6rem; background: var(--surface); color: var(--ink); min-height: 2.8rem; }
-  .ajustes { margin: .4rem 0 0; padding-left: 1.1rem; font-size: .88rem; color: var(--muted); }
-  .passos { display: grid; gap: .45rem; margin-top: .3rem; animation: bv-in .35s .12s cubic-bezier(.23,1,.32,1) both; }
-  .passo-c { display: block; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; padding: .7rem .9rem; }
-  .passo-c b { display: block; font-weight: 600; font-size: .95rem; }
-  .passo-c span { color: var(--muted); font-size: .85rem; }
-  @media (prefers-reduced-motion: reduce) { .bolha, .ctl-bv, .passos { animation: none; } .bv-prog i { transition: none; } }
+  .opc.pri:disabled { opacity: .45; }
+  .opc.suave { border-color: transparent; background: none; color: var(--muted); text-align: center; min-height: 2.4rem; }
+  .campo { font: inherit; width: 100%; padding: .7rem .85rem; border: 1px solid var(--line-strong); border-radius: .6rem; background: var(--surface); color: var(--ink); min-height: 2.8rem; text-align: center; }
+  .mods2 { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; }
+  .mods2 div { background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; padding: .55rem .7rem; }
+  .mods2 b { display: block; font-size: .9rem; font-weight: 600; }
+  .mods2 span { color: var(--muted); font-size: .76rem; line-height: 1.3; display: block; margin-top: .1rem; }
+  .ajustes { margin: 0; padding: .6rem .8rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; list-style: none; font-size: .84rem; color: var(--muted); display: grid; gap: .25rem; }
+  .ajustes li { display: block; padding: 0; border: 0; }
+  .ajustes li + li { border: 0; }
+  .bv.final .log { display: none; }
+  .passos { display: grid; gap: .4rem; }
+  .passo-c { display: block; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; padding: .55rem .8rem; }
+  .passo-c b { display: block; font-weight: 600; font-size: .92rem; }
+  .passo-c span { color: var(--muted); font-size: .8rem; line-height: 1.35; }
+  .log { border-top: 1px solid var(--line); padding: .55rem 0 calc(.6rem + env(safe-area-inset-bottom)); max-height: 25dvh; overflow-y: auto; }
+  .log h2 { margin: 0 0 .35rem; font-size: .76rem; font-weight: 600; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .chip { background: var(--accent-soft); color: var(--ink); border-radius: 1rem; padding: .2rem .65rem; font-size: .78rem; line-height: 1.3; animation: bv-in .35s cubic-bezier(.23,1,.32,1) both; }
+  .chip small { color: var(--muted); font-size: .72rem; margin-right: .25rem; }
+  .vazio-log { color: var(--muted); font-size: .8rem; margin: 0; }
+  @media (max-height: 640px) { .arte { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .cena, .chip { animation: none; } .cena.sai { animation: none; } .bv-prog i { transition: none; } }
 </style>
 </head>
 <body>
@@ -63,9 +84,10 @@
       <span class="bv-marca">Brain</span>
       <button class="bv-btn" id="pular" type="button">Pular</button>
     </div>
-    <div class="bv-prog" role="progressbar" aria-label="Progresso das boas-vindas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="prog"></i></div>
+    <div class="bv-prog" id="prog" role="progressbar" aria-label="Progresso das boas-vindas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
   </header>
-  <main class="bv-chat" id="chat" aria-live="polite" style="padding-top:1rem"></main>
+  <main class="palco" id="palco" aria-live="polite"></main>
+  <section class="log" aria-label="Suas respostas"><h2>Suas respostas</h2><div class="chips" id="chips"></div></section>
 </div>
 <script>
 (function () {
@@ -74,11 +96,28 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const refazer = /[?&]refazer=1/.test(location.search);
+  const reduzido = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const resp = {};
-  let i = 0;
-  let prioTmp = [];
+  let i = 0, prioTmp = [], eco = '';
 
-  const passos = [{ t: 'intro' }, { t: 'nome' }]
+  const R = (c) => `<svg viewBox="0 0 160 110" role="img" aria-hidden="true">${c}</svg>`;
+  const ARTE = {
+    livro: R('<path class="f" d="M80 34C62 24 38 24 18 30v58c20-6 44-6 62 4z"/><path class="f" d="M80 34c18-10 42-10 62-4v58c-20-6-44-6-62 4z"/><path class="n" d="M80 34v58M30 44c10-3 22-3 34 1M30 56c10-3 22-3 34 1M96 45c12-4 24-4 34-1M96 57c12-4 24-4 34-1"/><path class="s" d="M112 28v22l6-5 6 5V26z"/>'),
+    lapis: R('<rect class="f" x="36" y="16" width="76" height="82" rx="7"/><path class="n" d="M50 38h48M50 54h48M50 70h30"/><g transform="rotate(32 118 58)"><rect class="s" x="110" y="14" width="14" height="58" rx="2"/><path class="f" d="M110 72h14l-7 16z"/></g>'),
+    ampulheta: R('<path class="n" d="M50 16h60M50 96h60"/><path class="f" d="M56 16c0 34 24 34 24 40s-24 6-24 40M104 16c0 34-24 34-24 40s24 6 24 40"/><path class="s" d="M66 90c4-14 24-14 28 0z"/><path class="n" d="M80 56v18"/>'),
+    degraus: R('<path class="f" d="M16 96h30V76h30V56h30V36h38v60z"/><path class="n" d="M126 36V12"/><path class="s" d="M126 12l20 6-20 6z"/>'),
+    lista: R('<rect class="f" x="42" y="16" width="76" height="86" rx="8"/><path class="n" d="M70 12h20v10H70z"/><path class="n" d="M54 44l5 5 9-10M54 64l5 5 9-10M54 84l5 5 9-10M78 44h28M78 64h28M78 84h18"/>'),
+    livros: R('<rect class="f" x="26" y="74" width="108" height="20" rx="3"/><rect class="f" x="38" y="52" width="92" height="20" rx="3"/><rect class="f" x="24" y="30" width="100" height="20" rx="3"/><path class="n" d="M40 84h40M52 62h40M38 40h40"/><path class="s" d="M104 30v20l5-4 5 4V30z"/>'),
+    moedas: R('<path class="f" d="M44 84v10a36 10 0 0 0 72 0V84z"/><path class="f" d="M44 66v10a36 10 0 0 0 72 0V66z"/><ellipse class="f" cx="80" cy="56" rx="36" ry="10"/><path class="f" d="M44 56v10a36 10 0 0 0 72 0V56z"/><ellipse class="f" cx="80" cy="44" rx="36" ry="10"/><path class="n" d="M80 40v8M76 42h8"/>'),
+    relogio: R('<circle class="f" cx="80" cy="56" r="40"/><path class="n" d="M80 22v6M80 84v6M46 56h6M108 56h6"/><path class="n" d="M80 56V34M80 56l16 10"/><circle class="s" cx="80" cy="56" r="3"/>'),
+    alvo: R('<circle class="f" cx="76" cy="60" r="40"/><circle class="n" cx="76" cy="60" r="26"/><circle class="f" cx="76" cy="60" r="12"/><path class="n" d="M76 60L130 14M122 14h8v8"/>'),
+    baloes: R('<path class="f" d="M24 22h78a8 8 0 0 1 8 8v28a8 8 0 0 1-8 8H56l-14 12V66H24a8 8 0 0 1-8-8V30a8 8 0 0 1 8-8z"/><path class="n" d="M32 38h60M32 50h40"/><path class="s" d="M84 76h50a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-10l-10 8v-8H84a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/>'),
+    montanha: R('<path class="f" d="M8 98L58 40l26 28 26-32 42 62z"/><path class="n" d="M58 40V16"/><path class="s" d="M58 16l22 6-22 6z"/>'),
+  };
+  const ARTE_Q = { foco: 'ampulheta', disc: 'degraus', tarefas: 'lista', estudos: 'livros', dinheiro: 'moedas', rotina: 'relogio' };
+  const ROTULO = { nome: 'Nome', foco: 'Foco', disc: 'Disciplina', tarefas: 'Tarefas', estudos: 'Estudos', dinheiro: 'Dinheiro', rotina: 'Rotina', prior: 'Prioridades', tom: 'Coach' };
+
+  const passos = [{ t: 'intro' }, { t: 'mods' }, { t: 'nome' }]
     .concat(O.PERGUNTAS.map((q) => ({ t: 'q', q })))
     .concat([{ t: 'prior' }, { t: 'tom' }, { t: 'fim' }]);
 
@@ -88,108 +127,105 @@
     else window.BrainPrefs.set({ onboarding: true });
   }
 
-  const bot = (html, extra) => `<div class="bolha bot ${extra || ''}">${html}</div>`;
-  const eu = (txt) => `<div class="bolha eu">${esc(txt)}</div>`;
-  const eco = (txt) => `<div class="bolha eco">${esc(txt)}</div>`;
+  /** Respostas já dadas, como etiquetas curtas (aparecem na faixa de baixo). */
+  function respostas() {
+    const r = [];
+    if (resp.nome) r.push(['nome', resp.nome]);
+    for (const q of O.PERGUNTAS) if (resp[q.id]) r.push([q.id, q.opcoes.find((o) => o.v === resp[q.id]).t]);
+    if (resp.prioridade) r.push(['prior', resp.prioridade.map((k) => O.PRIORIDADES.find((x) => x[0] === k)[1]).join(' e ')]);
+    if (resp.tom) r.push(['tom', O.TONS.find((o) => o.v === resp.tom).t.split(':')[0]]);
+    return r;
+  }
+  function desenharLog(novo) {
+    const r = respostas();
+    $('chips').innerHTML = r.length
+      ? r.map(([k, v], n) => `<span class="chip"${novo && n < r.length - 1 ? ' style="animation:none"' : ''}><small>${ROTULO[k]}</small>${esc(v)}</span>`).join('')
+      : '<p class="vazio-log">As respostas aparecem aqui conforme você avança.</p>';
+    const lg = document.querySelector('.log'); lg.scrollTop = lg.scrollHeight;
+  }
 
-  function textoDe(p) {
+  function cena(p) {
     const n = resp.nome ? esc(resp.nome) : '';
-    switch (p.t) {
-      case 'intro': return [bot(refazer
-        ? 'Vamos refazer as perguntas. No final, suas metas, o coach e a tela inicial serão reajustados. Seus dados continuam como estão.'
-        : '<b>Olá, eu sou o Brain.</b> É o seu espaço pessoal para organizar a vida. Tudo fica neste aparelho.'),
-        bot('Isto é o que você tem aqui:<ul class="mods">' + O.MODULOS.map((m) => `<li><b>${m.nome}</b>${m.texto}</li>`).join('') + '</ul>'),
-        bot('Vou fazer algumas perguntas rápidas para ajustar tudo ao seu momento. Leva cerca de um minuto.')];
-      case 'nome': return [bot('Como você prefere ser chamado?')];
-      case 'q': return [bot((i === 2 && n ? `${n}, ` : '') + (i === 2 && n ? p.q.texto.charAt(0).toLowerCase() + p.q.texto.slice(1) : p.q.texto))];
-      case 'prior': return [bot('Se pudesse melhorar até <b>duas</b> áreas agora, quais seriam?')];
-      case 'tom': return [bot('Por último: como o coach deve falar com você?')];
-      case 'fim': {
-        const p2 = O.plano(resp);
-        return [bot(`${n ? n + ', ' : ''}montei o Brain assim para você:<ul class="ajustes">${p2.ajustes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>Você pode mudar tudo em Configurações.`),
-          bot('Seus primeiros passos, em ordem de importância:')];
-      }
-    }
-    return [];
-  }
-
-  function resposta(p) {
-    switch (p.t) {
-      case 'intro': return null;
-      case 'nome': return resp.nome ? [eu(resp.nome), eco(`Prazer, ${resp.nome}.`)] : (resp._semnome ? [eu('Prefiro não dizer'), eco('Sem problema.')] : null);
-      case 'q': { const v = resp[p.q.id]; if (!v) return null; const o = p.q.opcoes.find((x) => x.v === v); return [eu(o.t), eco(o.eco)]; }
-      case 'prior': return resp.prioridade ? [eu(resp.prioridade.map((k) => O.PRIORIDADES.find((x) => x[0] === k)[1]).join(' e ')), eco('Essas áreas vêm primeiro nos seus passos.')] : (resp._semprior ? [eu('Sem prioridade'), eco('Tudo bem, vou equilibrar.')] : null);
-      case 'tom': { const o = O.TONS.find((x) => x.v === resp.tom); return o ? [eu(o.t), eco(o.eco)] : null; }
-    }
-    return null;
-  }
-
-  function controles(p) {
-    const c = document.createElement('div'); c.className = 'ctl-bv';
-    const botao = (txt, cls, fn, pressed) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'opc ' + (cls || ''); b.textContent = txt; if (pressed !== undefined) b.setAttribute('aria-pressed', pressed); b.addEventListener('click', () => fn(b)); c.appendChild(b); return b; };
-    if (p.t === 'intro') { botao('Vamos começar', 'pri', () => avancar()); }
-    else if (p.t === 'nome') {
+    const e = eco ? `<p class="eco">${esc(eco)}</p>` : '<p class="eco"></p>';
+    const c = document.createElement('div'); c.className = 'cena';
+    const btn = (txt, cls, fn, pressed) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'opc ' + (cls || ''); b.textContent = txt; if (pressed !== undefined) b.setAttribute('aria-pressed', pressed); b.addEventListener('click', () => fn(b)); return b; };
+    const ctl = document.createElement('div'); ctl.className = 'ctl-bv';
+    let html = '';
+    if (p.t === 'intro') {
+      html = `<div class="arte">${ARTE.livro}</div><h1 class="perg">${refazer ? 'Vamos refazer as perguntas' : 'Olá, eu sou o Brain'}</h1><p class="sub">${refazer ? 'No final, metas, coach e tela inicial serão reajustados. Seus dados continuam como estão.' : 'Seu espaço pessoal para estudar, manter a disciplina e organizar a vida. Tudo fica neste aparelho.'}</p>`;
+      ctl.appendChild(btn('Próximo', 'pri', () => avancar()));
+    } else if (p.t === 'mods') {
+      html = `<h1 class="perg">O que você tem aqui</h1><div class="mods2">${O.MODULOS.map((m) => `<div><b>${m.nome}</b><span>${m.texto.split('.')[0]}.</span></div>`).join('')}</div><p class="sub">Agora algumas perguntas rápidas para ajustar tudo ao seu momento.</p>`;
+      ctl.appendChild(btn('Vamos começar', 'pri', () => avancar()));
+    } else if (p.t === 'nome') {
+      html = `<div class="arte">${ARTE.lapis}</div>${e}<h1 class="perg">Como você prefere ser chamado?</h1>`;
       const inp = document.createElement('input'); inp.className = 'campo'; inp.maxLength = 24; inp.placeholder = 'Seu nome ou apelido'; inp.autocomplete = 'given-name'; inp.setAttribute('aria-label', 'Seu nome ou apelido');
-      c.appendChild(inp);
-      const ok = () => { const n = inp.value.replace(/\s+/g, ' ').trim(); if (n) { resp.nome = n; delete resp._semnome; } else { delete resp.nome; resp._semnome = true; } avancar(); };
-      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') ok(); });
-      botao('Continuar', 'pri', ok);
-      botao('Prefiro não dizer', 'suave', () => { delete resp.nome; resp._semnome = true; avancar(); });
+      ctl.appendChild(inp);
+      const ok = () => { const v = inp.value.replace(/\s+/g, ' ').trim(); if (v) { resp.nome = v; eco = `Prazer, ${v}.`; } else { delete resp.nome; eco = 'Sem problema.'; } avancar(); };
+      inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') ok(); });
+      ctl.appendChild(btn('Continuar', 'pri', ok));
+      ctl.appendChild(btn('Prefiro não dizer', 'suave', () => { delete resp.nome; eco = 'Sem problema.'; avancar(); }));
     } else if (p.t === 'q') {
-      p.q.opcoes.forEach((o) => botao(o.t, '', () => { resp[p.q.id] = o.v; avancar(); }));
+      const q = p.q; const pergunta = (n && q.id === 'foco') ? `${n}, ${q.texto.charAt(0).toLowerCase()}${q.texto.slice(1)}` : q.texto;
+      html = `<div class="arte">${ARTE[ARTE_Q[q.id]]}</div>${e}<h1 class="perg">${pergunta}</h1>`;
+      q.opcoes.forEach((o) => ctl.appendChild(btn(o.t, '', () => { resp[q.id] = o.v; eco = o.eco; avancar(); })));
     } else if (p.t === 'prior') {
       prioTmp = [];
-      const cont = () => { b.disabled = prioTmp.length === 0; };
-      O.PRIORIDADES.forEach(([k, nome]) => botao(nome, '', (el) => {
+      html = `<div class="arte">${ARTE.alvo}</div>${e}<h1 class="perg">Se pudesse melhorar até duas áreas agora, quais seriam?</h1>`;
+      const bs = O.PRIORIDADES.map(([k, nome]) => btn(nome, '', () => {
         const ix = prioTmp.indexOf(k);
         if (ix >= 0) prioTmp.splice(ix, 1); else { if (prioTmp.length >= 2) prioTmp.shift(); prioTmp.push(k); }
-        c.querySelectorAll('.opc[aria-pressed]').forEach((x, n) => x.setAttribute('aria-pressed', prioTmp.includes(O.PRIORIDADES[n][0])));
-        cont();
+        bs.forEach((x, m) => x.setAttribute('aria-pressed', prioTmp.includes(O.PRIORIDADES[m][0])));
+        cont.disabled = prioTmp.length === 0;
       }, false));
-      const b = botao('Continuar', 'pri', () => { resp.prioridade = prioTmp.slice(); delete resp._semprior; avancar(); });
-      b.removeAttribute('aria-pressed'); cont();
-      botao('Sem prioridade', 'suave', () => { delete resp.prioridade; resp._semprior = true; avancar(); });
+      bs.forEach((b) => ctl.appendChild(b));
+      const cont = btn('Continuar', 'pri', () => { resp.prioridade = prioTmp.slice(); eco = 'Essas áreas vêm primeiro nos seus passos.'; avancar(); });
+      cont.disabled = true; ctl.appendChild(cont);
+      ctl.appendChild(btn('Sem prioridade', 'suave', () => { delete resp.prioridade; eco = 'Tudo bem, vou equilibrar.'; avancar(); }));
     } else if (p.t === 'tom') {
-      O.TONS.forEach((o) => botao(o.t, '', () => { resp.tom = o.v; avancar(); }));
+      html = `<div class="arte">${ARTE.baloes}</div>${e}<h1 class="perg">Como o coach deve falar com você?</h1>`;
+      O.TONS.forEach((o) => ctl.appendChild(btn(o.t, '', () => { resp.tom = o.v; eco = o.eco; avancar(); })));
+    } else if (p.t === 'fim') {
+      const pl = O.plano(resp);
+      html = `<div class="arte">${ARTE.montanha}</div><h1 class="perg">${n ? n + ', montei' : 'Montei'} o Brain para você</h1>
+        <ul class="ajustes">${pl.ajustes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
+        <div class="passos">${pl.passos.map((s, k) => `<a class="passo-c" href="${s.href}"><b>${k + 1}. ${esc(s.titulo)}</b><span>${esc(s.texto)}</span></a>`).join('')}</div>`;
+      ctl.appendChild(btn('Ir para o início', 'pri', sair));
     }
+    c.innerHTML = html; c.appendChild(ctl);
     return c;
   }
 
-  function avancar() { i = Math.min(i + 1, passos.length - 1); desenhar(); }
-
-  function desenhar() {
-    const chat = $('chat'); chat.innerHTML = '';
-    for (let k = 0; k < i; k++) {
-      const p = passos[k];
-      textoDe_k(p, k).forEach((h) => { chat.insertAdjacentHTML('beforeend', h); chat.lastElementChild.style.animation = 'none'; });
-      const r = resposta(p); if (r) r.forEach((h) => { chat.insertAdjacentHTML('beforeend', h); chat.lastElementChild.style.animation = 'none'; });
-    }
-    const p = passos[i];
-    textoDe_k(p, i).forEach((h, n) => { chat.insertAdjacentHTML('beforeend', h); chat.lastElementChild.style.animationDelay = (n * 0.12) + 's'; });
-    if (p.t === 'fim') {
-      concluir(true);
-      const pl = O.plano(resp);
-      const box = document.createElement('div'); box.className = 'passos';
-      box.innerHTML = pl.passos.map((s, n) => `<a class="passo-c" href="${s.href}"><b>${n + 1}. ${esc(s.titulo)}</b><span>${esc(s.texto)}</span></a>`).join('');
-      chat.appendChild(box);
-      const c = document.createElement('div'); c.className = 'ctl-bv';
-      c.innerHTML = '<button type="button" class="opc pri" id="comecar">Ir para o início</button>';
-      chat.appendChild(c);
-      $('comecar').addEventListener('click', sair);
-    } else chat.appendChild(controles(p));
-    const pct = Math.round(i / (passos.length - 1) * 100);
-    $('prog').style.width = pct + '%'; document.querySelector('.bv-prog').setAttribute('aria-valuenow', pct);
+  let ocupado = false;
+  function mostrar(sentido) {
+    const palco = $('palco'); const p = passos[i];
+    palco.innerHTML = ''; palco.scrollTop = 0;
+    palco.appendChild(cena(p));
+    if (p.t === 'fim') concluir(true);
+    $('prog').innerHTML = passos.slice(0, -1).map((_, k) => `<i class="${k < i || p.t === 'fim' ? 'on' : (k === i ? 'on' : '')}"></i>`).join('');
+    const pct = Math.round(i / (passos.length - 1) * 100); $('prog').setAttribute('aria-valuenow', pct);
+    document.querySelector('.bv').classList.toggle('final', p.t === 'fim');
     $('voltar').disabled = i === 0 || p.t === 'fim';
     $('pular').hidden = p.t === 'fim';
-    window.scrollTo({ top: document.body.scrollHeight, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    desenharLog(sentido === 'frente');
   }
-  function textoDe_k(p, k) { const ant = i; i = k; try { return textoDe(p); } finally { i = ant; } }
+  function trocar(fn, sentido) {
+    if (ocupado) return; ocupado = true;
+    const atual = $('palco').firstElementChild;
+    const feito = () => { fn(); mostrar(sentido); ocupado = false; };
+    if (atual && !reduzido) { atual.classList.add('sai'); setTimeout(feito, 170); } else feito();
+  }
+  function avancar() { trocar(() => { i = Math.min(i + 1, passos.length - 1); }, 'frente'); }
 
-  $('voltar').addEventListener('click', () => { if (i > 0) { i--; const p = passos[i]; if (p.t === 'q') delete resp[p.q.id]; if (p.t === 'nome') { delete resp.nome; delete resp._semnome; } if (p.t === 'prior') { delete resp.prioridade; delete resp._semprior; } if (p.t === 'tom') delete resp.tom; desenhar(); } });
+  $('voltar').addEventListener('click', () => trocar(() => {
+    if (i === 0) return; i--; const p = passos[i];
+    if (p.t === 'q') delete resp[p.q.id]; if (p.t === 'nome') delete resp.nome; if (p.t === 'prior') delete resp.prioridade; if (p.t === 'tom') delete resp.tom;
+    eco = '';
+  }, 'tras'));
   $('pular').addEventListener('click', () => { if (!refazer) concluir(false); sair(); });
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
-  desenhar();
+  mostrar('frente');
 })();
 </script>
 </body>
