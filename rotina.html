@@ -66,7 +66,7 @@
   @media (prefers-reduced-motion: no-preference) { .check { transition: background .15s, border-color .15s; } }
   .corpo { background: none; border: none; text-align: left; padding: 0; width: 100%; display: block; }
   .titulo-item { display: block; font-weight: 550; }
-  li.r.feito .titulo-item { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+  li.r.feito .titulo-item { color: var(--muted); }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .3rem; font-size: .78rem; color: var(--muted); }
   .chip { font-size: .7rem; font-weight: 650; padding: .1rem .5rem; border-radius: 2rem; background: var(--bg); color: var(--muted); }
   .chip.habito { background: var(--accent-soft); color: var(--accent); }
@@ -289,7 +289,7 @@ function linha(item) {
   check.setAttribute('aria-checked', String(item.feito));
   check.setAttribute('aria-label', (item.tipo === 'renuncia' ? 'Cumpri hoje: ' : 'Concluir: ') + item.titulo);
   check.onclick = () => alternar(item);
-  li.querySelector('.titulo-item').textContent = item.titulo;
+  { const rt = document.createElement('span'); rt.className = 'rt'; rt.textContent = item.titulo; li.querySelector('.titulo-item').appendChild(rt); }
   const meta = li.querySelector('.meta');
   const chip = document.createElement('span');
   chip.className = `chip ${item.tipo}`;

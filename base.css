@@ -396,3 +396,8 @@ html:not([data-pg="tarefas"]) .stats div { background: none; border: 0; box-shad
 }
 
 html[data-pg] .topo-config { min-height: 4.9rem; }
+
+/* traço que risca o texto da esquerda para a direita ao concluir (funciona em várias linhas) */
+.rt { background: linear-gradient(currentColor, currentColor) no-repeat 0 62% / 0% 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+@media (prefers-reduced-motion: no-preference) { .rt { transition: background-size .38s cubic-bezier(.65, 0, .35, 1), color .3s ease .08s; } }
+.feita > .rt, .feito > .rt, li.t.feita .tt > .rt, tr.feita td.col-t > .rt, li.r.feito .titulo-item > .rt, .subs li.feita .st > .rt { background-size: 100% 2px; }

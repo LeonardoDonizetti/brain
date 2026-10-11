@@ -79,7 +79,7 @@
   @keyframes ck-pop { 50% { transform: scale(1.25); } }
   .corpo { background: none; border: 0; text-align: left; font: inherit; color: var(--ink); padding: .72rem 0; min-height: 2.75rem; cursor: pointer; display: block; width: 100%; }
   .corpo .tt { display: block; font-size: .96rem; line-height: 1.35; overflow-wrap: anywhere; }
-  li.t.feita .tt { text-decoration: line-through; color: var(--muted); }
+  li.t.feita .tt { color: var(--muted); }
   .meta { display: flex; flex-wrap: wrap; gap: .15rem .6rem; margin-top: .2rem; font-size: .78rem; color: var(--muted); }
   .meta .atrasada { color: var(--danger); font-weight: 600; }
   .meta .lista { color: var(--accent); }
@@ -123,7 +123,7 @@
   .subs li { display: grid; grid-template-columns: 2.5rem 1fr 2.5rem; align-items: center; padding: 0; border: 0; }
   .subs input[type=checkbox] { width: 1.2rem; height: 1.2rem; margin: 0 auto; accent-color: var(--accent); }
   .subs .st { background: none; border: 0; font: inherit; color: var(--ink); padding: .5rem 0; text-align: left; }
-  .subs li.feita .st { text-decoration: line-through; color: var(--muted); }
+  .subs li.feita .st { color: var(--muted); }
   .subs .x { background: none; border: 0; color: var(--muted); font-size: 1.2rem; min-height: 2.5rem; cursor: pointer; }
   .sub-add { display: flex; gap: .4rem; margin-top: .3rem; }
   .sub-add button { flex: none; border: 1px solid var(--line); background: var(--bg); border-radius: .5rem; padding: 0 .8rem; font: inherit; color: var(--ink); cursor: pointer; }
@@ -330,7 +330,7 @@ function linha(t, opcoes = {}) {
   const li = document.createElement('li');
   li.className = `t p${t.prioridade || 0}` + (t.feita ? ' feita' : '');
   li.innerHTML = `<button type="button" class="ck" role="checkbox" aria-checked="${!!t.feita}" aria-label="Concluir: ${esc(t.titulo)}"><i>${ICONE_OK}</i></button><button type="button" class="corpo"><span class="tt"></span><span class="meta"></span></button>`;
-  li.querySelector('.tt').textContent = t.titulo;
+  { const rt = document.createElement('span'); rt.className = 'rt'; rt.textContent = t.titulo; li.querySelector('.tt').appendChild(rt); }
   const meta = li.querySelector('.meta');
   const add = (html, cls) => { const s = document.createElement('span'); if (cls) s.className = cls; s.innerHTML = html; meta.append(s); };
   const atrasada = !t.feita && t.data && t.data < HOJE;
@@ -353,7 +353,7 @@ async function alternar(t, li) {
     const r = await api(`/api/tarefas/${t.id}/alternar`, { method: 'PATCH' });
     const msg = virouFeita ? (r.proxima ? `Concluída. Próxima: ${rotulo(r.proxima.data).toLowerCase()}.` : 'Concluída.') : 'Reaberta.';
     if (virouFeita && window.BrainUI) window.BrainUI.snack(msg, 'Desfazer', async () => { await api(`/api/tarefas/${t.id}/alternar`, { method: 'PATCH' }); carregar(); });
-    setTimeout(carregar, virouFeita ? 380 : 0);
+    setTimeout(carregar, virouFeita ? 720 : 0);
   } catch (err) { aviso(err.message, true); carregar(); }
 }
 
@@ -539,7 +539,7 @@ function desenharSubs() {
   subs.forEach((s, i) => {
     const li = document.createElement('li'); li.className = s.feita ? 'feita' : '';
     li.innerHTML = '<input type="checkbox" aria-label="Concluir passo"><button type="button" class="st"></button><button type="button" class="x" aria-label="Remover passo">×</button>';
-    li.querySelector('.st').textContent = s.titulo; li.querySelector('input').checked = !!s.feita;
+    { const rt = document.createElement('span'); rt.className = 'rt'; rt.textContent = s.titulo; li.querySelector('.st').appendChild(rt); } li.querySelector('input').checked = !!s.feita;
     li.querySelector('input').onchange = (e) => { s.feita = e.target.checked ? 1 : 0; desenharSubs(); };
     li.querySelector('.x').onclick = () => { subs.splice(i, 1); desenharSubs(); };
     ul.append(li);

@@ -102,7 +102,7 @@
   table.tarefas tr.grupo th small { color: var(--muted); font-weight: 500; margin-left: .3rem; }
   table.tarefas tr.grupo.atrasada th { color: var(--warm); }
   table.tarefas tr:last-child td { border-bottom: 0; }
-  table.tarefas tr.feita td.col-t { color: var(--muted); text-decoration: line-through; }
+  table.tarefas tr.feita td.col-t { color: var(--muted); }
   .check { width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 2px solid var(--line-strong); background: transparent; display: inline-grid; place-items: center; padding: 0; color: transparent; }
   .check svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   .check[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
@@ -441,7 +441,7 @@ function desenharTabela() {
   area.innerHTML = html;
   // títulos entram como texto (sem interpretar HTML)
   const celulas = area.querySelectorAll('td.col-t');
-  linhas.forEach(([t, extra], i) => { celulas[i].textContent = t.titulo; if (extra) celulas[i].insertAdjacentHTML('beforeend', extra); });
+  linhas.forEach(([t, extra], i) => { { const rt = document.createElement('span'); rt.className = 'rt'; rt.textContent = t.titulo; celulas[i].appendChild(rt); } if (extra) celulas[i].insertAdjacentHTML('beforeend', extra); });
   area.querySelectorAll('.check').forEach((b) => b.addEventListener('click', async () => {
     if (b.disabled) return;
     b.disabled = true;
@@ -453,7 +453,7 @@ function desenharTabela() {
     if (vaiFicarFeita && !mostrarFeitas) linha.classList.add('saindo');
     try {
       await fetch(`/api/tarefas/${b.dataset.id}/alternar`, { method: 'PATCH' });
-      await new Promise((r) => setTimeout(r, 380)); // deixa o gesto terminar antes de redesenhar
+      await new Promise((r) => setTimeout(r, 720)); // deixa o traço terminar antes de redesenhar
       await carregarTarefas();
       carregarAneis();
     } catch (e) { b.disabled = false; }
