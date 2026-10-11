@@ -63,6 +63,36 @@
     financas: ['Anotou o gasto de hoje?', 'Cada real conta, viu?', 'Guardar um pouquinho já é vitória.'],
     jornada: ['Olha só o quanto você andou!', 'Bandeira fincada, próxima meta!', 'Evoluir é isso: um dia depois do outro.']
   };
+
+  // ===== acessórios com mais detalhe =====
+  /** Chapéu de aniversário: cone listrado, bolinhas, aba, pompom felpudo. */
+  function chapeu() {
+    const H = 28, R = 13, w = (h) => R * (1 - h / H);
+    const banda = (h1, h2, f) => `<path d="M${(-w(h1)).toFixed(2)} ${-h1}L${w(h1).toFixed(2)} ${-h1}L${w(h2).toFixed(2)} ${-h2}L${(-w(h2)).toFixed(2)} ${-h2}Z" fill="${f}"/>`;
+    return `<g transform="translate(72 19) rotate(-16) scale(1.25)">
+      <path d="M${-R} 0L0 ${-H}L${R} 0Z" fill="#ff6fa5"/>
+      ${banda(4, 9, '#ffd23f')}${banda(13, 17, '#5ab4ff')}${banda(21, 24.5, '#ffd23f')}
+      <g fill="#fff" opacity=".9"><circle cx="-5.5" cy="-11" r="1.3"/><circle cx="4.5" cy="-11" r="1.3"/><circle cx="-1" cy="-19" r="1.2"/><circle cx="-7.5" cy="-2" r="1.2"/><circle cx="7.5" cy="-2" r="1.2"/></g>
+      <path d="M${-R} 0L0 ${-H}L${R} 0Z" fill="none" stroke="#b02a63" stroke-width="1.7" stroke-linejoin="round"/>
+      <ellipse cx="0" cy="1" rx="14.5" ry="3" fill="#ff4d8d" stroke="#b02a63" stroke-width="1.6"/>
+      <path d="M-13 .6q13 3 26 0" fill="none" stroke="#ffd2e3" stroke-width="1" stroke-linecap="round" opacity=".8"/>
+      <g><circle cx="0" cy="${-H - 1}" r="4.6" fill="#ffd23f" stroke="#c98100" stroke-width="1.4"/><circle cx="-2.6" cy="${-H - 3}" r="1.5" fill="#fff3b0"/><circle cx="2.8" cy="${-H}" r="1.4" fill="#fff3b0"/><circle cx="-1" cy="${-H + 1.6}" r="1.2" fill="#e0a800" opacity=".6"/></g>
+    </g>`;
+  }
+  /** Confetes variados: fitas onduladas, retângulos, estrelinhas, triângulos e argolas. */
+  function confetes() {
+    const L = [['r', -4, 16, 24, '#ff5a8a'], ['w', 8, -8, -14, '#4aa8ff'], ['s', 130, 6, 0, '#ffb21f'], ['t', 143, 54, 28, '#7c3aed'], ['o', -3, 50, 0, '#16a34a'], ['w', 117, -12, 12, '#ff7a00'], ['r', 144, 26, -34, '#16a34a'], ['s', -6, 34, 0, '#ff7a00'], ['t', 20, -12, -16, '#ff5a8a'], ['o', 138, -6, 0, '#4aa8ff'], ['w', -2, 74, 28, '#7c3aed'], ['r', 141, 80, 40, '#ffb21f'], ['s', 100, -8, 0, '#4aa8ff']];
+    const f = {
+      r: (c) => `<rect x="-3.6" y="-1.7" width="7.2" height="3.4" rx=".9" fill="${c}"/>`,
+      w: (c) => `<path d="M-7 0q3.5-5 7 0t7 0" fill="none" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>`,
+      s: (c) => `<path d="M0 -5.4Q1 -1 5.4 0Q1 1 0 5.4Q-1 1 -5.4 0Q-1 -1 0 -5.4Z" fill="${c}"/>`,
+      t: (c) => `<path d="M0 -4L4 3L-4 3Z" fill="${c}" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
+      o: (c) => `<circle r="3" fill="none" stroke="${c}" stroke-width="1.9"/>`,
+    };
+    return `<g class="m-confs" aria-hidden="true">${L.map(([t, x, y, a, c], i) => `<g class="m-c" style="animation-delay:${(i * 0.23).toFixed(2)}s" transform="translate(${x} ${y}) rotate(${a})">${f[t](c)}</g>`).join('')}</g>`;
+  }
+  const lagrima = '<path d="M49 79q-6.5 8.5-.5 13q6-1.5 .5-13z" fill="#7cc4f2" stroke="#4aa0d8" stroke-width="1.4" stroke-linejoin="round"/><path d="M48 85q-1.6 3 .2 4.4" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity=".85"/>';
+
   function svg(humor, px, cls) {
     humor = humor || 'feliz';
     const PO = POSES[humor] || POSES[POSE_PAG[humor]] || null;
@@ -74,19 +104,26 @@
       rosto = PO.rosto;
     } else if (humor === 'triste') {
       rosto = `<ellipse cx="55" cy="68" rx="6.2" ry="7" fill="#2a2420"/><ellipse cx="85" cy="68" rx="6.2" ry="7" fill="#2a2420"/><circle cx="57" cy="65.5" r="2.4" fill="#fff"/><circle cx="87" cy="65.5" r="2.4" fill="#fff"/>
-        <path d="M47 56l12 3M93 56l-12 3" stroke="#2a2420" stroke-width="2.6" stroke-linecap="round"/><path d="M64 82q6-6 12 0" fill="none" stroke="#2a2420" stroke-width="2.6" stroke-linecap="round"/><path d="M50 78q-2 7 0 10" fill="none" stroke="#7cc4f2" stroke-width="3" stroke-linecap="round"/>`;
+        <path d="M47 56l12 3M93 56l-12 3" stroke="#2a2420" stroke-width="2.6" stroke-linecap="round"/><path d="M64 82q6-6 12 0" fill="none" stroke="#2a2420" stroke-width="2.6" stroke-linecap="round"/>${lagrima}`;
     } else if (humor === 'festa') {
-      rosto = `<path d="M48 68q7-9 14 0M78 68q7-9 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M62 75q8 12 16 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M52 18l8-14 8 14z" fill="#ffb21f" stroke="#c98100" stroke-width="2" stroke-linejoin="round" transform="translate(8 -2)"/><circle cx="12" cy="30" r="3" fill="#1565d8"/><circle cx="128" cy="26" r="3" fill="#ff7a00"/><circle cx="120" cy="8" r="2.5" fill="#7c3aed"/><circle cx="20" cy="10" r="2.5" fill="#15803d"/>`;
+      rosto = `<path d="M48 68q7-9 14 0M78 68q7-9 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M62 75q8 12 16 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/><path d="M66 79q4 3 8 0" fill="none" stroke="#ef8a85" stroke-width="2" stroke-linecap="round"/>`;
     } else {
       rosto = `<ellipse cx="55" cy="66" rx="6.4" ry="7.4" fill="#2a2420"/><ellipse cx="85" cy="66" rx="6.4" ry="7.4" fill="#2a2420"/><circle cx="57.4" cy="63" r="2.6" fill="#fff"/><circle cx="87.4" cy="63" r="2.6" fill="#fff"/><circle cx="53.2" cy="69.2" r="1.3" fill="#fff"/><circle cx="83.2" cy="69.2" r="1.3" fill="#fff"/>
         <path d="M65 76q5 6.5 10 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
     const pernas = `<path d="M56 98v9M84 98v9" fill="none" stroke="${B}" stroke-width="10" stroke-linecap="round"/><ellipse cx="55" cy="112" rx="9" ry="5" fill="${D}"/><ellipse cx="85" cy="112" rx="9" ry="5" fill="${D}"/>`;
     const br = (d) => `<path d="${d}" fill="none" stroke="${B}" stroke-width="8" stroke-linecap="round"/>`;
-    const bracos = PO ? PO.bracos : humor === 'festa' ? br('M18 62q-12-6-10-22') + br('M122 62q12-6 12-22') : humor === 'triste' ? br('M18 72q-8 8-4 22') + br('M122 72q8 8 4 22') : br('M18 70q-10 8-8 22') + br('M122 62q12-6 12-22');
+    const mao = (x, y) => `<circle cx="${x}" cy="${y}" r="5.6" fill="${B}"/><circle cx="${x - 1.6}" cy="${y - 1.8}" r="1.5" fill="#fff" opacity=".35"/>`;
+    const bracos = PO ? PO.bracos : humor === 'festa' ? br('M18 62q-12-6-10-22') + br('M122 62q12-6 12-22') + mao(8, 39) + mao(134, 39)
+      : humor === 'triste' ? br('M18 72q-8 8-4 22') + br('M122 72q8 8 4 22') + mao(14, 95) + mao(126, 95)
+        : br('M18 70q-10 8-8 22') + br('M122 62q12-6 12-22') + mao(10, 93) + mao(134, 39);
+    // brilho no topo, sombra sob o corpo e chão: dão volume sem pesar
+    const volume = `<path d="M24 44q4-11 15-15M54 17q9-4 17-1" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" opacity=".38"/><path d="M36 90q34 13 72-4" fill="none" stroke="${D}" stroke-width="5" stroke-linecap="round" opacity=".28"/>`;
+    const chao = '<ellipse cx="70" cy="119" rx="34" ry="3.6" fill="#1d2433" opacity=".1"/>';
+    const festa = humor === 'festa';
     const w = px || 80;
-    return `<svg viewBox="0 0 140 120" width="${w}" height="${Math.round(w * 120 / 140)}" role="img" aria-hidden="true" class="mascote-b${PO ? ' m-pose' : ''}${cls ? ' ' + cls : ''}">${bracos}${PO && PO.pernas === false ? '' : pernas}${corpo}${rosto}${PO ? PO.frente : ''}</svg>`;
+    const vb = festa ? [-10, -27, 160, 151] : [-10, -4, 160, 128];
+    return `<svg viewBox="${vb.join(' ')}" width="${w}" height="${Math.round(w * vb[3] / vb[2])}" role="img" aria-hidden="true" class="mascote-b${PO ? ' m-pose' : ''}${cls ? ' ' + cls : ''}">${chao}${bracos}${PO && PO.pernas === false ? '' : pernas}${corpo}${volume}${rosto}${PO ? PO.frente : ''}${festa ? chapeu() + confetes() : ''}</svg>`;
   }
 
   function paginaAtual() { return (typeof document !== 'undefined' && document.documentElement.getAttribute('data-pg')) || 'inicio'; }

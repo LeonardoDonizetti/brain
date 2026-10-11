@@ -107,7 +107,7 @@
   .mascote { display: block; margin: 0 auto; width: 8.5rem; }
   .mascote.p { width: 6rem; margin: 0; }
   .pontos { display: flex; gap: .4rem; justify-content: center; margin: 0 0 .8rem; }
-  .pontos i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--bv-line); transition: all .3s; }
+  .pontos i { width: .45rem; height: .45rem; border-radius: .3rem; background: var(--bv-line); transition: width .3s, background-color .3s; }
   .pontos i.on { width: 1.5rem; border-radius: .3rem; background: var(--bv-pill); }
   .splash { position: relative; overflow: hidden; flex: 1; display: flex; flex-direction: column; margin: 0 -1.3rem; padding: 0 1.6rem; min-height: 0; }
   .splash .faixa { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
@@ -119,9 +119,9 @@
   .splash .masc .mascote { margin: 0; width: 10.5rem; }
   .splash .slogan { text-align: left; }
   .splash .base { flex: none; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
-  @media (prefers-reduced-motion: no-preference) { .splash .masc .mascote { animation: flutua 3.2s ease-in-out infinite; } .splash .deco { animation: flutua 5s ease-in-out infinite alternate; } @keyframes flutua { 50% { translate: 0 -5px; } } }
-  @media (max-height: 740px) { .splash .masc .mascote { width: 8rem; } .splash .deco.b, .splash .deco.m { display: none; } .splash .deco.moeda { bottom: 25% !important; } .splash .faixa .deco:nth-child(1) { top: 2% !important; } .splash .faixa .deco:nth-child(2) { top: 1% !important; right: 3% !important; } .splash .deco svg { transform: scale(.82); } .splash .sp-bloco { padding-bottom: 1rem; } }
-  @media (max-height: 600px) { .splash .faixa .deco:nth-child(1) { display: none; } .splash .masc .mascote { width: 6.6rem; } .splash .deco svg { transform: scale(.7); } }
+  @media (prefers-reduced-motion: no-preference) { .splash .masc .mascote { animation: flutua 3.2s ease-in-out infinite; } .splash .deco { animation: flutua 5s ease-in-out infinite alternate; } .splash .deco:nth-child(2n) { animation-duration: 6s; animation-delay: -1.4s; } .splash .deco:nth-child(3n) { animation-duration: 4.4s; animation-delay: -.8s; } @keyframes flutua { 50% { translate: 0 -5px; } } }
+  @media (max-height: 740px) { .splash .masc svg { width: 9rem; } .splash .deco.m { display: none; } .splash .deco svg { transform: scale(.84); } .splash .sp-bloco { padding-bottom: .6rem; } .splash .faixa .deco:nth-child(4), .splash .faixa .deco:nth-child(5) { top: 27% !important; } }
+  @media (max-height: 640px) { .splash .masc svg { width: 7.4rem; } .splash .deco.b { display: none; } .splash .deco svg { transform: scale(.7); } .splash .marca { font-size: 2.6rem; } .splash .slogan { font-size: 1rem; } }
   .marca { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; font-size: 3.1rem; letter-spacing: -.045em; margin: 0; line-height: 1; }
   .splash .slogan { font-size: 1.15rem; line-height: 1.4; margin: .8rem 0 0; max-width: 17rem; font-weight: 500; }
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.1rem 0 0; }
@@ -163,13 +163,17 @@
   .pr-raios { position: absolute; left: 50%; top: 50%; width: 22rem; height: 22rem; margin: -11rem 0 0 -11rem; border-radius: 50%; opacity: .55;
     background: repeating-conic-gradient(from 0deg, rgba(21,101,216,.13) 0 9deg, rgba(21,101,216,0) 9deg 22.5deg); -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%); animation: pr-gira 28s linear infinite; }
   .pr-masc { position: absolute; left: 50%; top: 50%; width: 11.5rem; margin: -5rem 0 0 -5.75rem; animation: pr-entra .9s cubic-bezier(.34,1.56,.64,1) .1s both; }
-  .pr-masc .mascote { width: 100%; margin: 0; animation: pr-flutua 3.2s ease-in-out 1.1s infinite; filter: drop-shadow(0 8px 0 rgba(21,101,216,.12)); }
+  .pr-masc .mascote { width: 100%; height: auto; margin: 0; overflow: visible; animation: pr-flutua 3.2s ease-in-out 1.1s infinite; }
   .pr-pos { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: translate(var(--x), var(--y)); }
   .pr-ic { position: absolute; left: -1.75rem; top: -1.75rem; width: 3.5rem; height: 3.5rem; display: grid; place-items: center; border-radius: 1.1rem; background: #fff; color: var(--c); border: 2px solid var(--s); box-shadow: 0 4px 0 var(--s), 0 8px 14px rgba(20,40,90,.08);
     animation: pr-pop .6s cubic-bezier(.34,1.56,.64,1) var(--d) both, pr-flut var(--f) ease-in-out calc(var(--d) + .7s) infinite alternate; }
   .pr-ic svg { width: 1.75rem; height: 1.75rem; }
   .pr-confete { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
-  .pr-confete i { position: absolute; left: 0; top: 0; width: var(--w); height: calc(var(--w) * 1.5); border-radius: .12rem; background: var(--c); opacity: 0; animation: pr-conf var(--t) cubic-bezier(.1,.75,.3,1) .55s 1 both; }
+  .pr-confete i.tri { clip-path: polygon(50% 0, 100% 100%, 0 100%); height: var(--w); border-radius: 0; }
+  .pr-confete i.star { clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); height: calc(var(--w) * 1.3); width: calc(var(--w) * 1.3); border-radius: 0; }
+  .pr-confete i.fita { width: calc(var(--w) * 2.6); height: calc(var(--w) * .42); border-radius: 1rem; }
+  .pr-confete i.anel { background: transparent !important; border: .17rem solid var(--c); border-radius: 50%; height: var(--w); }
+  .pr-confete i { position: absolute; left: 0; top: 0; width: var(--w); height: calc(var(--w) * 1.5); border-radius: .12rem; will-change: transform, opacity; background: var(--c); opacity: 0; animation: pr-conf var(--t) cubic-bezier(.1,.75,.3,1) .55s 1 both; }
   .pr-txt { margin-top: 1.2rem; }
   .pr-h { font-size: 1.9rem; margin: 0; animation: pr-sobe .6s cubic-bezier(.23,1,.32,1) 1.15s both; }
   .pr-s { margin: .5rem auto 0; max-width: 20rem; animation: pr-sobe .6s cubic-bezier(.23,1,.32,1) 1.35s both; }
@@ -193,8 +197,10 @@
   .dado-chips li.l { flex-direction: column; align-items: flex-start; gap: .15rem; } .dado-chips li.l b { font-size: 1.1rem; min-width: 0; }
   .bv.sp { background: radial-gradient(circle 15rem at 50% 11rem, color-mix(in srgb, var(--bv-pill) 11%, #fff) 0%, rgba(255,255,255,0) 100%); }
   .splash .sp-bloco { align-items: center; text-align: center; justify-content: center; padding-bottom: 1rem; }
-  .splash .masc { margin: 0 0 .5rem; line-height: 0; }
-  .splash .masc svg { width: 9.4rem; height: auto; filter: drop-shadow(0 6px 0 rgba(21,101,216,.1)); }
+  .splash .masc { margin: 0 0 .3rem; line-height: 0; }
+  .splash .masc svg { width: 11rem; height: auto; overflow: visible; }
+  .splash .deco { transform: rotate(var(--r, 0deg)); }
+  .splash .deco svg { overflow: visible; }
   .splash .slogan { text-align: center; margin: .7rem auto 0; max-width: 18rem; }
   .secoes { list-style: none; margin: 1.6rem 0 0; padding: 0; display: flex; justify-content: space-between; gap: .3rem; width: 100%; max-width: 20.5rem; }
   .secoes li { display: flex; flex-direction: column; align-items: center; gap: .4rem; flex: 1; min-width: 0; }
@@ -336,7 +342,7 @@
       chips: [['Quando e onde', 'planejar o momento de agir aumenta o cumprimento de metas (meta-análise de 94 testes)']],
       fonte: 'Fontes: Lally et al., European Journal of Social Psychology (2009/2010) · Gollwitzer e Sheeran (2006).' },
   ];
-  const mascM = (pose, px) => (window.BrainMascote ? window.BrainMascote.svg(pose, px) : mascote('oi', ''));
+  const mascM = (pose, px, cls) => (window.BrainMascote ? window.BrainMascote.svg(pose, px, cls) : mascote('oi', cls));
 
   /* ---------- roteiro ---------- */
   const SEC = { a: 'Objetivo & perfil', b: 'Seu dia a dia', c: 'Prioridades' };
@@ -404,12 +410,22 @@
     let html = '', depois = null, podeIr = true, mostrarProx = true, rotulo = '';
 
     if (p.t === 'splash') {
+      const D = (k, t, pos, rot, cls) => `<span class="deco${cls ? ' ' + cls : ''}" style="${pos};--r:${rot}deg">${deco(k, t)}</span>`;
       html = `<div class="splash">
+        <div class="faixa" aria-hidden="true">
+          ${D('lapis', 66, 'top:4%;left:8%', -18)}
+          ${D('lampada', 50, 'top:3%;left:calc(50% - 25px)', 0, 'm')}
+          ${D('livro', 84, 'top:3%;right:7%', 10)}
+          ${D('relogio', 68, 'top:30%;left:4%', -8)}
+          ${D('agenda', 70, 'top:29%;right:4%', 9)}
+          ${D('moeda', 68, 'bottom:25%;left:7%', -10)}
+          ${D('clip', 58, 'bottom:23%;left:calc(50% - 29px)', 8, 'b')}
+          ${D('calc', 66, 'bottom:25%;right:8%', -12)}
+        </div>
         <div class="sp-bloco">
-          <div class="masc">${mascM('aceno', 150)}</div>
+          <div class="masc">${mascM('aceno', 176)}</div>
           <h1 class="marca">brain</h1>
           <p class="serif slogan">${refazer ? 'Vamos refazer as perguntas.' : 'Seu sistema de estudo e disciplina, do jeito que você vive.'}</p>
-          <ul class="secoes" aria-label="O que o Brain organiza">${SECOES.map(([k, nome]) => `<li style="--c:${COR[k]}"><span class="sc-ic">${ICS[k]}</span><span class="sc-n">${nome}</span></li>`).join('')}</ul>
         </div>
         <div class="base">
           <button class="pill" id="comecar" type="button" style="flex:none;width:12rem">Começar</button>
@@ -511,7 +527,7 @@
       const mvs = (resp.motivacoes || []).map((v) => O.MOTIVACOES.find((x) => x[0] === v)[1]).join(', ');
       const dicaNivel = cs.pct <= 25 ? 'Você está começando, e tudo bem. Vamos de metas pequenas e de retomar sem culpa quando falhar.' : cs.pct <= 50 ? 'Você já tem partes do hábito. Metas moderadas e o registro diário vão consolidar o resto.' : cs.pct <= 75 ? 'Boa base. Dá para subir as metas aos poucos e usar as revisões a seu favor.' : 'Você já tem constância. O Brain entra para medir, revisar e manter o ritmo.';
       const seg = Math.min(3, Math.floor((Math.max(1, cs.pct) - 1) / 25));
-      html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem"><h1 class="titulo" style="text-align:left;margin:1.6rem 0 0">${n ? n + ', seu' : 'Seu'} resumo pessoal</h1>${mascote('festa', 'p')}</div>
+      html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem"><h1 class="titulo" style="text-align:left;margin:1.6rem 0 0">${n ? n + ', seu' : 'Seu'} resumo pessoal</h1>${mascM('festa', 100, 'mascote p')}</div>
         <div class="chips"><span class="chip">${esc(O.rotuloHoras(resp.horas))} por dia</span><span class="chip">${resp.dias} ${resp.dias === 1 ? 'dia' : 'dias'} por semana</span>${rit ? `<span class="chip">${esc(rit)}</span>` : ''}</div>
         <div class="cartao" style="margin-top:1.2rem"><h2>Índice de constância</h2><div class="num-g">${cs.pct}<span style="font-size:1rem;font-weight:500;color:var(--bv-muted)"> / 100</span></div>
         <div class="gauge">${cores.map((x) => `<i style="--c:${x}"></i>`).join('')}<span class="mk" id="mk" style="left:3%"></span></div>
@@ -523,7 +539,7 @@
       depois = (el) => setTimeout(() => { const m = el.querySelector('#mk'); if (m) m.style.left = Math.max(3, Math.min(97, cs.pct)) + '%'; }, 150);
     } else if (p.t === 'fim') {
       const pl = O.plano(resp); rotulo = 'Continuar';
-      html = `<div style="margin-top:1.4rem">${mascote('festa', 'p')}</div><h1 class="titulo" style="text-align:left;margin:.8rem 0 0">${n ? n + ', seu' : 'Seu'} plano está montado</h1>
+      html = `<div style="margin-top:1.4rem">${mascM('festa', 100, 'mascote p')}</div><h1 class="titulo" style="text-align:left;margin:.8rem 0 0">${n ? n + ', seu' : 'Seu'} plano está montado</h1>
         <p class="sub">Ajustei isto para você (dá para mudar depois em ⚙):</p><ul class="ajustes">${pl.ajustes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
         <h2 class="sec-h">Seus primeiros passos</h2><div class="passos">${pl.passos.map((s, m) => `<a class="passo-c" href="${s.href}"><b>${m + 1}. ${esc(s.titulo)}</b><span>${esc(s.texto)}</span></a>`).join('')}</div><div style="height:.6rem"></div>`;
     } else if (p.t === 'pronto') {
@@ -546,13 +562,13 @@
       let conf = '';
       for (let m = 0; m < 30; m++) {
         const a = (Math.PI * 2 * m) / 30 + Math.random() * 0.4, dist = 7 + Math.random() * 7;
-        conf += `<i style="--dx:${(Math.cos(a) * dist).toFixed(1)}rem;--dy:${(Math.sin(a) * dist * 0.8 - 1).toFixed(1)}rem;--r:${Math.round(Math.random() * 540 - 270)}deg;--c:${cores[m % cores.length]};--w:${(0.35 + Math.random() * 0.35).toFixed(2)}rem;--t:${(0.9 + Math.random() * 0.7).toFixed(2)}s"></i>`;
+        conf += `<i class="${['', 'tri', 'star', 'fita', 'anel'][m % 5]}" style="--dx:${(Math.cos(a) * dist).toFixed(1)}rem;--dy:${(Math.sin(a) * dist * 0.8 - 1).toFixed(1)}rem;--r:${Math.round(Math.random() * 540 - 270)}deg;--c:${cores[m % cores.length]};--w:${(0.35 + Math.random() * 0.35).toFixed(2)}rem;--t:${(0.9 + Math.random() * 0.7).toFixed(2)}s"></i>`;
       }
       html = `<div class="pronto">
         <div class="pr-palco" aria-hidden="true">
           <div class="pr-glow"></div><div class="pr-raios"></div>
           ${icones}
-          <div class="pr-masc">${mascote('festa', 'pr')}</div>
+          <div class="pr-masc">${mascM('festa', 300, 'mascote pr')}</div>
           <div class="pr-confete">${conf}</div>
         </div>
         <div class="pr-txt"><h1 class="titulo pr-h">Seu app está pronto!</h1>
