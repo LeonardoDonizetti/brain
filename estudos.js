@@ -221,6 +221,12 @@
     r.proxima = alvo > hoje ? alvo : somaDias(hoje, Math.max(1, INTERVALOS[r.etapa] - INTERVALOS[r.etapa - 1]));
     return r;
   }
+  /** Resultado da revisão (como no Anki): 'bom' avança, 'dificil' repete em 3 dias, 'esqueci' volta ao início. */
+  function avaliarRevisao(r, nivel, hoje) {
+    if (nivel === 'bom') return concluirRevisao(r, hoje);
+    if (nivel === 'dificil') { r.proxima = somaDias(hoje, 3); return r; }
+    r.etapa = 0; r.concluida = false; r.proxima = somaDias(hoje, 1); return r;
+  }
   const revisoesDevidas = (e, hoje) => e.revisoes.filter((r) => !r.concluida && r.proxima <= hoje).sort((a, b) => a.proxima.localeCompare(b.proxima));
 
   // ---------------------------------------------------------- vestibulares
@@ -330,6 +336,6 @@
     return e;
   }
 
-  const api = { TIPOS, DIAS, DIAS_CURTO, ORDEM_SEMANA, INTERVALOS, MOTIVOS, CORES_MATERIA, DICA_ERRO, estadoVazio, sanitizar, novoId, lerTexto, agoraProximo, conflitos, gerarPlano, estatisticas, inicioSemana, fmtMin, criarRevisao, concluirRevisao, revisoesDevidas, proximoVestibular, mensagens, responder, modeloFoto, minutos, hhmm, somaDias, isoDe, norm };
+  const api = { TIPOS, DIAS, DIAS_CURTO, ORDEM_SEMANA, INTERVALOS, MOTIVOS, CORES_MATERIA, DICA_ERRO, estadoVazio, sanitizar, novoId, lerTexto, agoraProximo, conflitos, gerarPlano, estatisticas, inicioSemana, fmtMin, criarRevisao, concluirRevisao, avaliarRevisao, revisoesDevidas, proximoVestibular, mensagens, responder, modeloFoto, minutos, hhmm, somaDias, isoDe, norm };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.BrainEstudos = api;
 })(typeof window !== 'undefined' ? window : globalThis);

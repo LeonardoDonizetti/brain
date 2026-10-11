@@ -16,7 +16,7 @@
     coach: true,             // mensagens do coach
     coach_tom: 'amigo',      // amigo | firme | calmo
     coach_alerta_pct: 40,    // avisa quando uma categoria passa disso % dos gastos
-    home: { aneis: true, barras: true, constancia: true, tabela: true, gastos: true },
+    home: { aneis: true, semana: true, barras: true, constancia: true, tabela: true, gastos: true },
     onboarding: false,       // true depois das boas-vindas (ou de pular)
     perfil: {},              // respostas das boas-vindas (nome, foco, disciplina...)
   };

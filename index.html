@@ -134,6 +134,12 @@
   #agora .ag-s { margin: .15rem 0 0; font-size: .85rem; color: var(--muted); }
   #agora .ag-f { display: flex; justify-content: space-between; align-items: center; margin-top: .6rem; }
   #agora .ag-f a { font-weight: 650; font-size: .85rem; color: var(--accent); text-decoration: none; min-height: 2.75rem; display: inline-flex; align-items: center; }
+  .sem-grade { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .sem-grade > div { background: var(--bg); border-radius: .55rem; padding: .6rem .75rem; }
+  .sem-grade small { display: block; color: var(--muted); font-size: .76rem; font-weight: 600; }
+  .sem-grade b { display: block; font-size: 1.15rem; font-weight: 650; letter-spacing: -.01em; margin-top: .1rem; }
+  .sem-grade em { font-style: normal; font-size: .76rem; color: var(--muted); }
+  .sem-ins { margin: .7rem 0 0; font-size: .9rem; line-height: 1.45; }
 </style>
 </head>
 <body>
@@ -144,7 +150,7 @@
   <section class="cartao bloco" id="coach" aria-label="Coach" hidden style="margin-top:1rem"></section>
 
   <form class="rapido" id="rapido" autocomplete="off">
-    <input id="rapido-t" type="text" maxlength="200" placeholder="Nova tarefa (ex.: prova sexta 14h)" aria-label="Nova tarefa">
+    <input id="rapido-t" type="text" maxlength="200" placeholder="Nova tarefa (ex.: prova sexta)" aria-label="Nova tarefa">
     <button type="submit" aria-label="Adicionar tarefa">Adicionar</button>
   </form>
   <section class="cartao bloco" id="agora" aria-label="Estudos agora" hidden style="margin-top:.8rem"></section>
@@ -161,6 +167,10 @@
   </section>
   </div>
 
+  <div data-bloco="semana">
+  <h2>Sua semana</h2>
+  <section class="cartao bloco" id="semana" aria-label="Resumo dos últimos 7 dias"><p class="vazio">Carregando...</p></section>
+  </div>
   <div data-bloco="barras">
   <div class="sec-topo"><h2>Tarefas concluídas</h2><a href="tarefas.html">Ver tarefas</a></div>
   <section class="cartao bloco" aria-label="Tarefas concluídas por dia">
@@ -526,6 +536,55 @@ async function carregarAgora() {
   sec.hidden = false;
 }
 carregarAgora();
+
+// ---- resumo dos últimos 7 dias, comparado com os 7 anteriores ----
+async function carregarSemana() {
+  const sec = $('semana');
+  const dia = (n) => iso(somar(doIso(HOJE), n));
+  const ini = dia(-6), antIni = dia(-13), antFim = dia(-7);
+  const meses = [...new Set([antIni.slice(0, 7), HOJE.slice(0, 7)])];
+  let tar = [], gast = [], est = null, rot = null;
+  try {
+    const r = await Promise.all([
+      get('/api/tarefas'), get('/api/estudos'), get(`/api/rotina?data=${HOJE}`),
+      ...meses.map((m) => get(`/api/financas/gastos?mes=${m}`)),
+    ]);
+    tar = r[0].tarefas; est = r[1].estudos; rot = r[2]; gast = r.slice(3).flatMap((x) => x.gastos);
+  } catch (e) { sec.innerHTML = '<p class="vazio">Não consegui montar o resumo.</p>'; return; }
+  const dataFeita = (t) => t.concluida_em || t.data;
+  const nTar = (a, b) => tar.filter((t) => t.feita && dataFeita(t) >= a && dataFeita(t) <= b).length;
+  const tarAtual = nTar(ini, HOJE), tarAnt = nTar(antIni, antFim);
+  const minEst = (a, b) => est.sessoes.filter((s) => s.data >= a && s.data <= b).reduce((m, s) => m + s.minutos, 0);
+  const estAtual = minEst(ini, HOJE), estAnt = minEst(antIni, antFim);
+  const gas = (a, b) => Math.round(gast.filter((g) => g.tipo !== 'receita' && g.data >= a && g.data <= b).reduce((m, g) => m + g.valor, 0) * 100) / 100;
+  const gAtual = gas(ini, HOJE), gAnt = gas(antIni, antFim);
+  const dias = (rot.semana || []).filter((d) => d.total);
+  const rotPct = dias.length ? Math.round(dias.reduce((m, d) => m + d.feitos / d.total, 0) / dias.length * 100) : null;
+  const diasEstudo = new Set(est.sessoes.filter((s) => s.data >= ini && s.data <= HOJE).map((s) => s.data)).size;
+  if (!tarAtual && !tarAnt && !estAtual && !estAnt && !gAtual && !gAnt && rotPct === null) { sec.innerHTML = '<p class="vazio">Use o app por alguns dias e o resumo da semana aparece aqui.</p>'; return; }
+  const dif = (a, b, fmt) => (a === b ? 'igual à anterior' : `${a > b ? '+' : '-'}${fmt(Math.abs(a - b))} vs anterior`);
+  const fmtMin = (m) => (window.BrainEstudos ? window.BrainEstudos.fmtMin(m) : `${m} min`);
+  const cel = (t, v, e) => `<div><small>${t}</small><b>${v}</b><em>${e || ''}</em></div>`;
+  sec.innerHTML = `<div class="sem-grade">
+    ${cel('Tarefas concluídas', tarAtual, dif(tarAtual, tarAnt, String))}
+    ${cel('Estudo', estAtual ? fmtMin(estAtual) : '0 min', estAtual || estAnt ? dif(estAtual, estAnt, fmtMin) : 'sem sessões')}
+    ${cel('Rotina (média)', rotPct === null ? '-' : rotPct + '%', rotPct === null ? 'sem rotina' : 'últimos 7 dias')}
+    ${cel('Gastos', BRL.format(gAtual), gAtual || gAnt ? dif(gAtual, gAnt, (v) => BRL.format(v)) : 'sem gastos')}
+  </div><p class="sem-ins"></p>`;
+  // uma frase só: o que mais merece atenção
+  const frases = [];
+  if (tarAtual > tarAnt) frases.push([tarAtual - tarAnt, `Você concluiu ${tarAtual - tarAnt} ${tarAtual - tarAnt === 1 ? 'tarefa a mais' : 'tarefas a mais'} que na semana anterior. Bom ritmo.`]);
+  if (diasEstudo >= 4) frases.push([5, `Você estudou em ${diasEstudo} dos últimos 7 dias. Constância é o que mais pesa.`]);
+  if (estAtual > estAnt && estAnt > 0) frases.push([3, `Seu tempo de estudo subiu em relação à semana anterior.`]);
+  if (gAnt > 0 && gAtual > gAnt * 1.3) frases.push([6, `Seus gastos subiram ${Math.round((gAtual / gAnt - 1) * 100)}% em relação aos 7 dias anteriores. Vale olhar as categorias.`]);
+  if (rotPct !== null && rotPct >= 80) frases.push([4, 'Sua rotina está firme: média acima de 80% na semana.']);
+  if (tarAtual < tarAnt && tarAnt > 0) frases.push([2, 'Você concluiu menos tarefas que na semana anterior. Escolha uma pequena para hoje e comece por ela.']);
+  if (!frases.length) frases.push([0, 'Semana tranquila. Escolha uma meta pequena para a próxima.']);
+  frases.sort((a, b) => b[0] - a[0]);
+  sec.querySelector('.sem-ins').textContent = frases[0][1];
+}
+carregarSemana();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) carregarSemana(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) carregarAgora(); });
 
 get('/api/jornada?dias=84').then((d) => { dadosJornada = d; desenharAneis(); desenharMapa(d.dias); }).catch(() => desenharMapa([]));

@@ -42,7 +42,7 @@
   ];
   const DIAS_LETRA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
   const DIAS_NOME = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
-  const BLOCOS = [['aneis', 'Anéis de hoje'], ['barras', 'Tarefas concluídas (barras)'], ['constancia', 'Constância (mapa de dias)'], ['tabela', 'Próximas tarefas'], ['gastos', 'Gastos do mês']];
+  const BLOCOS = [['aneis', 'Anéis de hoje'], ['semana', 'Resumo da semana'], ['barras', 'Tarefas concluídas (barras)'], ['constancia', 'Constância (mapa de dias)'], ['tabela', 'Próximas tarefas'], ['gastos', 'Gastos do mês']];
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   function seg(pref, opcoes) {

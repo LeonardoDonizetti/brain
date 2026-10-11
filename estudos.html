@@ -154,6 +154,11 @@
   .vazio-i { text-align: center; padding: 1.2rem .5rem; color: var(--muted); }
   .vazio-i svg { width: 3rem; height: 3rem; stroke: var(--accent); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
   .vazio-i b { display: block; color: var(--ink); font-size: 1.05rem; margin: .4rem 0 .2rem; }
+  #dlg-rev { width: min(92vw, 28rem); }
+  .rev h3.rev-t { font-size: 1.35rem; font-weight: 600; margin: .5rem 0 .15rem; letter-spacing: -.015em; }
+  .rev-k { font-size: .8rem; color: var(--muted); font-weight: 600; }
+  .rev-i { background: var(--accent-soft); border-radius: .6rem; padding: .8rem .9rem; margin: .8rem 0; font-size: .92rem; line-height: 1.45; }
+  .rev-b { display: grid; gap: .5rem; }
 </style>
 </head>
 <body>
@@ -234,6 +239,7 @@
   </form>
 </dialog>
 
+<dialog id="dlg-rev"><div id="rev-corpo"></div></dialog>
 <dialog id="dlg-foto"><div class="zoom"><img id="foto-grande" alt="Foto do meu horário de estudos"></div><div class="acoes"><button type="button" id="foto-fechar">Fechar</button></div></dialog>
 
 <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
@@ -270,6 +276,28 @@ async function carregar() {
   desenhar();
   montarCoach();
 }
+
+// ---- modo revisão: um assunto por vez, com recuperação ativa (tentar lembrar antes de avaliar) ----
+let FILA = [], FILA_N = 0;
+function iniciarRevisao() { FILA = ES.revisoesDevidas(E, HOJE).map((r) => r.id); FILA_N = FILA.length; if (!FILA_N) return; $('dlg-rev').showModal(); desenharRevisao(); }
+function desenharRevisao() {
+  const c = $('rev-corpo');
+  if (!FILA.length) {
+    c.innerHTML = `<div class="rev"><p class="rev-k">Revisão concluída</p><h3>Boa sessão</h3><p class="sub">${FILA_N} ${FILA_N === 1 ? 'assunto revisado' : 'assuntos revisados'}. Reveja de novo só quando o app avisar: o espaçamento é o que fixa.</p><div class="linhas"><button class="btn2 pri" id="rev-fim">Fechar</button></div></div>`;
+    $('rev-fim').onclick = () => $('dlg-rev').close(); return;
+  }
+  const r = E.revisoes.find((x) => x.id === FILA[0]); const m = r.materia_id && mat(r.materia_id);
+  c.innerHTML = `<div class="rev"><div class="es-topo"><span class="rev-k">${FILA_N - FILA.length + 1} de ${FILA_N}</span><button type="button" class="linkb" id="rev-sair">Sair</button></div>
+    <h3 class="rev-t"></h3><p class="sub">${m ? esc(m.nome) + ' · ' : ''}revisão ${r.etapa + 1} de ${ES.INTERVALOS.length}</p>
+    <p class="rev-i">Feche os olhos e explique este assunto com as suas palavras, sem olhar o material. Depois avalie com sinceridade.</p>
+    <div class="rev-b"><button class="btn2 pri" data-n="bom">Lembrei bem</button><button class="btn2" data-n="dificil">Lembrei pouco</button><button class="btn2 perigo" data-n="esqueci">Esqueci</button></div>
+    <p class="sub" style="margin-top:.6rem">Lembrei bem: próxima revisão mais longe. Pouco: repete em 3 dias. Esqueci: recomeça amanhã.</p></div>`;
+  c.querySelector('.rev-t').textContent = r.tema;
+  $('rev-sair').onclick = () => $('dlg-rev').close();
+  c.querySelectorAll('[data-n]').forEach((b) => { b.onclick = async () => { ES.avaliarRevisao(r, b.dataset.n, HOJE); FILA.shift(); await salvar(); desenharRevisao(); }; });
+}
+$('dlg-rev').addEventListener('close', () => { try { desenhar && desenhar(); } catch (e) {} });
+
 async function salvar() {
   try { E = (await api('/api/estudos', { method: 'PUT', headers: JSON_HDR, body: JSON.stringify({ estudos: E }) })).estudos; }
   catch (err) { aviso(err.message, true); }
@@ -476,12 +504,13 @@ function abaRev(w) {
   const nomeMat = (id) => { const m = id && mat(id); return m ? esc(m.nome) : ''; };
   const fmt = (d) => { const n = ES.minutos ? Math.round((new Date(d + 'T12:00') - new Date(HOJE + 'T12:00')) / 86400000) : 0; return n === 0 ? 'hoje' : n < 0 ? `atrasada ${-n} d` : n === 1 ? 'amanhã' : `em ${n} dias`; };
   html(w, `<div class="es"><h3>Acabei de estudar...</h3><p class="sub">Anote o assunto e eu agendo as revisões: 1 dia, 1 semana, 1 mês e 3 meses. Revisar espaçado fixa muito mais do que reler tudo de uma vez.</p><input id="r-tema" type="text" maxlength="100" placeholder="Ex.: Cinemática, MRUV" aria-label="Assunto estudado"><div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;margin-top:.5rem"><select id="r-mat" aria-label="Matéria">${opcoesMat}</select><button class="btn2 pri" id="r-add">Agendar</button></div></div>`);
-  html(w, `<div class="es"><h3>Revisar hoje</h3>${dev.length ? dev.map((r) => `<div class="item venc"><div>${esc(r.tema)}<small>${nomeMat(r.materia_id)}${nomeMat(r.materia_id) ? ' · ' : ''}revisão ${r.etapa + 1} de ${ES.INTERVALOS.length} <small class="p" style="display:inline">${r.proxima < HOJE ? '· ' + fmt(r.proxima) : ''}</small></small></div><button class="btn2 pri" data-rev="${r.id}">Revisei</button></div>`).join('') : '<p class="vazio">Nada para revisar hoje.</p>'}</div>`);
+  html(w, `<div class="es"><div class="es-topo"><h3>Revisar hoje</h3>${dev.length ? '<button class="btn2 pri" id="rev-agora">Revisar agora</button>' : ''}</div>${dev.length ? dev.map((r) => `<div class="item venc"><div>${esc(r.tema)}<small>${nomeMat(r.materia_id)}${nomeMat(r.materia_id) ? ' · ' : ''}revisão ${r.etapa + 1} de ${ES.INTERVALOS.length} <small class="p" style="display:inline">${r.proxima < HOJE ? '· ' + fmt(r.proxima) : ''}</small></small></div><button class="btn2 pri" data-rev="${r.id}">Revisei</button></div>`).join('') : '<p class="vazio">Nada para revisar hoje.</p>'}</div>`);
   if (futuras.length) html(w, `<div class="es"><h3>Próximas revisões</h3>${futuras.map((r) => `<div class="item"><div>${esc(r.tema)}<small>${nomeMat(r.materia_id)}${nomeMat(r.materia_id) ? ' · ' : ''}${fmt(r.proxima)}</small></div><button class="lapis2" data-delrev="${r.id}" aria-label="Apagar ${esc(r.tema)}">×</button></div>`).join('')}</div>`);
   // caderno de erros
   const abertos = E.erros.filter((x) => !x.resolvido).slice().reverse();
   const resolvidos = E.erros.filter((x) => x.resolvido).length;
   html(w, `<div class="es"><div class="es-topo"><h3>Caderno de erros</h3><span class="sub" style="margin:0">${abertos.length} abertos · ${resolvidos} resolvidos</span></div><p class="sub">Anote cada questão errada e por que errou. Revisar os erros é uma das formas mais eficientes de subir a nota.</p><input id="e-ass" type="text" maxlength="100" placeholder="Assunto da questão" aria-label="Assunto do erro"><div class="grade2"><select id="e-mat" aria-label="Matéria">${opcoesMat}</select><select id="e-mot" aria-label="Motivo">${Object.entries(ES.MOTIVOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div><input id="e-nota" type="text" maxlength="300" placeholder="O que você precisa lembrar (opcional)" aria-label="Anotação"><div class="linhas"><button class="btn2 pri" id="e-add">Adicionar erro</button></div>${abertos.length ? '<div style="margin-top:.6rem">' + abertos.slice(0, 20).map((x) => `<div class="item"><div>${esc(x.assunto)}<span class="chip">${ES.MOTIVOS[x.motivo]}</span><small>${nomeMat(x.materia_id)}${nomeMat(x.materia_id) ? ' · ' : ''}${x.data.split('-').reverse().slice(0, 2).join('/')}${x.nota ? ' · ' + esc(x.nota) : ''}</small></div><div style="display:flex;gap:.3rem"><button class="btn2" data-ok-erro="${x.id}" aria-label="Marcar como resolvido">Resolvi</button><button class="lapis2" data-del-erro="${x.id}" aria-label="Apagar">×</button></div></div>`).join('') + '</div>' : ''}</div>`);
+  if ($('rev-agora')) $('rev-agora').onclick = () => iniciarRevisao();
   $('r-add').onclick = async () => { const t = $('r-tema').value.trim(); if (!t) { aviso('Escreva o assunto estudado.', true); return; } ES.criarRevisao(E, t, $('r-mat').value ? Number($('r-mat').value) : null, HOJE); await salvar(); aviso('Revisões agendadas: amanhã, em 1 semana, 1 mês e 3 meses.'); };
   w.querySelectorAll('[data-rev]').forEach((b) => { b.onclick = async () => { const r = E.revisoes.find((x) => x.id === Number(b.dataset.rev)); if (r) { ES.concluirRevisao(r, HOJE); await salvar(); aviso(r.concluida ? 'Assunto concluído. Parabéns!' : 'Boa! Próxima revisão agendada.'); } }; });
   w.querySelectorAll('[data-delrev]').forEach((b) => { b.onclick = async () => { E.revisoes = E.revisoes.filter((x) => x.id !== Number(b.dataset.delrev)); await salvar(); }; });

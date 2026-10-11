@@ -94,7 +94,7 @@
       coach: true,
       coach_tom: r.tom || 'amigo',
       coach_alerta_pct: { nada: 40, as_vezes: 40, controle: 50, nao: 60 }[r.dinheiro] || 40,
-      home: { aneis: true, barras: true, constancia: true, tabela: true, gastos: r.dinheiro !== 'nao' },
+      home: { aneis: true, semana: true, barras: true, constancia: true, tabela: true, gastos: r.dinheiro !== 'nao' },
     };
     ajustes.push(`Meta de ${prefs.meta_diaria} ${prefs.meta_diaria === 1 ? 'tarefa' : 'tarefas'} por dia e ${prefs.meta_semanal} por semana`);
     ajustes.push(`Coach com tom ${{ amigo: 'amigo', firme: 'firme', calmo: 'calmo' }[prefs.coach_tom]}`);
