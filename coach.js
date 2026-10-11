@@ -169,6 +169,8 @@
 
   // Termos casam com o INÍCIO de uma palavra (ex.: "obrigad" pega obrigado/obrigada) no texto sem acentos.
   const tem = (q, ...termos) => termos.some((t) => new RegExp('(^|[^a-z0-9])' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(q));
+  const CRISE = ['suicid', 'me matar', 'quero morrer', 'nao quero mais viver', 'me machucar', 'automutil', 'me cortar', 'acabar com tudo', 'tirar minha vida', 'sumir do mundo'];
+  const ehCrise = (pergunta) => tem(norm(pergunta).replace(/\s+/g, ' ').trim(), ...CRISE);
   const SUGESTOES = ['Como estou hoje?', 'O que faço agora?', 'Como estão meus gastos?', 'Estou sem vontade'];
   const resumoTxt = (a, n) => a.mensagens.filter((m) => m.nivel !== 'bom').slice(0, n).map((m) => m.texto).join(' ');
   const pelaArea = (a, area) => a.mensagens.filter((m) => m.area === area).slice(0, 3).map((m) => m.texto).join(' ');
@@ -189,7 +191,7 @@
       return R('Escreva sua pergunta ou toque em uma das sugestões abaixo.', 'vazio', SUGESTOES);
     }
     // 1) segurança vem antes de tudo
-    if (tem(q, 'suicid', 'me matar', 'quero morrer', 'nao quero mais viver', 'me machucar', 'automutil')) {
+    if (ehCrise(q)) {
       return R('Sinto muito que você esteja se sentindo assim. Você não precisa passar por isso sozinho. No Brasil, o CVV atende 24 horas pelo telefone 188 (ligação gratuita) ou em cvv.org.br. Se estiver em perigo agora, ligue 192 (SAMU). Se puder, fale também com alguém de confiança perto de você.', 'crise', []);
     }
     // 2) assuntos do Brasil: motivação / sentimentos
@@ -251,7 +253,7 @@
     try { return conversar(pergunta, ctx, estado).texto; } catch (e) { return 'Tive um problema para ler seus dados agora, mas continuo aqui. Tente de novo em instantes.'; }
   }
 
-  const api = { analisar, responder, conversar, TOM };
+  const api = { analisar, responder, conversar, ehCrise, TOM };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
   root.BrainCoach = api;
 
@@ -296,32 +298,90 @@
   .coach-rap { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .6rem; }
   .coach-rap button { font: inherit; font-size: .78rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: .35rem .7rem; cursor: pointer; }
   .coach-in { display: flex; gap: .5rem; } .coach-in input { flex: 1; }
-  .coach-in button { font: inherit; font-weight: 650; border: 0; background: var(--accent); color: var(--on-accent); border-radius: .5rem; padding: 0 1rem; cursor: pointer; }`;
+  .coach-in button { font: inherit; font-weight: 650; border: 0; background: var(--accent); color: var(--on-accent); border-radius: .5rem; padding: 0 1rem; cursor: pointer; }
+  .coach-b.pensando { opacity: .75; font-style: italic; }
+  .coach-b.pensando::after { content: ""; display: inline-block; width: 1.1em; text-align: left; animation: coach-pts 1.2s steps(4) infinite; }
+  @keyframes coach-pts { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+  .coach-nota { justify-self: center; font-size: .76rem; color: var(--muted); text-align: center; padding: 0 .5rem; }
+  .coach-acao { justify-self: start; max-width: 92%; display: grid; gap: .45rem; padding: .6rem .75rem; border: 2px solid var(--borda-t, var(--line)); border-radius: 1rem; background: var(--surface); font-size: .88rem; line-height: 1.35; }
+  .coach-acao .bts { display: flex; gap: .4rem; }
+  .coach-acao button { font: inherit; font-weight: 650; font-size: .84rem; min-height: 2.5rem; padding: 0 .9rem; border-radius: .7rem; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+  .coach-acao button.ok { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .coach-acao.feito { background: var(--accent-soft); border-color: transparent; font-weight: 600; }
+  .coach-acao .err { color: var(--danger); font-size: .8rem; }
+  .coach-aviso { margin: .5rem 0 0; font-size: .74rem; color: var(--muted); line-height: 1.35; }`;
   document.head.append(css);
 
+  const chaveIA = () => { try { return (localStorage.getItem('brain-gemini-key') || '').trim(); } catch (e) { return ''; } };
+  const iaLigada = () => !!(P() && P().get().coach_ia && root.BrainIA && chaveIA().length >= 20);
   let dlg = null;
   function abrirChat() {
     if (!dlg) {
       dlg = el('dialog', 'coach-dlg');
-      dlg.innerHTML = `<h3>Coach</h3><p class="dica">Assistente de regras, roda só no seu aparelho. Pergunte sobre tarefas, gastos, rotina ou jornada.</p>
+      dlg.innerHTML = `<h3 class="coach-tit">Coach</h3><p class="dica coach-sub"></p>
         <div class="coach-log" aria-live="polite"></div>
         <div class="coach-rap"></div>
-        <form class="coach-in"><input type="text" maxlength="200" placeholder="Escreva sua pergunta" aria-label="Pergunta ao coach"><button type="submit">Enviar</button></form>
+        <form class="coach-in"><input type="text" maxlength="400" placeholder="Escreva sua pergunta" aria-label="Pergunta ao coach"><button type="submit">Enviar</button></form>
+        <p class="coach-aviso" hidden>A IA pode errar. Confira antes de decidir. Nada é salvo sem você tocar em Adicionar.</p>
         <div class="acoes" style="margin-top:.7rem"><button type="button" class="fechar">Fechar</button></div>`;
       document.body.append(dlg);
       const log = dlg.querySelector('.coach-log');
-      const bolha = (t, c) => { log.append(el('div', 'coach-b ' + c, t)); log.scrollTop = log.scrollHeight; };
+      const bolha = (t, c) => { const b = el('div', 'coach-b ' + c, t); log.append(b); log.scrollTop = log.scrollHeight; return b; };
       const estado = { falhas: 0 };
+      const hist = [];
       const rap = () => dlg.querySelector('.coach-rap');
       const sugerir = (l) => { rap().replaceChildren(); l.forEach((t) => { const b = el('button', null, t); b.type = 'button'; b.onclick = () => perguntar(t); rap().append(b); }); };
+      const json = (m, c) => ({ method: m, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(c) });
+      async function aplicar(a) {
+        const r = a.tipo === 'criar_tarefa'
+          ? await fetch('/api/tarefas', json('POST', Object.assign({ titulo: a.titulo, data: a.data, hora: a.hora }, a.prioridade ? { prioridade: a.prioridade } : {})))
+          : await fetch('/api/financas/gastos', json('POST', { tipo: a.tipo === 'registrar_entrada' ? 'receita' : 'despesa', item: { valor: a.valor, descricao: a.descricao, categoria: a.categoria, data: a.data } }));
+        if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.detail || j.erro || 'Não consegui salvar.'); }
+      }
+      function cartaoAcao(a) {
+        const d = el('div', 'coach-acao'); d.append(el('span', null, a.rotulo));
+        const bts = el('div', 'bts'); const ok = el('button', 'ok', 'Adicionar'); const no = el('button', null, 'Ignorar'); ok.type = no.type = 'button';
+        ok.onclick = async () => {
+          ok.disabled = no.disabled = true;
+          try { await aplicar(a); d.className = 'coach-acao feito'; d.replaceChildren(el('span', null, '✓ ' + a.rotulo)); }
+          catch (e) { ok.disabled = no.disabled = false; let m = d.querySelector('.err'); if (!m) { m = el('span', 'err'); m.setAttribute('role', 'alert'); d.append(m); } m.textContent = e.message; }
+        };
+        no.onclick = () => d.remove();
+        bts.append(ok, no); d.append(bts); log.append(d); log.scrollTop = log.scrollHeight;
+      }
       const perguntar = async (t) => {
         if (!t.trim()) { bolha('Escreva sua pergunta ou toque em uma sugestão.', 'c'); return; }
         bolha(t, 'u');
-        let r;
-        try { r = conversar(t, await coletar(), estado); } catch (e) { r = { texto: 'Não consegui ler seus dados agora, mas continuo aqui. Tente de novo em instantes.', sugestoes: SUGESTOES, intencao: 'erro' }; }
-        if (!['fallback', 'fallback2', 'fora_escopo'].includes(r.intencao)) estado.falhas = 0;
-        bolha(r.texto, 'c');
-        sugerir(r.sugestoes && r.sugestoes.length ? r.sugestoes : SUGESTOES);
+        const ctx = await coletar().catch(() => null);
+        let feito = false;
+        if (ctx && !ehCrise(t) && iaLigada()) {
+          const esp = bolha('Pensando', 'c pensando');
+          try {
+            const chave = chaveIA();
+            const modelo = (() => { try { return localStorage.getItem('brain-gemini-model') || undefined; } catch (e) { return undefined; } })();
+            const p = P() ? P().get() : {};
+            const res = await root.BrainIA.perguntar({ chave, modelo, pergunta: t, historico: hist, ctx, perfil: { nome: p.perfil && p.perfil.nome, tom: p.coach_tom } });
+            try { localStorage.setItem('brain-gemini-model', res.modelo); } catch (e) { /* sem cache */ }
+            esp.className = 'coach-b c'; esp.textContent = res.texto;
+            hist.push({ papel: 'u', texto: t }, { papel: 'c', texto: res.texto });
+            res.acoes.forEach(cartaoAcao);
+            sugerir(res.sugestoes.length ? res.sugestoes : SUGESTOES);
+            feito = true;
+          } catch (e) {
+            esp.remove();
+            const dica = e && e.codigo === 'chave' ? e.message + ' Respondi com as regras do aparelho.' : (e && e.message ? e.message + ' Respondi com as regras do aparelho.' : 'Sem IA agora. Respondi com as regras do aparelho.');
+            log.append(el('div', 'coach-nota', dica));
+          }
+        }
+        if (!feito) {
+          let r;
+          try { r = ctx ? conversar(t, ctx, estado) : { texto: 'Não consegui ler seus dados agora, mas continuo aqui. Tente de novo em instantes.', sugestoes: SUGESTOES, intencao: 'erro' }; } catch (e) { r = { texto: 'Não consegui ler seus dados agora, mas continuo aqui. Tente de novo em instantes.', sugestoes: SUGESTOES, intencao: 'erro' }; }
+          if (!['fallback', 'fallback2', 'fora_escopo'].includes(r.intencao)) estado.falhas = 0;
+          bolha(r.texto, 'c');
+          hist.push({ papel: 'u', texto: t }, { papel: 'c', texto: r.texto });
+          sugerir(r.sugestoes && r.sugestoes.length ? r.sugestoes : SUGESTOES);
+        }
+        log.scrollTop = log.scrollHeight;
       };
       sugerir(SUGESTOES);
       const inp = dlg.querySelector('input');
@@ -330,6 +390,10 @@
       dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
       coletar().then((c) => bolha(analisar(c).mensagens.filter((m) => m.nivel !== 'bom').slice(0, 2).map((m) => m.texto).join(' ') || 'Oi! Tudo em ordem por aqui. Em que posso ajudar?', 'c')).catch(() => {});
     }
+    const ia = iaLigada();
+    dlg.querySelector('.coach-tit').textContent = ia ? 'Coach com IA' : 'Coach';
+    dlg.querySelector('.coach-sub').textContent = ia ? 'Conversa livre com o Google Gemini (sua chave grátis). Eu leio um resumo do seu app e posso propor tarefas e gastos, que você confirma.' : 'Assistente de regras, roda só no seu aparelho. Pergunte sobre tarefas, gastos, rotina ou jornada. Para conversa livre, ligue o Coach com IA nas configurações.';
+    dlg.querySelector('.coach-aviso').hidden = !ia;
     dlg.showModal();
   }
 
@@ -350,7 +414,7 @@
     const caixa = el('div', 'coach');
     msgs.forEach((m) => { const d = el('div', 'coach-msg n-' + m.nivel); d.append(el('i'), el('span', null, m.texto)); caixa.append(d); });
     const rod = el('div', 'coach-rod');
-    rod.append(el('small', null, 'Coach · regras no seu aparelho'));
+    rod.append(el('small', null, iaLigada() ? 'Coach · IA opcional ligada' : 'Coach · regras no seu aparelho'));
     const b = el('button', 'coach-btn', 'Conversar'); b.type = 'button'; b.onclick = abrirChat;
     rod.append(b); caixa.append(rod);
     alvo.append(caixa);

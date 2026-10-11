@@ -11,6 +11,7 @@
     meta_semanal: 15,        // tarefas por semana (0 desliga)
     dias_folga: [],          // dias da semana sem cobrança de meta (0-6)
     modo_ferias: false,      // pausa as metas sem "quebrar" nada
+    coach_ia: false,         // conversa com o Gemini (chave grátis do usuário); desligado = só regras locais
     ofensiva_leve: false,    // true = qualquer ação vale o dia (padrão: dia completo = 30 XP + uma entrega)
     periodo_grafico: 7,      // 7 | 14 | 30
     lembrete_backup: 14,     // dias; 0 = nunca lembrar
@@ -77,6 +78,7 @@
       dias_folga: [...new Set(folgas)].sort(),
       modo_ferias: p.modo_ferias === true,
       ofensiva_leve: p.ofensiva_leve === true,
+      coach_ia: p.coach_ia === true,
       periodo_grafico: [7, 14, 30].includes(p.periodo_grafico) ? p.periodo_grafico : PADRAO.periodo_grafico,
       lembrete_backup: [0, 7, 14, 30].includes(p.lembrete_backup) ? p.lembrete_backup : PADRAO.lembrete_backup,
       bloqueio_min: [0, 1, 5, 15].includes(p.bloqueio_min) ? p.bloqueio_min : PADRAO.bloqueio_min,

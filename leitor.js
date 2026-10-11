@@ -8,6 +8,8 @@
   const TIPOS = ['estudo', 'aula', 'escola', 'trabalho', 'treino', 'refeicao', 'deslocamento', 'descanso', 'outro'];
   const DIAS = { dom: 0, domingo: 0, seg: 1, segunda: 1, ter: 2, terca: 2, qua: 3, quarta: 3, qui: 4, quinta: 4, sex: 5, sexta: 5, sab: 6, sabado: 6, 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
 
+  const ESQUEMA = { type: 'ARRAY', items: { type: 'OBJECT', properties: { dia: { type: 'INTEGER' }, ini: { type: 'STRING' }, fim: { type: 'STRING' }, titulo: { type: 'STRING' }, tipo: { type: 'STRING', enum: TIPOS } }, required: ['dia', 'ini', 'fim', 'titulo'] } };
+
   function montarPrompt(materias) {
     const nomes = (materias || []).map((m) => m.nome).join(', ');
     return `Você lê a FOTO de uma grade semanal de horários (colunas = dias da semana, linhas = horários) e devolve os blocos em JSON.
@@ -78,14 +80,19 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
       usar = escolherModelo(corpo.models);
       if (!usar) throw new Error('Sua chave não tem acesso a um modelo que leia imagens.');
     }
-    let r;
-    try {
-      r = await f(`${BASE}/models/${encodeURIComponent(usar)}:generateContent?key=${c}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: montarPrompt(materias) }, { inline_data: { mime_type: m[1], data: m[2] } }] }], generationConfig: { temperature: 0, responseMimeType: 'application/json' } }),
-      });
-    } catch (e) { throw new Error('Sem conexão com a internet.'); }
-    const corpo = await r.json().catch(() => ({}));
+    const url = `${BASE}/models/${encodeURIComponent(usar)}:generateContent?key=${c}`;
+    const enviar = async (config) => {
+      try {
+        return await f(url, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: montarPrompt(materias) }, { inline_data: { mime_type: m[1], data: m[2] } }] }], generationConfig: config }),
+        });
+      } catch (e) { throw new Error('Sem conexão com a internet.'); }
+    };
+    // esquema JSON força o formato certo; se o modelo recusar o esquema, tenta de novo só com JSON livre
+    let r = await enviar({ temperature: 0, responseMimeType: 'application/json', responseSchema: ESQUEMA });
+    let corpo = await r.json().catch(() => ({}));
+    if (r.status === 400 && !/API key/i.test((corpo.error && corpo.error.message) || '')) { r = await enviar({ temperature: 0, responseMimeType: 'application/json' }); corpo = await r.json().catch(() => ({})); }
     if (!r.ok) throw new Error(msgErro(r.status, corpo));
     const texto = (((corpo.candidates || [])[0] || {}).content || {}).parts;
     const resp = Array.isArray(texto) ? texto.map((p) => p.text || '').join('') : '';

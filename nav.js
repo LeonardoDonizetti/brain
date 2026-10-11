@@ -139,6 +139,15 @@
         <h3>Coach</h3>
         <div class="cfg-cartao">
           <div class="cfg-linha flex"><div><div class="rot">Coach ligado</div><p class="dica">Incentiva suas tarefas e avisa sobre gastos. Funciona por regras no seu aparelho, sem IA paga.</p></div><label class="chave"><input type="checkbox" data-check="coach" aria-label="Coach ligado"><span></span></label></div>
+          <div class="cfg-linha flex"><div><div class="rot">Coach com IA</div><p class="dica">Conversa livre e ações por texto ("anota prova de química sexta 14h"), com o Google Gemini. É opcional e grátis, com a sua chave. Sem ela, o Coach segue por regras no aparelho.</p></div><label class="chave"><input type="checkbox" data-check="coach_ia" aria-label="Coach com IA"><span></span></label></div>
+          <div class="cfg-linha" id="cfg-ia-bloco" hidden>
+            <div class="rot">Chave do Google AI Studio</div>
+            <p class="dica">Gere de graça em <a class="cfg-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="padding:0">aistudio.google.com/apikey</a>, sem cartão. Fica só neste aparelho e não entra no backup.</p>
+            <input id="cfg-ia-chave" type="password" autocomplete="off" spellcheck="false" placeholder="Cole a chave (AIza...)" aria-label="Chave da API do Google AI Studio" style="width:100%;margin-top:.5rem">
+            <div class="cfg-botoes"><button type="button" id="cfg-ia-testar">Testar chave</button></div>
+            <p class="dica" id="cfg-ia-st" role="status" aria-live="polite"></p>
+            <p class="dica"><b>Privacidade:</b> ao conversar, um resumo do app (títulos de tarefas, totais de gastos, matérias) e a sua mensagem são enviados ao Google. No plano gratuito o Google pode usar esse conteúdo para melhorar produtos. Não escreva dados sensíveis. A IA só sugere; nada é salvo sem você tocar em Adicionar.</p>
+          </div>
           <div class="cfg-linha"><div class="rot">Tom de voz</div><div class="ctl">${seg('coach_tom', [['amigo', 'Amigo'], ['firme', 'Firme'], ['calmo', 'Calmo']])}</div></div>
           <div class="cfg-linha"><div class="rot">Avisar quando uma categoria passar de</div><p class="dica">Percentual do total gasto no mês (ex.: Alimentação).</p><div class="ctl">${seg('coach_alerta_pct', [[30, '30%'], [40, '40%'], [50, '50%'], [60, '60%']])}</div></div>
           <div class="cfg-linha flex"><div><div class="rot">Boas-vindas</div><p class="dica">Refaça as perguntas para reajustar metas, coach e tela inicial.</p></div><a class="cfg-link" href="boasvindas.html?refazer=1">Refazer</a></div>
@@ -375,6 +384,25 @@
       try { await L().apagarTudo(); msg('Tudo foi apagado.'); setTimeout(() => location.reload(), 700); }
       catch (e) { msg('Não consegui apagar.', true); }
     });
+
+    // Coach com IA: mostra o campo da chave quando ligado, guarda a chave só neste aparelho e testa
+    {
+      const lerChave = () => { try { return localStorage.getItem('brain-gemini-key') || ''; } catch (e) { return ''; } };
+      const bloco = $('cfg-ia-bloco'), campo = $('cfg-ia-chave'), st = $('cfg-ia-st');
+      const mostrar = () => { bloco.hidden = !(P && P.get().coach_ia); };
+      campo.value = lerChave();
+      mostrar();
+      dlg.addEventListener('change', (e) => { if (e.target.dataset && e.target.dataset.check === 'coach_ia') { setTimeout(mostrar, 0); if (e.target.checked && lerChave().length < 20) st.textContent = 'Cole sua chave abaixo para ativar.'; } });
+      campo.addEventListener('input', () => { try { localStorage.setItem('brain-gemini-key', campo.value.trim()); localStorage.removeItem('brain-gemini-model'); } catch (e) { /* sem armazenamento */ } st.textContent = ''; });
+      $('cfg-ia-testar').addEventListener('click', async () => {
+        const k = campo.value.trim();
+        if (k.length < 20) { st.textContent = 'Cole a chave inteira primeiro.'; return; }
+        if (!window.BrainIA) { st.textContent = 'IA indisponível nesta tela.'; return; }
+        st.textContent = 'Testando...';
+        try { const m = await window.BrainIA.testar(k); try { localStorage.setItem('brain-gemini-model', m); } catch (e) { /* sem cache */ } st.textContent = 'Funcionando! Modelo: ' + m + '.'; }
+        catch (e) { st.textContent = e.message || 'Não deu certo.'; }
+      });
+    }
 
     $('cfg-zerar').addEventListener('click', async () => {
       const r = prompt('Isto apaga TUDO deste aparelho: dados, configurações, senha, tutoriais e cache. O app volta como se fosse a primeira vez e não dá para desfazer.\n\nPara confirmar, digite ZERAR:');

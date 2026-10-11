@@ -158,6 +158,21 @@
   const CAT_ENTRADA = 'Entrada';
 
   async function financasRegistrar(estado, ctx, q, corpo) {
+    // Item já estruturado (vem do Coach com IA depois que o usuário confirma): validado de novo aqui.
+    if (corpo && corpo.item && typeof corpo.item === 'object') {
+      const it = corpo.item;
+      const valor = Math.round(Number(it.valor) * 100) / 100;
+      if (!isFinite(valor) || valor <= 0 || valor > 9999999) erro(422, 'Valor inválido.');
+      const descricao = texto(it.descricao).replace(/\s+/g, ' ').trim().slice(0, 80) || 'Gasto';
+      const dataOk = /^\d{4}-\d{2}-\d{2}$/.test(String(it.data || '')) ? it.data : iso(hojeData());
+      const tipoI = corpo.tipo === 'receita' ? 'receita' : 'despesa';
+      const categoria = tipoI === 'receita' ? CAT_ENTRADA : (C.CATEGORIAS && C.CATEGORIAS.includes(it.categoria) ? it.categoria : C.classificador.prever(descricao));
+      const id1 = proximoId(estado.gastos);
+      estado.gastos.push({ id: id1, tipo: tipoI, valor, categoria, descricao, data: dataOk, texto_original: '', corrigido: 0 });
+      if (tipoI === 'despesa') retreinar(estado);
+      ctx.salvar = true;
+      return { registrados: [{ valor, descricao, categoria, data: dataOk, tipo: tipoI }], ignorados: [] };
+    }
     const entrada = texto(corpo && corpo.texto).trim();
     if (!entrada) erro(400, 'Escreva ou fale um gasto.');
     const { itens, ignorados } = T.interpretarGastos(entrada);
