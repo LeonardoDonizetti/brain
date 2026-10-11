@@ -125,10 +125,50 @@
     .limite i { animation: preenche 600ms var(--ease) backwards; }
     @keyframes preenche { from { transform: scaleX(0); } }
   }
+  /* ===== v2: visões, panorama, metas, lançamentos por dia ===== */
+  main[data-vista="resumo"] [data-vw]:not([data-vw="resumo"]), main[data-vista="lanc"] [data-vw]:not([data-vw="lanc"]), main[data-vista="plan"] [data-vw]:not([data-vw="plan"]) { display: none !important; }
+  .hero { background: var(--surface); border: 1px solid var(--line); border-radius: .7rem; padding: 1rem 1.1rem; margin: 0 0 .8rem; }
+  .hero .h-k { display: block; color: var(--muted); font-size: .8rem; font-weight: 600; }
+  .hero-linha { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .hero-linha strong { font-size: 2rem; font-weight: 700; letter-spacing: -.03em; }
+  .h-txt { margin: .1rem 0 0; color: var(--muted); font-size: .84rem; line-height: 1.4; }
+  .h-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .8rem; }
+  .h-grade > div { background: var(--bg); border-radius: .55rem; padding: .5rem .65rem; min-width: 0; }
+  .h-grade small { display: block; color: var(--muted); font-size: .72rem; font-weight: 600; }
+  .h-grade strong { font-size: .98rem; font-weight: 650; letter-spacing: -.01em; }
+  .h-grade .pos { color: var(--ok); } .h-grade .neg { color: var(--danger); }
+  #abas-f { display: flex; gap: .3rem; margin: 0 0 .8rem; }
+  #abas-f button { flex: 1; border: 1px solid var(--line); background: var(--surface); border-radius: .6rem; padding: 0 .4rem; min-height: 2.75rem; font: inherit; font-size: .88rem; font-weight: 650; color: var(--ink); cursor: pointer; }
+  #abas-f button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  li.g { grid-template-columns: 1rem 1fr auto auto; }
+  li.g .pt { width: .6rem; height: .6rem; border-radius: 50%; display: block; }
+  li.dia-h { display: flex; justify-content: space-between; align-items: baseline; background: var(--bg); padding: .45rem 1rem; font-size: .8rem; color: var(--muted); font-weight: 600; border-top: 1px solid var(--line); }
+  li.dia-h:first-child { border-top: 0; }
+  li.dia-h + li.g { border-top: 0; }
+  .lanc-res { display: flex; justify-content: space-between; gap: .6rem; margin: .5rem 0 .4rem; color: var(--muted); font-size: .84rem; }
+  .cats .cat .barra i { background: var(--cor, var(--accent)); }
+  .fixas-res { margin: -.2rem 0 .5rem; color: var(--muted); font-size: .84rem; }
+  .plano-linha { display: flex; justify-content: space-between; gap: 1rem; padding: .25rem 0; font-size: .9rem; }
+  .plano-linha span:first-child { color: var(--muted); }
+  .meta-c { background: var(--surface); border: 1px solid var(--line); border-radius: .65rem; padding: .85rem 1rem; margin-bottom: .6rem; }
+  .meta-c .m-topo { display: flex; justify-content: space-between; gap: .6rem; align-items: baseline; }
+  .meta-c h3 { margin: 0; font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+  .meta-c .m-pct { font-weight: 650; font-size: .9rem; color: var(--accent); }
+  .meta-c.ok .m-pct { color: var(--ok); }
+  .meta-c .limite { margin: .5rem 0 .3rem; }
+  .meta-c.ok .limite i { background: var(--ok); }
+  .meta-c .m-sub { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.4; }
+  .meta-c .m-acoes { display: flex; gap: .4rem; margin-top: .5rem; }
+  .meta-c .m-acoes button { font: inherit; font-size: .85rem; font-weight: 650; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: .55rem; padding: 0 .9rem; min-height: 2.75rem; cursor: pointer; }
+  .meta-c .m-acoes button.pri { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .vazio-p { background: var(--surface); border: 1px dashed var(--line-strong); border-radius: .65rem; padding: 1rem; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+  .sec-topo .link, .chips button, .lapis, #g-valor, #g-qtd { min-height: 2.75rem !important; }
+  .lapis { min-width: 2.75rem; }
+  .sec-topo .link { padding: 0 .3rem; display: inline-flex; align-items: center; }
 </style>
 </head>
 <body>
-<main>
+<main data-vista="resumo">
   <header>
     <h1>Finanças</h1>
     <div class="mes">
@@ -138,19 +178,27 @@
     </div>
   </header>
 
-  <section class="cartao" id="coach" aria-label="Coach" hidden style="margin:.8rem 0;padding:1rem"></section>
-
-  <section class="total">
-    <small>Gastos do mês</small>
-    <strong class="num" id="total">R$ 0,00</strong>
+  <section class="hero" id="hero" data-vw="resumo" aria-label="Panorama do mês">
+    <small class="h-k" id="h-k">Gastos do mês</small>
+    <div class="hero-linha"><strong class="num" id="total">R$ 0,00</strong><span class="delta" id="h-delta" hidden></span></div>
+    <div class="limite" id="h-barra" hidden><i></i></div>
+    <p class="h-txt" id="h-txt"></p>
+    <div class="h-grade">
+      <div><small>Entradas</small><strong class="num" id="r-entradas">R$ 0,00</strong></div>
+      <div><small>Saldo</small><strong class="num" id="r-saldo">R$ 0,00</strong></div>
+      <div><small id="h-dia-k">Por dia</small><strong class="num" id="h-dia">-</strong></div>
+    </div>
   </section>
 
-  <section class="resumo" id="resumo" aria-label="Entradas e saldo do mês">
-    <div><small>Entradas</small><strong class="num" id="r-entradas">R$ 0,00</strong></div>
-    <div><small>Saldo</small><strong class="num" id="r-saldo">R$ 0,00</strong></div>
-  </section>
+  <div class="abas" role="group" aria-label="Visões de finanças" id="abas-f">
+    <button type="button" data-vf="resumo" aria-pressed="true">Resumo</button>
+    <button type="button" data-vf="lanc" aria-pressed="false">Lançamentos</button>
+    <button type="button" data-vf="plan" aria-pressed="false">Planejar</button>
+  </div>
 
-  <section class="bloco an" id="an" aria-label="Análises">
+  <section class="cartao" id="coach" data-vw="resumo" aria-label="Coach" hidden style="margin:.8rem 0;padding:1rem"></section>
+
+  <section class="bloco an" id="an" data-vw="resumo" aria-label="Análises">
     <div class="an-topo">
       <div class="alternar" role="group" aria-label="Tipo de análise">
         <button type="button" data-an="evol" aria-pressed="true">Evolução</button>
@@ -161,22 +209,29 @@
     <div id="an-corpo"></div>
   </section>
 
-  <section class="bloco" id="ritmo" aria-label="Ritmo do mês" hidden>
+  <section class="bloco" id="ritmo" data-vw="resumo" aria-label="Ritmo do mês" hidden>
     <div id="ritmo-corpo"></div>
   </section>
 
-  <div class="sec-topo"><h2>Por categoria</h2><button type="button" class="link" id="b-limites">Definir limites</button></div>
-  <section class="cats" id="cats" aria-label="Gastos por categoria"></section>
-  <p class="dica-vazia" id="cats-vazio" hidden style="color:var(--muted);font-size:.9rem;margin:.2rem 0">Nenhum gasto neste mês.</p>
+  <div class="sec-topo" data-vw="resumo"><h2>Por categoria</h2><button type="button" class="link" id="b-limites">Definir limites</button></div>
+  <section class="cats" id="cats" data-vw="resumo" aria-label="Gastos por categoria"></section>
+  <p class="dica-vazia" id="cats-vazio" data-vw="resumo" hidden style="color:var(--muted);font-size:.9rem;margin:.2rem 0">Nenhum gasto neste mês.</p>
 
-  <div class="sec-topo"><h2>Contas fixas</h2><button type="button" class="link" id="b-nova-fixa">+ Nova conta fixa</button></div>
-  <ul id="fixas" aria-label="Contas fixas do mês"></ul>
+  <div class="sec-topo" data-vw="plan"><h2>Orçamento do mês</h2><button type="button" class="link" id="b-limites2">Editar limites</button></div>
+  <section class="bloco" id="plano-orc" data-vw="plan" aria-label="Orçamento"></section>
 
-  <section class="bloco" id="insights-sec" aria-label="Destaques do mês" hidden style="margin-top:1.1rem">
+  <div class="sec-topo" data-vw="plan" style="margin-top:1.2rem"><h2>Metas de economia</h2><button type="button" class="link" id="b-nova-meta">+ Nova meta</button></div>
+  <div id="metas" data-vw="plan" aria-label="Metas de economia"></div>
+
+  <div class="sec-topo" data-vw="plan" style="margin-top:1.2rem"><h2>Contas fixas</h2><button type="button" class="link" id="b-nova-fixa">+ Nova conta fixa</button></div>
+  <p class="fixas-res" id="fixas-res" data-vw="plan"></p>
+  <ul id="fixas" data-vw="plan" aria-label="Contas fixas do mês"></ul>
+
+  <section class="bloco" id="insights-sec" data-vw="resumo" aria-label="Destaques do mês" hidden style="margin-top:1.1rem">
     <div id="insights"></div>
   </section>
 
-  <section class="grafico-sec" id="grafico-sec" hidden>
+  <section class="grafico-sec" id="grafico-sec" data-vw="resumo" hidden>
     <div class="grafico-topo">
       <h2>Gráfico por categoria</h2>
       <div class="alternar" role="group" aria-label="O que mostrar no gráfico">
@@ -187,10 +242,10 @@
     <div class="rosca" id="grafico"></div>
   </section>
 
-  <h2>Lançamentos <span style="font-weight:400;text-transform:none;letter-spacing:0">(toque no lápis para corrigir)</span></h2>
-  <div class="busca-linha"><input type="search" id="busca" placeholder="Buscar lançamentos" aria-label="Buscar lançamentos" autocomplete="off"></div>
-  <div class="chips" id="chips" role="group" aria-label="Filtrar por categoria"></div>
-  <ul id="lista"></ul>
+  <div class="busca-linha" data-vw="lanc"><input type="search" id="busca" placeholder="Buscar lançamentos" aria-label="Buscar lançamentos" autocomplete="off"></div>
+  <div class="chips" id="chips" data-vw="lanc" role="group" aria-label="Filtrar por categoria"></div>
+  <div id="lanc-res" class="lanc-res" data-vw="lanc"></div>
+  <ul id="lista" data-vw="lanc"></ul>
 </main>
 
 <dialog id="dlg">
@@ -247,6 +302,37 @@
   </form>
 </dialog>
 
+<dialog id="dlg-meta">
+  <form id="meta-form">
+    <h3 id="m-titulo">Nova meta</h3>
+    <label for="m-nome">Nome</label>
+    <input id="m-nome" type="text" maxlength="60" placeholder="Ex.: Viagem de formatura, notebook" required>
+    <label for="m-alvo">Quanto quer juntar (R$)</label>
+    <input id="m-alvo" type="number" step="0.01" min="0.01" inputmode="decimal" required>
+    <label for="m-prazo">Prazo (opcional)</label>
+    <input id="m-prazo" type="date">
+    <div class="acoes">
+      <button type="button" class="perigo" id="m-apagar" hidden>Apagar</button>
+      <button type="button" id="m-cancelar">Cancelar</button>
+      <button type="submit" class="primario">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-guardar">
+  <form id="guardar-form">
+    <h3 id="g-titulo">Guardar dinheiro</h3>
+    <p class="dica" id="g-info"></p>
+    <label for="gm-valor">Valor (R$)</label>
+    <input id="gm-valor" type="number" step="0.01" min="0.01" inputmode="decimal" required>
+    <div class="acoes">
+      <button type="button" id="g-retirar">Retirar</button>
+      <button type="button" id="g-cancelar">Cancelar</button>
+      <button type="submit" class="primario">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="composer" role="region" aria-label="Registrar gasto ou entrada">
   <div class="tipo" role="group" aria-label="Tipo de lançamento">
     <button type="button" data-t="despesa" aria-pressed="true">Gasto</button>
@@ -274,6 +360,10 @@ let DADOS = null, ANT = null, HIST = [];
 let anAba = 'evol';
 let filtroCat = '';
 let busca = '';
+let vistaF = 'resumo';
+let METAS = [];
+let metaEd = null, metaGuardar = null;
+try { const v = localStorage.getItem('brain-fin-vista'); if (['resumo', 'lanc', 'plan'].includes(v)) vistaF = v; } catch (e) {}
 const LAPIS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/><path d="M14 7l3 3"/></svg>';
 const JSON_HDR = { 'Content-Type': 'application/json' };
 const norm = (t) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -307,6 +397,7 @@ function mudarMes(delta) {
 }
 
 async function carregar() {
+  carregarMetas();
   try {
     const meses = [mes];
     for (let i = 0; i < 5; i++) meses.unshift(mesAnterior(meses[0]));
@@ -335,6 +426,7 @@ function desenharTudo() {
   if (!sel.options.length) d.categorias.forEach((c) => sel.add(new Option(c, c)));
   const selF = $('f-cat');
   if (!selF.options.length) d.categorias.forEach((c) => selF.add(new Option(c, c)));
+  desenharHero();
   desenharAnalises();
   desenharRitmo();
   desenharCategorias();
@@ -343,6 +435,8 @@ function desenharTudo() {
   desenharGrafico(d.por_categoria);
   desenharChips();
   desenharLista();
+  desenharPlano();
+  aplicarVista();
 }
 
 // ---------- análises (evolução, mês dia a dia, semana) ----------
@@ -480,29 +574,7 @@ function desenharRitmo() {
   const linhas = [];
   linhas.push(`<div class="ritmo-linha"><span>Média por dia</span><b>${BRL.format(media)}</b></div>`);
   if (atual) linhas.push(`<div class="ritmo-linha"><span>No ritmo atual, o mês fecha em</span><b>${BRL.format(proj)}</b></div>`);
-  if (atual && ANT) {
-    const ateDia = ANT.gastos.filter((g) => g.tipo !== 'receita' && Number(g.data.slice(8)) <= diaRef).reduce((s, g) => s + g.valor, 0);
-    if (ateDia > 0) {
-      const p = Math.round(((d.total - ateDia) / ateDia) * 100);
-      const cls = p > 0 ? 'down' : p < 0 ? 'up' : '';
-      linhas.push(`<div class="ritmo-linha"><span>Mês passado até o dia ${diaRef}</span><b>${BRL.format(ateDia)}<span class="delta ${cls}">${p === 0 ? 'igual' : (p > 0 ? '▲ +' : '▼ ') + p + '%'}</span></b></div>`);
-    }
-  }
-  const lim = d.orcamento.total;
-  let barra = '';
-  if (lim > 0) {
-    const uso = d.total / lim;
-    const estado = uso > 1 ? 'estourou' : uso >= 0.8 ? 'aviso' : '';
-    let txt;
-    if (uso > 1) txt = `Você passou ${BRL.format(d.total - lim)} do limite de ${BRL.format(lim)}.`;
-    else {
-      txt = `${Math.round(uso * 100)}% do limite de ${BRL.format(lim)} · restam ${BRL.format(lim - d.total)}.`;
-      if (atual && proj > lim) txt += ` No ritmo atual, passa em ${BRL.format(proj - lim)}.`;
-    }
-    const marca = atual && proj <= lim * 1.5 ? `<span class="marcador" style="left:${Math.min(100, (proj / lim) * 100)}%" title="Projeção"></span>` : '';
-    barra = `<div class="limite ${estado}" role="img" aria-label="${txt}"><i style="width:${Math.min(100, uso * 100)}%"></i>${marca}</div><p class="limite-txt ${estado}">${txt}</p>`;
-  }
-  $('ritmo-corpo').innerHTML = linhas.join('') + barra;
+  $('ritmo-corpo').innerHTML = linhas.join('');
 }
 
 // ---------- categorias com limite ----------
@@ -520,6 +592,7 @@ function desenharCategorias() {
     linha.innerHTML = '<span></span><div class="barra"><i></i></div><span class="num"></span>';
     linha.children[0].textContent = c.categoria;
     linha.querySelector('i').style.width = `${(c.valor / max) * 100}%`;
+    linha.querySelector('i').style.setProperty('--cor', catCor(c.categoria));
     linha.children[2].textContent = BRL.format(c.valor);
     const lim = limites[c.categoria];
     if (lim) {
@@ -569,6 +642,117 @@ $('lim-form').addEventListener('submit', async (e) => {
 });
 
 // ---------- contas fixas ----------
+
+// ---------- panorama do mês (no estilo YNAB/Mobills: quanto ainda posso gastar) ----------
+function compAnterior() {
+  const d = DADOS; if (!ANT || d.mes !== HOJE.slice(0, 7)) return null;
+  const diaRef = hoje.getDate();
+  const ateDia = ANT.gastos.filter((g) => g.tipo !== 'receita' && Number(g.data.slice(8)) <= diaRef).reduce((s, g) => s + g.valor, 0);
+  if (ateDia <= 0) return null;
+  return Math.round(((d.total - ateDia) / ateDia) * 100);
+}
+function desenharHero() {
+  const d = DADOS; const atual = d.mes === HOJE.slice(0, 7); const futuro = d.mes > HOJE.slice(0, 7);
+  const nDias = diasDoMes(d.mes); const diaRef = atual ? hoje.getDate() : nDias;
+  const lim = d.orcamento.total; const base = lim > 0 ? lim : d.entradas > 0 ? d.entradas : 0;
+  // variação contra o mês passado até o mesmo dia
+  const dl = $('h-delta'); const p = compAnterior();
+  dl.hidden = p === null; if (p !== null) { dl.className = 'delta ' + (p > 0 ? 'down' : p < 0 ? 'up' : ''); dl.textContent = p === 0 ? 'igual ao mês passado' : (p > 0 ? '▲ +' : '▼ ') + p + '% vs mês passado'; }
+  // barra: gastos contra o limite (ou contra as entradas)
+  const barra = $('h-barra'); const txt = $('h-txt');
+  if (base > 0 && !futuro) {
+    const uso = d.total / base; const estado = uso > 1 ? 'estourou' : uso >= 0.8 ? 'aviso' : '';
+    barra.hidden = false; barra.className = 'limite ' + estado; barra.querySelector('i').style.width = Math.min(100, uso * 100) + '%';
+    const alvoTxt = lim > 0 ? `do limite de ${BRL.format(lim)}` : `das entradas de ${BRL.format(d.entradas)}`;
+    let t = uso > 1 ? `Passou ${BRL.format(d.total - base)} ${alvoTxt}.` : `${Math.round(uso * 100)}% ${alvoTxt} · restam ${BRL.format(base - d.total)}.`;
+    if (atual && uso <= 1) { const proj = (d.total / diaRef) * nDias; if (proj > base) t += ` No ritmo atual, passa em ${BRL.format(proj - base)}.`; }
+    txt.textContent = t;
+  } else { barra.hidden = true; txt.textContent = futuro ? 'Mês futuro.' : 'Defina um limite do mês em Planejar para acompanhar quanto ainda pode gastar.'; }
+  // entradas, saldo e valor por dia
+  $('r-entradas').textContent = BRL.format(d.entradas);
+  const saldo = $('r-saldo');
+  if (!d.entradas) { saldo.textContent = '-'; saldo.className = 'num'; } else { saldo.textContent = BRL.format(d.saldo); saldo.className = 'num ' + (d.saldo > 0 ? 'pos' : d.saldo < 0 ? 'neg' : ''); }
+  const dia = $('h-dia'); const k = $('h-dia-k');
+  if (atual && base > 0) {
+    const restam = nDias - hoje.getDate() + 1; const livre = base - d.total;
+    k.textContent = 'Pode gastar por dia'; dia.textContent = livre > 0 ? BRL.format(livre / restam) : BRL.format(0); dia.className = 'num ' + (livre > 0 ? '' : 'neg');
+  } else { k.textContent = 'Média por dia'; dia.textContent = d.total ? BRL.format(d.total / diaRef) : '-'; dia.className = 'num'; }
+}
+
+// ---------- visões ----------
+function aplicarVista() {
+  document.querySelector('main').dataset.vista = vistaF;
+  document.querySelectorAll('#abas-f button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.vf === vistaF)));
+}
+document.querySelectorAll('#abas-f button').forEach((b) => { b.onclick = () => { vistaF = b.dataset.vf; try { localStorage.setItem('brain-fin-vista', vistaF); } catch (e) {} aplicarVista(); window.scrollTo({ top: 0 }); }; });
+$('b-limites2').onclick = () => $('b-limites').click();
+
+// ---------- planejar: orçamento e metas ----------
+function desenharPlano() {
+  const d = DADOS; const lim = d.orcamento.total; const nCats = Object.keys(d.orcamento.categorias).length;
+  const somaCats = Object.values(d.orcamento.categorias).reduce((s, v) => s + v, 0);
+  const fixasTotal = d.recorrentes.reduce((s, r) => s + r.valor, 0);
+  const linhas = [];
+  linhas.push(`<div class="plano-linha"><span>Limite do mês</span><b>${lim > 0 ? BRL.format(lim) : 'não definido'}</b></div>`);
+  linhas.push(`<div class="plano-linha"><span>Limites por categoria</span><b>${nCats ? nCats + ' (' + BRL.format(somaCats) + ')' : 'nenhum'}</b></div>`);
+  linhas.push(`<div class="plano-linha"><span>Contas fixas por mês</span><b>${BRL.format(fixasTotal)}</b></div>`);
+  if (lim > 0 && fixasTotal > 0) linhas.push(`<div class="plano-linha"><span>Sobra para o resto, depois das fixas</span><b>${BRL.format(lim - fixasTotal)}</b></div>`);
+  $('plano-orc').innerHTML = linhas.join('');
+  $('fixas-res').textContent = d.recorrentes.length ? `${BRL.format(fixasTotal)} por mês · ${d.recorrentes.filter((r) => !r.lancado).length} ainda não lançadas neste mês.` : '';
+  desenharMetas();
+}
+async function carregarMetas() { try { METAS = (await api('/api/financas/metas')).metas; } catch (e) { METAS = []; } desenharMetas(); }
+function desenharMetas() {
+  const box = $('metas'); box.replaceChildren();
+  if (!METAS.length) { box.innerHTML = '<div class="vazio-p">Crie uma meta (viagem, notebook, reserva de emergência), informe quanto quer juntar e vá guardando aos poucos. O app mostra quanto falta e quanto guardar por mês até o prazo.</div>'; return; }
+  METAS.forEach((m) => {
+    const pct = Math.min(100, Math.round((m.guardado / m.alvo) * 100)); const falta = Math.max(0, m.alvo - m.guardado); const ok = m.guardado >= m.alvo;
+    let sub = ok ? `Meta atingida: ${BRL.format(m.guardado)} guardados.` : `${BRL.format(m.guardado)} de ${BRL.format(m.alvo)} · faltam ${BRL.format(falta)}`;
+    if (!ok && m.prazo) {
+      const dias = Math.round((new Date(m.prazo + 'T12:00') - new Date(HOJE + 'T12:00')) / 86400000);
+      if (dias < 0) sub += ` · prazo passou há ${-dias} ${plural(-dias, 'dia', 'dias')}`;
+      else { const meses = Math.max(1, Math.ceil(dias / 30)); sub += ` · ${dias} ${plural(dias, 'dia', 'dias')} até o prazo (cerca de ${BRL.format(falta / meses)} por mês)`; }
+    }
+    const c = document.createElement('div'); c.className = 'meta-c' + (ok ? ' ok' : '');
+    c.innerHTML = '<div class="m-topo"><h3></h3><span class="m-pct"></span></div><div class="limite" role="img"><i></i></div><p class="m-sub"></p><div class="m-acoes"><button type="button" class="pri" data-a="g">Guardar</button><button type="button" data-a="e">Editar</button></div>';
+    c.querySelector('h3').textContent = m.nome; c.querySelector('.m-pct').textContent = pct + '%';
+    c.querySelector('.limite').setAttribute('aria-label', `${pct}% da meta ${m.nome}`); c.querySelector('i').style.width = pct + '%';
+    c.querySelector('.m-sub').textContent = sub;
+    c.querySelector('[data-a=g]').onclick = () => abrirGuardar(m); c.querySelector('[data-a=e]').onclick = () => abrirMeta(m);
+    box.append(c);
+  });
+}
+function abrirMeta(m) {
+  metaEd = m || null; $('m-titulo').textContent = m ? 'Editar meta' : 'Nova meta';
+  $('m-nome').value = m ? m.nome : ''; $('m-alvo').value = m ? m.alvo : ''; $('m-prazo').value = m && m.prazo ? m.prazo : ''; $('m-apagar').hidden = !m;
+  $('dlg-meta').showModal();
+}
+$('b-nova-meta').onclick = () => abrirMeta(null);
+$('m-cancelar').onclick = () => $('dlg-meta').close();
+$('meta-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const corpo = { nome: $('m-nome').value, alvo: parseFloat($('m-alvo').value), prazo: $('m-prazo').value || null };
+  try { await api(metaEd ? `/api/financas/metas/${metaEd.id}` : '/api/financas/metas', { method: metaEd ? 'PUT' : 'POST', headers: JSON_HDR, body: JSON.stringify(corpo) }); $('dlg-meta').close(); carregarMetas(); desenharPlano(); }
+  catch (err) { aviso(err.message, true); }
+});
+$('m-apagar').onclick = async () => {
+  if (!metaEd) return;
+  const copia = Object.assign({}, metaEd);
+  try { await api(`/api/financas/metas/${metaEd.id}`, { method: 'DELETE' }); $('dlg-meta').close(); carregarMetas();
+    if (window.BrainUI) window.BrainUI.snack('Meta apagada.', 'Desfazer', async () => { const r = await api('/api/financas/metas', { method: 'POST', headers: JSON_HDR, body: JSON.stringify({ nome: copia.nome, alvo: copia.alvo, prazo: copia.prazo, guardado: copia.guardado }) }); carregarMetas(); });
+  } catch (err) { aviso(err.message, true); }
+};
+function abrirGuardar(m) { metaGuardar = m; $('g-titulo').textContent = m.nome; $('g-info').textContent = `${BRL.format(m.guardado)} de ${BRL.format(m.alvo)} guardados.`; $('gm-valor').value = ''; $('dlg-guardar').showModal(); }
+$('g-cancelar').onclick = () => $('dlg-guardar').close();
+async function guardarValor(sinal) {
+  const v = parseFloat($('gm-valor').value); if (!(v > 0)) { aviso('Informe um valor.', true); return; }
+  try { await api(`/api/financas/metas/${metaGuardar.id}/guardar`, { method: 'POST', headers: JSON_HDR, body: JSON.stringify({ valor: sinal * v }) }); $('dlg-guardar').close(); await carregarMetas();
+    const m = METAS.find((x) => x.id === metaGuardar.id); if (m && m.guardado >= m.alvo && sinal > 0 && window.BrainUI) window.BrainUI.snack('Meta atingida. Parabéns!');
+  } catch (err) { aviso(err.message, true); }
+}
+$('guardar-form').addEventListener('submit', (e) => { e.preventDefault(); guardarValor(1); });
+$('g-retirar').onclick = () => guardarValor(-1);
+
 function desenharFixas() {
   const d = DADOS;
   const ul = $('fixas');
@@ -591,7 +775,10 @@ function desenharFixas() {
     else {
       const venceu = d.mes === HOJE.slice(0, 7) && r.data_prevista < HOJE;
       peq.className = venceu ? 'venc' : '';
-      peq.append(document.createTextNode(`${venceu ? 'Venceu em ' + curto(r.data_prevista) : r.categoria} · `));
+      let quando = r.categoria;
+      if (venceu) quando = 'Venceu em ' + curto(r.data_prevista);
+      else if (d.mes === HOJE.slice(0, 7)) { const n = Math.round((new Date(r.data_prevista + 'T12:00') - new Date(HOJE + 'T12:00')) / 86400000); quando = n === 0 ? 'Vence hoje' : n <= 7 ? `Vence em ${n} ${plural(n, 'dia', 'dias')}` : r.categoria; }
+      peq.append(document.createTextNode(`${quando} · `));
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'link'; b.textContent = 'Lançar agora';
       b.onclick = async () => {
@@ -712,13 +899,24 @@ function desenharLista() {
     lista.append(vazio);
     return;
   }
+  const rotDia = (s) => { if (s === HOJE) return 'Hoje'; const ont = new Date(hoje); ont.setDate(hoje.getDate() - 1); if (s === isoDe(ont)) return 'Ontem'; const [a, m, dd] = s.split('-').map(Number); const t = new Date(a, m - 1, dd).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }); return t.charAt(0).toUpperCase() + t.slice(1); };
+  const gastoTot = vis.filter((g) => g.tipo !== 'receita').reduce((s, g) => s + g.valor, 0);
+  const entTot = vis.filter((g) => g.tipo === 'receita').reduce((s, g) => s + g.valor, 0);
+  $('lanc-res').innerHTML = `<span>${vis.length} ${plural(vis.length, 'lançamento', 'lançamentos')}</span><span>${gastoTot ? 'Gastos ' + BRL.format(gastoTot) : ''}${gastoTot && entTot ? ' · ' : ''}${entTot ? 'Entradas ' + BRL.format(entTot) : ''}</span>`;
+  let diaAtual = '';
   vis.forEach((g) => {
+    if (g.data !== diaAtual) {
+      diaAtual = g.data;
+      const h = document.createElement('li'); h.className = 'dia-h'; h.setAttribute('aria-hidden', 'false');
+      const totDia = vis.filter((x) => x.data === g.data && x.tipo !== 'receita').reduce((s, x) => s + x.valor, 0);
+      h.innerHTML = '<span></span><span class="num"></span>'; h.children[0].textContent = rotDia(g.data); h.children[1].textContent = totDia ? BRL.format(totDia) : '';
+      lista.append(h);
+    }
     const li = document.createElement('li');
     li.className = 'g';
-    li.innerHTML = '<span class="data num"></span><span class="desc"></span><span class="num"></span><button type="button" class="lapis" aria-label="Editar este lançamento">' + LAPIS + '</button>';
-    const [, mm, dd] = g.data.split('-');
+    li.innerHTML = '<span class="pt" aria-hidden="true"></span><span class="desc"></span><span class="num"></span><button type="button" class="lapis" aria-label="Editar este lançamento">' + LAPIS + '</button>';
     const cols = li.children;
-    cols[0].textContent = `${dd}/${mm}`;
+    cols[0].style.background = catCor(g.categoria);
     cols[1].textContent = g.descricao;
     const cat = document.createElement('small');
     cat.textContent = g.categoria;
@@ -807,6 +1005,8 @@ let dadosGrafico = [];
 // Paleta discreta, distinguível por daltônicos (tons e luminosidades diferentes); o valor e o % sempre aparecem em texto
 const PALETA_CAT = ['#2f6f8f', '#c4743f', '#7d8f4e', '#8a5a8c', '#c19a2e', '#4f9a8e', '#b0566a', '#7a8591'];
 const corCategoria = (i) => PALETA_CAT[i % PALETA_CAT.length];
+// cor fixa por categoria (a mesma em barras, rosca e lista)
+const catCor = (nome) => { if (nome === 'Entrada') return 'var(--ok)'; const l = (DADOS && DADOS.categorias) || []; const i = l.indexOf(nome); return corCategoria(i < 0 ? 0 : i); };
 
 function desenharGrafico(dados) {
   dadosGrafico = dados;
@@ -829,7 +1029,7 @@ function desenharGrafico(dados) {
     arco.setAttribute('cy', '21');
     arco.setAttribute('r', '15.9155');
     arco.setAttribute('fill', 'none');
-    arco.setAttribute('stroke', corCategoria(i));
+    arco.setAttribute('stroke', catCor(c.categoria));
     arco.setAttribute('stroke-width', '6');
     arco.setAttribute('stroke-dasharray', `${pct} ${100 - pct}`);
     arco.setAttribute('stroke-dashoffset', `${25 - acumulado}`);
@@ -848,7 +1048,7 @@ function desenharGrafico(dados) {
   dados.forEach((c, i) => {
     const li = document.createElement('li');
     li.innerHTML = '<i></i><span class="nome"></span><span class="valor num"></span>';
-    li.querySelector('i').style.background = corCategoria(i);
+    li.querySelector('i').style.background = catCor(c.categoria);
     li.querySelector('.nome').textContent = c.categoria;
     const pct = Math.round((c[modoGrafico] / total) * 100);
     const texto = modoGrafico === 'valor' ? BRL.format(c.valor) : `${c.quantidade}x`;

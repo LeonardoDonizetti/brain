@@ -27,7 +27,7 @@
   function estadoVazio() {
     return {
       versao: 1,
-      gastos: [], orcamento: { total: 0, categorias: {} }, recorrentes: [], tarefas: [], rotina_itens: [], rotina_registros: [], avaliacoes: [],
+      gastos: [], orcamento: { total: 0, categorias: {} }, recorrentes: [], metas_fin: [], tarefas: [], rotina_itens: [], rotina_registros: [], avaliacoes: [],
       config: {}, jornadas: [], estudos: null, preferencias: null, ultimo_backup: null,
     };
   }
@@ -259,6 +259,50 @@
   }
   async function recorrenteApagar(estado, ctx, q, corpo, params) {
     estado.recorrentes = estado.recorrentes.filter((x) => x.id !== params.id);
+    ctx.salvar = true;
+    return { ok: true };
+  }
+
+  // ---- metas de economia ----
+  const listaMetas = (estado) => (estado.metas_fin = Array.isArray(estado.metas_fin) ? estado.metas_fin : []);
+  function lerMeta(corpo) {
+    corpo = corpo || {};
+    const nome = texto(corpo.nome).replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (!nome) erro(400, 'Dê um nome para a meta.');
+    const alvo = r2(Number(corpo.alvo));
+    if (!(alvo > 0 && alvo < 100000000)) erro(400, 'Informe o valor da meta.');
+    const prazo = corpo.prazo ? iso(validarData(corpo.prazo)) : null;
+    return { nome, alvo, prazo };
+  }
+  async function metasListar(estado) { return { metas: listaMetas(estado).map((m) => ({ ...m })) }; }
+  async function metaCriar(estado, ctx, q, corpo) {
+    const m = lerMeta(corpo);
+    const guardado = corpo && Number(corpo.guardado) > 0 ? r2(Number(corpo.guardado)) : 0;
+    const l = listaMetas(estado);
+    if (l.length >= 20) erro(400, 'Limite de 20 metas.');
+    const id = proximoId(l);
+    l.push({ id, ...m, guardado, criada: iso(hojeData()) });
+    ctx.salvar = true;
+    return { id };
+  }
+  async function metaEditar(estado, ctx, q, corpo, params) {
+    const atual = listaMetas(estado).find((x) => x.id === params.id);
+    if (!atual) erro(404, 'Meta não encontrada.');
+    Object.assign(atual, lerMeta(corpo));
+    ctx.salvar = true;
+    return { ok: true };
+  }
+  async function metaGuardar(estado, ctx, q, corpo, params) {
+    const atual = listaMetas(estado).find((x) => x.id === params.id);
+    if (!atual) erro(404, 'Meta não encontrada.');
+    const v = r2(Number(corpo && corpo.valor));
+    if (!Number.isFinite(v) || v === 0 || Math.abs(v) >= 100000000) erro(400, 'Informe um valor.');
+    atual.guardado = Math.max(0, r2(atual.guardado + v));
+    ctx.salvar = true;
+    return { ok: true, guardado: atual.guardado };
+  }
+  async function metaApagar(estado, ctx, q, corpo, params) {
+    estado.metas_fin = listaMetas(estado).filter((x) => x.id !== params.id);
     ctx.salvar = true;
     return { ok: true };
   }
@@ -681,6 +725,11 @@
     ['DELETE', `/api/financas/gastos/${id}`, financasApagar],
     ['GET', '/api/financas/orcamento', orcamentoLer],
     ['PUT', '/api/financas/orcamento', orcamentoSalvar],
+    ['GET', '/api/financas/metas', metasListar],
+    ['POST', '/api/financas/metas', metaCriar],
+    ['PUT', `/api/financas/metas/${id}`, metaEditar],
+    ['POST', `/api/financas/metas/${id}/guardar`, metaGuardar],
+    ['DELETE', `/api/financas/metas/${id}`, metaApagar],
     ['POST', '/api/financas/recorrentes', recorrenteCriar],
     ['PUT', `/api/financas/recorrentes/${id}`, recorrenteEditar],
     ['DELETE', `/api/financas/recorrentes/${id}`, recorrenteApagar],
@@ -731,7 +780,7 @@
   function copiaLimpa(estado) {
     return {
       app: 'brain', versao: 1, exportado_em: new Date().toISOString(),
-      gastos: estado.gastos, orcamento: estado.orcamento, recorrentes: estado.recorrentes, tarefas: estado.tarefas, rotina_itens: estado.rotina_itens,
+      gastos: estado.gastos, orcamento: estado.orcamento, recorrentes: estado.recorrentes, metas_fin: listaMetas(estado), tarefas: estado.tarefas, rotina_itens: estado.rotina_itens,
       rotina_registros: estado.rotina_registros, avaliacoes: estado.avaliacoes, config: estado.config, jornadas: estado.jornadas, estudos: estado.estudos,
       preferencias: estado.preferencias,
     };
@@ -773,6 +822,12 @@
       const valor = r2(Number(r.valor));
       if (!Number.isInteger(r.id) || !texto(r.descricao).trim() || !(valor > 0) || !Number.isInteger(r.dia) || r.dia < 1 || r.dia > 31 || !C.CATEGORIAS.includes(r.categoria)) continue;
       novo.recorrentes.push({ id: r.id, descricao: texto(r.descricao).slice(0, 120), valor, dia: r.dia, categoria: r.categoria });
+    }
+    for (const m of lista(obj.metas_fin)) {
+      const alvo = r2(Number(m.alvo)); const nome = texto(m.nome).replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (!Number.isInteger(m.id) || !nome || !(alvo > 0 && alvo < 100000000)) continue;
+      const g = r2(Number(m.guardado)); 
+      novo.metas_fin.push({ id: m.id, nome, alvo, prazo: ehData(m.prazo) ? m.prazo : null, guardado: g > 0 && g < 100000000 ? g : 0, criada: ehData(m.criada) ? m.criada : '' });
     }
     if (obj.orcamento && typeof obj.orcamento === 'object') {
       const o = obj.orcamento;
