@@ -20,6 +20,7 @@
 <script src="api-local.js"></script>
 <script src="bloqueio.js"></script>
 <script src="onboarding.js"></script>
+<script src="mascote.js"></script>
 <style>
   @font-face { font-family: "Fraunces"; font-weight: 500; font-style: normal; font-display: swap; src: url(fonts/fraunces-latin-500-normal.woff2) format("woff2"); }
   :root { --bv-bg: #ffffff; --bv-card: #f3f6fb; --bv-card2: #e6ecf5; --bv-ink: #1c2330; --bv-muted: #5b6575; --bv-pill: #1565d8; --bv-on-pill: #ffffff; --bv-tag: #ffb21f; --bv-on-tag: #3a2606; --bv-sel: #fff1cf; --bv-line: #dfe5ee; --bv-ok: #178a43; --bv-body: #ef9a95; --bv-body2: #d97d78; --ic-ink: #2a2420; --ic-face: #ffffff; --ic-ag: #232a3a; --ic-ag2: #11151f; --ic-calc: #4a5470; --ic-paper: #f1ebdf; --ic-book1: #3b5b8c; --ic-book2: #5f86bd; }
@@ -184,6 +185,60 @@
   @keyframes pr-conf { 0% { transform: translate(0, 0) rotate(0) scale(.4); opacity: 1; } 65% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), calc(var(--dy) + 4rem)) rotate(calc(var(--r) * 1.4)) scale(1); opacity: 0; } }
   @media (max-height: 700px) { .pr-palco { height: 14rem; } .pr-masc { width: 9rem; margin: -4rem 0 0 -4.5rem; } .pr-pos { transform: translate(calc(var(--x) * .85), calc(var(--y) * .8)); } .pr-h { font-size: 1.6rem; } .pr-ic { transform-origin: center; } }
   @media (prefers-reduced-motion: reduce) { .pr-glow, .pr-raios, .pr-masc, .pr-masc .mascote, .pr-ic, .pr-h, .pr-s, .pr-btn { animation: none !important; } .pr-confete { display: none; } }
+
+  /* ---- v6: introdução (splash, dados e benefícios) ---- */
+  .secoes, .dado-chips, .bens, .tc ul { background: none; border: 0; box-shadow: none; border-radius: 0; overflow: visible; }
+  .secoes li, .dado-chips li, .bens li, .tc li { border-top: 0; grid-template-columns: none; }
+  .secoes li, .tc li { padding: 0; } .tc li { display: block; }
+  .dado-chips li.l { flex-direction: column; align-items: flex-start; gap: .15rem; } .dado-chips li.l b { font-size: 1.1rem; min-width: 0; }
+  .bv.sp { background: radial-gradient(circle 15rem at 50% 11rem, color-mix(in srgb, var(--bv-pill) 11%, #fff) 0%, rgba(255,255,255,0) 100%); }
+  .splash .sp-bloco { align-items: center; text-align: center; justify-content: center; padding-bottom: 1rem; }
+  .splash .masc { margin: 0 0 .5rem; line-height: 0; }
+  .splash .masc svg { width: 9.4rem; height: auto; filter: drop-shadow(0 6px 0 rgba(21,101,216,.1)); }
+  .splash .slogan { text-align: center; margin: .7rem auto 0; max-width: 18rem; }
+  .secoes { list-style: none; margin: 1.6rem 0 0; padding: 0; display: flex; justify-content: space-between; gap: .3rem; width: 100%; max-width: 20.5rem; }
+  .secoes li { display: flex; flex-direction: column; align-items: center; gap: .4rem; flex: 1; min-width: 0; }
+  .sc-ic { width: 3.1rem; height: 3.1rem; border-radius: 1rem; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 12%, #fff); border: 2px solid color-mix(in srgb, var(--c) 22%, #fff); box-shadow: 0 3px 0 color-mix(in srgb, var(--c) 22%, #fff); flex: none; }
+  .sc-ic svg { width: 1.5rem; height: 1.5rem; }
+  .sc-n { font-size: .72rem; font-weight: 600; color: var(--bv-muted); }
+  @media (prefers-reduced-motion: no-preference) {
+    .splash .masc svg { animation: flutua 3.2s ease-in-out infinite; }
+    .secoes li { animation: sc-in .5s cubic-bezier(.23,1,.32,1) both; } .secoes li:nth-child(2) { animation-delay: .06s; } .secoes li:nth-child(3) { animation-delay: .12s; } .secoes li:nth-child(4) { animation-delay: .18s; } .secoes li:nth-child(5) { animation-delay: .24s; }
+    @keyframes sc-in { from { opacity: 0; transform: translateY(10px) scale(.9); } to { opacity: 1; transform: none; } }
+  }
+  .dado { margin: auto 0; display: flex; flex-direction: column; padding: .6rem 0 .4rem; }
+  .dado-topo { display: flex; align-items: center; justify-content: space-between; min-height: 3.4rem; }
+  .dado-tag { font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c); background: color-mix(in srgb, var(--c) 7%, #fff); padding: .3rem .75rem; border-radius: 2rem; }
+  .dado-m { line-height: 0; } .dado-m svg { width: 4.2rem; height: auto; }
+  .dado-num { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 700; font-size: 4.4rem; line-height: 1; letter-spacing: -.045em; color: var(--c); font-variant-numeric: tabular-nums; margin: .3rem 0 0; }
+  .dado-num small { font-size: 2.6rem; letter-spacing: -.02em; margin-left: .05em; } .dado-num .un { font-size: 1.6rem; letter-spacing: 0; font-weight: 600; }
+  .dado-leg { font-size: 1.12rem; line-height: 1.35; font-weight: 600; margin: .45rem 0 0; text-wrap: balance; }
+  .pic { display: grid; gap: 3px; margin: 1rem 0 .2rem; }
+  .pic.p100 { grid-template-columns: repeat(20, 1fr); } .pic.p66 { grid-template-columns: repeat(22, 1fr); }
+  .pic i { aspect-ratio: 1; border-radius: 50%; background: color-mix(in srgb, var(--c) 12%, #fff); } .pic.p66 i { border-radius: 3px; }
+  .pic i.on { background: var(--c); }
+  @media (prefers-reduced-motion: no-preference) { .pic i.on { animation: pic-on .3s cubic-bezier(.3,1.5,.5,1) both; animation-delay: calc(var(--k) * 11ms + 300ms); } @keyframes pic-on { from { transform: scale(0); opacity: 0; } to { transform: none; opacity: 1; } } }
+  .tec2 { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin: .9rem 0 .1rem; }
+  .tc { border-radius: 1.1rem; padding: .8rem .9rem; border: 2px solid; }
+  .tc h2 { margin: 0 0 .4rem; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-family: "IBM Plex Sans", system-ui, sans-serif; }
+  .tc ul { margin: 0; padding: 0; list-style: none; display: grid; gap: .3rem; font-size: 1rem; font-weight: 600; }
+  .tc li::before { content: ""; display: inline-block; width: .9rem; height: .9rem; margin-right: .5rem; vertical-align: -.1rem; background-position: center; background-repeat: no-repeat; background-size: contain; }
+  .tc.ruim { background: #f6f2f2; border-color: #e6dcdc; color: #6b5a5a; } .tc.ruim h2 { color: #a24a4a; }
+  .tc.ruim li { text-decoration: line-through; text-decoration-color: #c9a3a3; }
+  .tc.ruim li::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a24a4a' stroke-width='3.2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E"); }
+  .tc.bom { background: color-mix(in srgb, var(--c) 9%, #fff); border-color: color-mix(in srgb, var(--c) 40%, #fff); color: var(--bv-ink); } .tc.bom h2 { color: var(--c); }
+  .tc.bom li::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23178a43' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E"); }
+  .dado-chips { list-style: none; margin: .9rem 0 0; padding: 0; display: grid; gap: .5rem; }
+  .dado-chips li { display: flex; align-items: center; gap: .8rem; background: var(--bv-card); border-radius: 1rem; padding: .65rem .9rem; }
+  .dado-chips b { font-size: 1.5rem; font-weight: 700; color: var(--c); letter-spacing: -.02em; min-width: 3.3rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .dado-chips span { font-size: .88rem; line-height: 1.35; color: var(--bv-ink); }
+  .fonte { font-size: .72rem; line-height: 1.4; color: var(--bv-muted); margin: .8rem 0 0; }
+  .ola-topo { display: flex; align-items: center; gap: .8rem; } .ola-topo svg { width: 5.4rem; height: auto; flex: none; }
+  .ola-topo .titulo { font-size: 1.5rem; }
+  .bens { list-style: none; margin: .9rem 0 0; padding: 0; display: grid; gap: .55rem; }
+  .bens li { display: flex; align-items: center; gap: .85rem; background: var(--bv-card); border-radius: 1.1rem; padding: .7rem .9rem; }
+  .bens b { display: block; font-size: .98rem; font-weight: 650; } .bens span:not(.sc-ic) { display: block; font-size: .84rem; color: var(--bv-muted); line-height: 1.35; margin-top: .1rem; }
+  @media (max-height: 700px) { .dado-num { font-size: 3.6rem; } .dado-m svg { width: 3.4rem; } .dado-topo { min-height: 2.8rem; } .pic { margin-top: .6rem; } .dado-chips { margin-top: .6rem; } .dado-chips li { padding: .5rem .8rem; } .splash .masc svg { width: 7.4rem; } .secoes { margin-top: 1rem; } .bens li { padding: .55rem .8rem; } .ola-topo svg { width: 4.4rem; } }
   @media (prefers-reduced-motion: reduce) { .cena, .cena.volta, .cena.sai { animation: none; } .barra i, .opc, .gauge .mk, .roda .it { transition: none; } }
 </style>
 </head>
@@ -249,6 +304,39 @@
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg>',
   };
   const deco = (k, t) => `<svg viewBox="0 0 120 120" width="${t}" height="${t}" aria-hidden="true">${ic[k]}</svg>`;
+
+  /* ---------- dados da introdução (cada número tem fonte, ano e instituição) ---------- */
+  const COR = { rotina: '#c2410c', estudos: '#7c3aed', jornada: '#be1f68', tarefas: '#087590', financas: '#11793a' };
+  const sv24 = (c) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${c}</svg>`;
+  const ICS = {
+    rotina: sv24('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+    estudos: sv24('<path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 006.5 23H20v-5"/><path d="M9 8h7M9 12h5"/>'),
+    jornada: sv24('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
+    tarefas: sv24('<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>'),
+    financas: sv24('<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="15" r="1"/>'),
+  };
+  const SECOES = [['rotina', 'Rotina'], ['estudos', 'Estudos'], ['jornada', 'Jornada'], ['tarefas', 'Tarefas'], ['financas', 'Finanças']];
+  const BENS = [
+    ['financas', 'Gastos em segundos', 'Escreva “32 no iFood” e eu organizo por categoria.'],
+    ['estudos', 'Revisão no tempo certo', 'Lembretes de revisão espaçada para fixar o que você estuda.'],
+    ['rotina', 'Ofensiva que perdoa', 'Escudos protegem a sequência quando a vida atrapalha.'],
+    ['tarefas', 'Quando e onde', 'Tarefas e blocos de estudo com dia e hora definidos.'],
+  ];
+  const DADOS = [
+    { tag: 'Dinheiro', cor: COR.financas, humor: 'triste', vis: 'pontos', n: 82, un: '<small>%</small>',
+      leg: 'das famílias brasileiras estão endividadas. Novo recorde da pesquisa.',
+      chips: [['31%', 'dos brasileiros não têm nenhuma reserva para imprevistos'], ['45%', 'dos jovens brasileiros de 15 anos não têm o básico em educação financeira']],
+      fonte: 'Fontes: CNC, Peic (jul/2026) · Anbima/Datafolha, Raio X do Investidor, 9ª ed. · OCDE, PISA 2022.' },
+    { tag: 'Estudos', cor: COR.estudos, humor: 'lendo', vis: 'tecnicas', big: '2 em 10',
+      leg: 'técnicas de estudo têm alta utilidade comprovada. Grifar e reler não estão entre elas.',
+      chips: [['Se testar', 'e revisar em intervalos rende mais do que reler várias vezes']],
+      fonte: 'Fonte: Dunlosky et al., Psychological Science in the Public Interest (2013), análise de 10 técnicas.' },
+    { tag: 'Hábito', cor: COR.rotina, humor: 'festa', vis: 'dias', n: 66, un: '<span class="un"> dias</span>',
+      leg: 'é a média para um hábito virar automático. Errar um dia isolado não atrapalhou.',
+      chips: [['Quando e onde', 'planejar o momento de agir aumenta o cumprimento de metas (meta-análise de 94 testes)']],
+      fonte: 'Fontes: Lally et al., European Journal of Social Psychology (2009/2010) · Gollwitzer e Sheeran (2006).' },
+  ];
+  const mascM = (pose, px) => (window.BrainMascote ? window.BrainMascote.svg(pose, px) : mascote('oi', ''));
 
   /* ---------- roteiro ---------- */
   const SEC = { a: 'Objetivo & perfil', b: 'Seu dia a dia', c: 'Prioridades' };
@@ -316,37 +404,48 @@
     let html = '', depois = null, podeIr = true, mostrarProx = true, rotulo = '';
 
     if (p.t === 'splash') {
-      const D = (k, t, pos, rot, cls) => `<span class="deco${cls ? ' ' + cls : ''}" style="${pos};transform:rotate(${rot}deg)">${deco(k, t)}</span>`;
       html = `<div class="splash">
-        <div class="faixa" aria-hidden="true">
-          ${D('lapis', 70, 'top:5%;left:7%', -18)}
-          ${D('livro', 116, 'top:4%;right:5%', 12)}
-          ${D('lampada', 54, 'top:9%;left:42%', 6, 'm')}
-          ${D('relogio', 78, 'top:31%;right:7%', 10)}
-          ${D('moeda', 76, 'bottom:21%;left:7%', -8, 'moeda')}
-          ${D('clip', 54, 'bottom:30%;left:41%', 14, 'b m')}
-          ${D('calc', 70, 'bottom:23%;right:24%', -12, 'b')}
-          ${D('bandeira', 62, 'bottom:31%;right:7%', 8, 'b')}
-        </div>
         <div class="sp-bloco">
-          <div class="masc">${mascote('oi')}</div>
+          <div class="masc">${mascM('aceno', 150)}</div>
           <h1 class="marca">brain</h1>
           <p class="serif slogan">${refazer ? 'Vamos refazer as perguntas.' : 'Seu sistema de estudo e disciplina, do jeito que você vive.'}</p>
+          <ul class="secoes" aria-label="O que o Brain organiza">${SECOES.map(([k, nome]) => `<li style="--c:${COR[k]}"><span class="sc-ic">${ICS[k]}</span><span class="sc-n">${nome}</span></li>`).join('')}</ul>
         </div>
         <div class="base">
-          <button class="pill" id="comecar" type="button" style="flex:none;width:11rem">Começar</button>
+          <button class="pill" id="comecar" type="button" style="flex:none;width:12rem">Começar</button>
           ${refazer ? '' : '<div style="font-size:.88rem;color:var(--bv-muted)">Já usou o Brain? <button class="link" id="imp" type="button"><u>Importar backup</u></button></div>'}
         </div></div>`;
       mostrarProx = false;
     } else if (p.t === 'intro') {
-      const t = [
-        ['Estudar com método faz toda a diferença', tile('livro', 'lapis', 'relogio', 'clip')],
-        ['Você é único, assim como o seu plano', tile('agenda', 'lampada', 'relogio', 'bandeira')],
-        ['Parabéns por dar o primeiro passo!', tile('bandeira', 'moeda', 'calc', 'livro')],
-      ][p.n];
-      html = `<div class="meio centro">${t[1]}<h1 class="titulo" style="margin-top:1.8rem">${t[0]}</h1></div><div class="pontos" aria-hidden="true">${[0, 1, 2].map((x) => `<i class="${x === p.n ? 'on' : ''}"></i>`).join('')}</div>`;
+      const d = DADOS[p.n];
+      const chips = d.chips.map(([v, t]) => `<li${v.length > 5 ? ' class="l"' : ''}><b>${v}</b><span>${t}</span></li>`).join('');
+      let vis = '';
+      if (d.vis === 'pontos') vis = `<div class="pic p100" aria-hidden="true">${Array.from({ length: 100 }, (_, k) => `<i${k < d.n ? ' class="on"' : ''} style="--k:${k}"></i>`).join('')}</div>`;
+      else if (d.vis === 'dias') vis = `<div class="pic p66" aria-hidden="true">${Array.from({ length: 66 }, (_, k) => `<i class="on" style="--k:${k}"></i>`).join('')}</div>`;
+      else if (d.vis === 'tecnicas') vis = `<div class="tec2"><div class="tc ruim"><h2>Baixa utilidade</h2><ul><li>Grifar</li><li>Reler</li><li>Resumir</li></ul></div><div class="tc bom"><h2>Alta utilidade</h2><ul><li>Se testar</li><li>Revisar espaçado</li></ul></div></div>`;
+      html = `<div class="dado" style="--c:${d.cor}">
+        <div class="dado-topo"><span class="dado-tag">${d.tag}</span><span class="dado-m">${mascM(d.humor, 64)}</span></div>
+        <div class="dado-num"${d.n ? ` data-n="${d.n}"` : ''}>${d.n ? d.n + d.un : d.big}</div>
+        <p class="dado-leg">${d.leg}</p>
+        ${vis}
+        <ul class="dado-chips">${chips}</ul>
+        <p class="fonte">${d.fonte}</p></div>
+        <div class="pontos" aria-hidden="true">${[0, 1, 2].map((x) => `<i class="${x === p.n ? 'on' : ''}"></i>`).join('')}</div>`;
+      depois = (el) => {
+        const n = el.querySelector('.dado-num[data-n]'); if (!n) return;
+        const alvo = Number(n.dataset.n), un = d.un || '';
+        const pinta = (v) => { n.innerHTML = Math.round(v) + un; };
+        if (reduzido) { pinta(alvo); return; }
+        pinta(0); const t0 = performance.now(), dur = 1100;
+        const passo = (t) => { const k = Math.min(1, (t - t0) / dur); pinta(alvo * (1 - Math.pow(1 - k, 3))); if (k < 1 && n.isConnected) requestAnimationFrame(passo); };
+        setTimeout(() => requestAnimationFrame(passo), 250);
+      };
     } else if (p.t === 'ola') {
-      html = `<div class="meio"><div style="margin:0 0 1rem">${mascote('calmo', 'p')}</div><h1 class="titulo" style="text-align:left;margin:.5rem 0 .3rem">Você está no lugar certo!</h1><p class="sub">Vamos fazer algumas perguntas para montar metas, coach e tela inicial do seu jeito. Leva uns 2 minutos e as respostas ficam só neste aparelho.</p></div>`;
+      html = `<div class="meio ola">
+        <div class="ola-topo">${mascM('festa', 92)}<div><h1 class="titulo" style="text-align:left;margin:0">Você está no lugar certo!</h1></div></div>
+        <p class="sub" style="margin-top:.7rem">O Brain junta o que a pesquisa mostra que funciona, num app só:</p>
+        <ul class="bens">${BENS.map(([k, t, x]) => `<li style="--c:${COR[k]}"><span class="sc-ic">${ICS[k]}</span><div><b>${t}</b><span>${x}</span></div></li>`).join('')}</ul>
+        <p class="dica" style="margin-top:.9rem">Leva uns 2 minutos de perguntas. As respostas ficam só neste aparelho.</p></div>`;
     } else if (p.t === 'nome') {
       html = `<div class="meio" style="margin-top:2rem"><h1 class="perg" style="font-size:1.5rem">Vamos nos conhecer.<br>Como você prefere ser chamado?</h1><label class="rotc" for="nm">Nome ou apelido</label><input class="campo" id="nm" maxlength="24" autocomplete="given-name" value="${esc(resp.nome || '')}"></div>`;
       depois = (el) => { const inp = el.querySelector('#nm'); inp.addEventListener('input', () => { const v = inp.value.replace(/\s+/g, ' ').trim(); if (v) resp.nome = v; else delete resp.nome; $('prox').disabled = !v; }); inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && inp.value.trim()) avancar(); }); };
@@ -480,6 +579,7 @@
       const pct = Math.round(((i - primeira) / (ultima - primeira + 1)) * 100);
       $('barra').firstElementChild.style.width = Math.max(4, pct) + '%'; $('barra').setAttribute('aria-valuenow', pct);
     }
+    $('bv').classList.toggle('sp', p.t === 'splash');
     $('rod').hidden = p.t === 'splash' || p.t === 'pronto';
     $('voltar').hidden = i <= 1;
     $('prox').hidden = !r.mostrarProx; $('prox').disabled = !r.podeIr;

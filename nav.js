@@ -39,6 +39,12 @@
     { nome: 'Linear', url: 'https://linear.app', uso: 'Interface sóbria: contornos finos, cantos moderados, uma cor de destaque usada com economia.' },
     { nome: 'The visible tells of AI design', url: 'https://impeccable.style/slop', uso: 'Lista do que evitar para o visual não parecer gerado por IA: degradês roxo e azul, brilhos, texto em degradê, rótulos em caixa alta.' },
     { nome: 'Modo Caverna', url: null, uso: 'Jornada por dias, avaliação diária, rotinas e renúncias (referência que você trouxe).' },
+    { nome: 'CNC (Peic)', url: 'https://www.folhape.com.br/noticia/amp/505052/percentual-de-brasileiros-endividados-atinge-82-em-julho-novo/', uso: 'Dado da introdução: 82% das famílias endividadas em jul/2026, novo recorde da pesquisa.' },
+    { nome: 'Anbima/Datafolha', url: 'https://diariodocomercio.com.br/financas/nao-ter-reserva-emergencia/', uso: 'Dado da introdução: 31% dos brasileiros sem reserva de emergência (Raio X do Investidor, 9ª edição, 5.832 pessoas).' },
+    { nome: 'OCDE (PISA 2022)', url: 'https://www.oecd.org/en/publications/pisa-2022-results-volume-iv-factsheets_34d60137-en/brazil_1c815ef9-en.html', uso: 'Dado da introdução: 45% dos jovens brasileiros de 15 anos abaixo do nível básico em educação financeira.' },
+    { nome: 'Dunlosky et al. (2013)', url: 'https://www.psychologicalscience.org/news/releases/which-study-strategies-make-the-grade.html', uso: 'Se testar e revisar em intervalos têm a maior utilidade entre 10 técnicas; grifar e reler, baixa.' },
+    { nome: 'Lally et al. (UCL)', url: 'https://www.ucl.ac.uk/news/2009/aug/how-long-does-it-take-form-habit', uso: 'Em média 66 dias para um hábito ficar automático; falhar um dia isolado não atrapalhou.' },
+    { nome: 'Gollwitzer e Sheeran (2006)', url: 'https://www.thebehavioralscientist.com/glossary/implementation-intentions', uso: 'Planos “se X, então Y” (quando e onde) aumentam o cumprimento de metas (meta-análise de 94 testes).' }
   ];
   const DIAS_LETRA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
   const DIAS_NOME = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
