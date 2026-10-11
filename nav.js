@@ -124,8 +124,7 @@
       <div class="cfg-corpo">
         <h3>Aparência</h3>
         <div class="cfg-cartao">
-          <div class="cfg-linha"><div class="rot">Tema</div><div class="ctl">${seg('tema', [['auto', 'Automático'], ['claro', 'Claro'], ['escuro', 'Escuro']])}</div></div>
-          <div class="cfg-linha"><div class="rot">Cor de destaque</div><p class="dica">As 7 últimas são degradês discretos (a mesma cor em dois tons).</p><div class="ctl cores" id="cfg-cores">${cores.map(([k, c]) => `<button type="button" data-v="${k}" aria-pressed="false" aria-label="${c.nome}" style="background:${c.grad ? `linear-gradient(135deg, ${c.claro[0]}, ${c.claro[3]})` : (c.claro ? c.claro[0] : '#0b5f73')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`).join('')}</div></div>
+          <div class="cfg-linha"><div class="rot">Cor de destaque</div><p class="dica">As 7 últimas são degradês discretos (a mesma cor em dois tons).</p><div class="ctl cores" id="cfg-cores">${cores.map(([k, c]) => `<button type="button" data-v="${k}" aria-pressed="false" aria-label="${c.nome}" style="background:${c.grad ? `linear-gradient(135deg, ${c.claro[0]}, ${c.claro[3]})` : (c.claro ? c.claro[0] : '#1565d8')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`).join('')}</div></div>
         </div>
 
         <h3>Metas</h3>

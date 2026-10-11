@@ -4,7 +4,7 @@
   'use strict';
 
   const PADRAO = {
-    tema: 'auto',            // auto | claro | escuro
+    tema: 'claro',           // o app é sempre branco (a opção de tema foi retirada)
     cor: 'azul',             // azul | verde | roxo | laranja | rosa | grafite
     semana_inicio: 0,        // 0 domingo, 1 segunda, 6 sábado
     meta_diaria: 3,          // tarefas por dia (0 desliga)
@@ -25,7 +25,7 @@
   // [claro: destaque, suave, texto sobre destaque, (opcional) segunda cor do degradê] [escuro: ...]
   // As chaves (azul, verde...) são antigas e mantidas para não perder a escolha salva; os nomes e as cores são novos.
   const CORES = {
-    azul:    { nome: 'Petróleo',  claro: null, escuro: null },
+    azul:    { nome: 'Azul vivo',  claro: null, escuro: null },
     verde:   { nome: 'Pinheiro',  claro: ['#1b6b46', '#e4f1ea', '#ffffff'], escuro: ['#5cc08f', '#162b21', '#06200f'] },
     roxo:    { nome: 'Ameixa',    claro: ['#5b3a7a', '#efe9f4', '#ffffff'], escuro: ['#c3a3dd', '#261a33', '#190d26'] },
     laranja: { nome: 'Terracota', claro: ['#a8481f', '#f8ebe4', '#ffffff'], escuro: ['#f0a07a', '#35201a', '#2a1006'] },
@@ -68,7 +68,7 @@
     for (const k of Object.keys(PADRAO.home)) home[k] = typeof h[k] === 'boolean' ? h[k] : PADRAO.home[k];
     const folgas = Array.isArray(p.dias_folga) ? p.dias_folga.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6) : [];
     return {
-      tema: ['auto', 'claro', 'escuro'].includes(p.tema) ? p.tema : PADRAO.tema,
+      tema: 'claro',
       cor: Object.prototype.hasOwnProperty.call(CORES, p.cor) ? p.cor : PADRAO.cor,
       semana_inicio: [0, 1, 6].includes(p.semana_inicio) ? p.semana_inicio : PADRAO.semana_inicio,
       meta_diaria: inteiro(p.meta_diaria, 0, 50, PADRAO.meta_diaria),
@@ -98,14 +98,14 @@
 
     function aplicar() {
       const el = document.documentElement;
-      if (atual.tema === 'auto') el.removeAttribute('data-tema'); else el.setAttribute('data-tema', atual.tema);
-      const escuro = atual.tema === 'escuro' || (atual.tema === 'auto' && escuroSistema && escuroSistema.matches);
+      el.setAttribute('data-tema', 'claro');
+      const escuro = false;
       const c = CORES[atual.cor];
       const par = c && (escuro ? c.escuro : c.claro);
       for (const v of ['--accent', '--accent-soft', '--on-accent', '--accent-grad']) el.style.removeProperty(v);
       if (par) { el.style.setProperty('--accent', par[0]); el.style.setProperty('--accent-soft', par[1]); el.style.setProperty('--on-accent', par[2]); if (par[3]) el.style.setProperty('--accent-grad', `linear-gradient(135deg, ${par[0]}, ${par[3]})`); }
       let meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', escuro ? '#101214' : (par ? par[0] : '#0b5f73'));
+      if (meta) meta.setAttribute('content', '#ffffff');
     }
     if (escuroSistema && escuroSistema.addEventListener) escuroSistema.addEventListener('change', aplicar);
 

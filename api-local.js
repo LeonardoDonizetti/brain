@@ -11,6 +11,7 @@
   const C = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./categorias.js') : root.BrainCategorias;
   const TF = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./tarefas.js') : root.BrainTarefas;
   const ES = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./estudos.js') : root.BrainEstudos;
+  const JG = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./jogo.js') : root.BrainJogo;
   const CF = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./cofre.js') : root.BrainCofre;
   const { iso, addDias, hojeData, deIso } = T;
 
@@ -737,6 +738,10 @@
     return { estudos: estado.estudos };
   }
 
+  async function jogoLer(estado) {
+    return JG.calcular(estado, P.sanitizar(estado.preferencias), iso(hojeData()));
+  }
+
   async function prefsLer(estado) {
     return { salvo: !!estado.preferencias, preferencias: P.sanitizar(estado.preferencias) };
   }
@@ -778,6 +783,7 @@
     ['POST', '/api/rotina/modelo', rotinaModelo],
     ['GET', '/api/estudos', estudosLer],
     ['PUT', '/api/estudos', estudosSalvar],
+    ['GET', '/api/jogo', jogoLer],
     ['GET', '/api/preferencias', prefsLer],
     ['PUT', '/api/preferencias', prefsSalvar],
     ['GET', '/api/jornada', jornadaPainel],
@@ -1032,6 +1038,7 @@
       let corpo = null;
       if (opcoes && opcoes.body) { try { corpo = JSON.parse(opcoes.body); } catch (e) { corpo = null; } }
       const r = await chamar(metodo, url.pathname.slice(i), url.searchParams, corpo);
+      if (metodo !== 'GET' && r.status < 400) { try { window.dispatchEvent(new Event('brain-mudou')); } catch (e) { /* sem eventos */ } }
       return new Response(JSON.stringify(r.corpo), { status: r.status, headers: { 'Content-Type': 'application/json' } });
     };
     window.BrainLocal = api;

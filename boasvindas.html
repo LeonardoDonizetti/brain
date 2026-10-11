@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Brain - Boas-vindas</title>
 <link rel="stylesheet" href="base.css?v=m1">
-<meta name="theme-color" content="#faf6ee">
+<meta name="theme-color" content="#ffffff"><meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -16,12 +16,13 @@
 <script src="tarefas.js"></script>
 <script src="categorias.js"></script>
 <script src="cofre.js"></script>
+<script src="jogo.js"></script>
 <script src="api-local.js"></script>
 <script src="bloqueio.js"></script>
 <script src="onboarding.js"></script>
 <style>
   @font-face { font-family: "Fraunces"; font-weight: 500; font-style: normal; font-display: swap; src: url(fonts/fraunces-latin-500-normal.woff2) format("woff2"); }
-  :root { --bv-bg: #faf6ee; --bv-card: #f1ebdf; --bv-card2: #ebe3d3; --bv-ink: #1d1b19; --bv-muted: #625c52; --bv-pill: #1c2230; --bv-on-pill: #ffffff; --bv-tag: #f0b45c; --bv-on-tag: #3a2606; --bv-sel: #fbe4bd; --bv-line: #ddd4c2; --bv-ok: #4f7f43; --bv-body: #ef9a95; --bv-body2: #d97d78; --ic-ink: #2a2420; --ic-face: #ffffff; --ic-ag: #232a3a; --ic-ag2: #11151f; --ic-calc: #4a5470; --ic-paper: #f1ebdf; --ic-book1: #3b5b8c; --ic-book2: #5f86bd; }
+  :root { --bv-bg: #ffffff; --bv-card: #f3f6fb; --bv-card2: #e6ecf5; --bv-ink: #1c2330; --bv-muted: #5b6575; --bv-pill: #1565d8; --bv-on-pill: #ffffff; --bv-tag: #ffb21f; --bv-on-tag: #3a2606; --bv-sel: #fff1cf; --bv-line: #dfe5ee; --bv-ok: #178a43; --bv-body: #ef9a95; --bv-body2: #d97d78; --ic-ink: #2a2420; --ic-face: #ffffff; --ic-ag: #232a3a; --ic-ag2: #11151f; --ic-calc: #4a5470; --ic-paper: #f1ebdf; --ic-book1: #3b5b8c; --ic-book2: #5f86bd; }
   @media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]) { --bv-bg: #15130f; --bv-card: #211e18; --bv-card2: #2a261e; --bv-ink: #f2ede3; --bv-muted: #a59d8e; --bv-pill: #f2ede3; --bv-on-pill: #15130f; --bv-tag: #e8a950; --bv-on-tag: #2b1c04; --bv-sel: #3b2e17; --bv-line: #3a352b; --bv-ok: #7fb06f; --ic-ink: #efe9dc; --ic-face: #1d1a15; --ic-ag: #4b5878; --ic-ag2: #333d57; --ic-calc: #5d6a8c; --ic-paper: #2a261e; --ic-book1: #4a6ea5; --ic-book2: #6f97cf; } }
   html[data-tema="escuro"] { --bv-bg: #15130f; --bv-card: #211e18; --bv-card2: #2a261e; --bv-ink: #f2ede3; --bv-muted: #a59d8e; --bv-pill: #f2ede3; --bv-on-pill: #15130f; --bv-tag: #e8a950; --bv-on-tag: #2b1c04; --bv-sel: #3b2e17; --bv-line: #3a352b; --bv-ok: #7fb06f; --ic-ink: #efe9dc; --ic-face: #1d1a15; --ic-ag: #4b5878; --ic-ag2: #333d57; --ic-calc: #5d6a8c; --ic-paper: #2a261e; --ic-book1: #4a6ea5; --ic-book2: #6f97cf; }
   button, .opc, .it, .roda { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -51,13 +52,14 @@
   .meio { margin: auto 0; }
   .rod { padding: .6rem 1.3rem calc(1rem + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: .6rem; min-height: 4.6rem; }
   .rod[hidden] { display: none; }
-  .volt { flex: none; width: 3.4rem; height: 3.4rem; border-radius: 50%; border: 0; background: var(--bv-card2); color: var(--bv-ink); display: grid; place-items: center; cursor: pointer; }
+  .volt { box-shadow: 0 3px 0 var(--bv-line); flex: none; width: 3.4rem; height: 3.4rem; border-radius: 50%; border: 0; background: var(--bv-card2); color: var(--bv-ink); display: grid; place-items: center; cursor: pointer; }
   .volt[hidden] { display: none; }
   .volt svg { width: 1.3rem; height: 1.3rem; }
   .pill { flex: 1; min-height: 3.4rem; border: 0; border-radius: 2rem; background: var(--bv-pill); color: var(--bv-on-pill); font: inherit; font-size: 1.02rem; font-weight: 600; cursor: pointer; padding: 0 1.4rem; }
   .pill[hidden] { display: none; }
   .pill:disabled { background: var(--bv-card2); color: var(--bv-muted); opacity: 1; cursor: default; }
-  .pill:active:not(:disabled) { transform: scale(.985); }
+  .pill:not(:disabled) { box-shadow: 0 4px 0 #0d4aa8; }
+  .pill:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #0d4aa8; }
   .link { background: none; border: 0; font: inherit; color: var(--bv-muted); font-size: .9rem; min-height: 2.75rem; cursor: pointer; padding: 0 .4rem; }
   .link u { text-underline-offset: 3px; }
   .opcs { display: flex; flex-direction: column; gap: .6rem; margin: 1.3rem 0 .6rem; }
@@ -110,14 +112,14 @@
   .splash .faixa { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
   .splash .deco { position: absolute; display: block; opacity: .95; }
   .splash .deco svg { display: block; }
-  .splash .bloco, .splash .base { position: relative; z-index: 1; }
-  .splash .bloco { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; min-height: 0; padding-bottom: 2rem; }
+  .splash .sp-bloco, .splash .base { position: relative; z-index: 1; }
+  .splash .sp-bloco { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; min-height: 0; padding-bottom: 2rem; }
   .splash .masc { margin: 0 0 .9rem; }
   .splash .masc .mascote { margin: 0; width: 10.5rem; }
   .splash .slogan { text-align: left; }
   .splash .base { flex: none; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
   @media (prefers-reduced-motion: no-preference) { .splash .masc .mascote { animation: flutua 3.2s ease-in-out infinite; } .splash .deco { animation: flutua 5s ease-in-out infinite alternate; } @keyframes flutua { 50% { translate: 0 -5px; } } }
-  @media (max-height: 740px) { .splash .masc .mascote { width: 8rem; } .splash .deco.b, .splash .deco.m { display: none; } .splash .deco.moeda { bottom: 25% !important; } .splash .faixa .deco:nth-child(1) { top: 2% !important; } .splash .faixa .deco:nth-child(2) { top: 1% !important; right: 3% !important; } .splash .deco svg { transform: scale(.82); } .splash .bloco { padding-bottom: 1rem; } }
+  @media (max-height: 740px) { .splash .masc .mascote { width: 8rem; } .splash .deco.b, .splash .deco.m { display: none; } .splash .deco.moeda { bottom: 25% !important; } .splash .faixa .deco:nth-child(1) { top: 2% !important; } .splash .faixa .deco:nth-child(2) { top: 1% !important; right: 3% !important; } .splash .deco svg { transform: scale(.82); } .splash .sp-bloco { padding-bottom: 1rem; } }
   @media (max-height: 600px) { .splash .faixa .deco:nth-child(1) { display: none; } .splash .masc .mascote { width: 6.6rem; } .splash .deco svg { transform: scale(.7); } }
   .marca { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; font-size: 3.1rem; letter-spacing: -.045em; margin: 0; line-height: 1; }
   .splash .slogan { font-size: 1.15rem; line-height: 1.4; margin: .8rem 0 0; max-width: 17rem; font-weight: 500; }
@@ -295,7 +297,7 @@
           ${D('calc', 70, 'bottom:23%;right:24%', -12, 'b')}
           ${D('bandeira', 62, 'bottom:31%;right:7%', 8, 'b')}
         </div>
-        <div class="bloco">
+        <div class="sp-bloco">
           <div class="masc">${mascote('oi')}</div>
           <h1 class="marca">brain</h1>
           <p class="serif slogan">${refazer ? 'Vamos refazer as perguntas.' : 'Seu sistema de estudo e disciplina, do jeito que você vive.'}</p>
