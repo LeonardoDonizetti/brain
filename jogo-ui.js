@@ -41,7 +41,7 @@
   const LUA = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>';
 
   function bolinha(d) {
-    const ic = { feito: CHECK, escudo: ESCUDO, resgatado: VOLTA, perdido: XIS, folga: LUA, parcial: CHECK }[d.estado] || '';
+    const ic = { feito: CHECK, escudo: ESCUDO, resgatado: VOLTA, perdido: XIS, folga: LUA, parcial: '' }[d.estado] || '';
     return `<div class="sm-dia s-${d.estado}${d.hoje ? ' hoje' : ''}" role="img" aria-label="${esc(rotuloDia(d))}"><span class="sm-l">${d.letra}</span><span class="sm-b">${ic}</span></div>`;
   }
   const rotuloDia = (d) => `${d.letra}${d.hoje ? ' (hoje)' : ''}: ${({ feito: 'feito', escudo: 'coberto pelo escudo', resgatado: 'resgatado', perdido: 'perdido', folga: 'folga', pendente: 'ainda sem ação', parcial: 'em andamento', futuro: 'ainda não chegou', vazio: 'sem registro' })[d.estado] || ''}`;
@@ -50,15 +50,24 @@
   // ------------------------------------------------------------ textos
   const horasRestantes = () => { const a = new Date(); const f = new Date(a.getFullYear(), a.getMonth(), a.getDate() + 1); return Math.max(1, Math.round((f - a) / 3600000)); };
   const plural = (n, s, p) => (n === 1 ? s : p);
+  const OPCOES = 'concluir uma tarefa, 15 min de foco, uma revisão ou 3 itens da rotina';
+  function falta(r) {
+    const d = r.dia || {};
+    if (r.modo === 'leve') return 'Falta uma ação hoje.';
+    const nx = Math.max(0, (d.meta || 30) - (d.xp || 0));
+    if (!d.xp_ok && !d.entrega) return `Faltam ${nx} XP e uma entrega: ${OPCOES}.`;
+    if (!d.entrega) return `Falta uma entrega: ${OPCOES}.`;
+    return `Faltam ${nx} XP para fechar o dia.`;
+  }
   function mensagem(r) {
     const seq = r.sequencia;
     switch (r.estado) {
-      case 'nova': return { t: 'Comece sua ofensiva', s: 'Faça qualquer coisa no Brain hoje: concluir uma tarefa, estudar 25 minutos, marcar a rotina ou anotar um gasto.' };
-      case 'inicio': return { t: 'Comece uma nova ofensiva', s: `Uma ação hoje já vale o dia.${r.melhor ? ` Seu recorde é ${r.melhor} ${plural(r.melhor, 'dia', 'dias')}.` : ''}` };
-      case 'em_risco': return { t: `Salve sua ofensiva de ${seq} ${plural(seq, 'dia', 'dias')}!`, s: `Falta uma ação hoje. Restam cerca de ${horasRestantes()} h.` };
+      case 'nova': return { t: 'Comece sua ofensiva', s: r.modo === 'leve' ? 'Faça qualquer coisa no Brain hoje para o dia valer.' : `Complete o dia: ${r.meta_xp_dia} XP e uma entrega real, como ${OPCOES}.` };
+      case 'inicio': return { t: 'Comece uma nova ofensiva', s: `${r.modo === 'leve' ? 'Uma ação hoje já vale o dia.' : falta(r)}${r.melhor ? ` Seu recorde é ${r.melhor} ${plural(r.melhor, 'dia', 'dias')}.` : ''}` };
+      case 'em_risco': return { t: `Salve sua ofensiva de ${seq} ${plural(seq, 'dia', 'dias')}!`, s: `${falta(r)} Restam cerca de ${horasRestantes()} h.` };
       case 'quebrada':
-        if (r.resgatavel) return { t: `Sua ofensiva de ${r.resgate.valor} ${plural(r.resgate.valor, 'dia', 'dias')} quebrou`, s: `Dá tempo de salvar: ganhe ${r.resgate.falta} XP hoje e ela volta.` };
-        return { t: `Sua ofensiva de ${r.perdida.valor} ${plural(r.perdida.valor, 'dia', 'dias')} acabou`, s: 'Acontece com todo mundo. Recomece hoje, uma ação já vale o dia.' };
+        if (r.resgatavel) return { t: `Sua ofensiva de ${r.resgate.valor} ${plural(r.resgate.valor, 'dia', 'dias')} quebrou`, s: r.resgate.falta > 0 ? `Dá tempo de salvar: ganhe ${r.resgate.falta} XP hoje${r.resgate.entrega ? '' : ' com uma entrega real'} e ela volta.` : 'Falta só uma entrega real hoje (tarefa, foco, revisão ou rotina) e ela volta.' };
+        return { t: `Sua ofensiva de ${r.perdida.valor} ${plural(r.perdida.valor, 'dia', 'dias')} acabou`, s: r.modo === 'leve' ? 'Acontece com todo mundo. Recomece hoje, uma ação já vale o dia.' : 'Acontece com todo mundo. Recomece hoje: complete o dia com 30 XP e uma entrega real.' };
       default: {
         if (r.salvou_hoje) return { t: 'Ofensiva salva!', s: 'Você recuperou o dia que faltava. Bom trabalho.' };
         if (seq === 1) return { t: 'A ofensiva começou!', s: 'Volte amanhã para ela crescer.' };
@@ -81,6 +90,14 @@
         @keyframes jg-pulsa { 50% { transform: scale(1.07); opacity: .85; } }
       }
       .topo-config { align-items: center; justify-content: space-between; }
+      .jg-miss { display: flex; gap: .7rem; align-items: flex-start; padding: .55rem 0; }
+      .jg-miss > div { flex: 1; min-width: 0; }
+      .jg-miss b { font-size: .98rem; }
+      .jg-miss small { display: block; color: var(--muted); font-size: .86rem; line-height: 1.45; margin-top: .15rem; }
+      .jg-miss .jg-barra { margin-top: .35rem; }
+      .jg-ck { flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 2px solid #c9d1de; display: grid; place-items: center; font-size: .95rem; font-weight: 800; color: #fff; margin-top: .05rem; }
+      .jg-miss.ok .jg-ck { background: #11793a; border-color: #11793a; }
+      .jg-pill.ok { background: #e1f5e8; color: #0b5a2a; }
       .jg-chip { display: inline-flex; align-items: center; gap: .3rem; min-height: 2.75rem; padding: 0 .85rem 0 .65rem; border-radius: 1rem; border: 2px solid var(--line); background: #fff; box-shadow: 0 3px 0 var(--line); font-weight: 800; font-size: 1.05rem; color: var(--muted); cursor: pointer; }
       .jg-chip:active { box-shadow: none; transform: translateY(3px) !important; }
       .jg-chip[data-e="ativa"] { color: #b94a00; border-color: #ffd7a8; box-shadow: 0 3px 0 #ffd7a8; background: #fff9f1; }
@@ -94,14 +111,14 @@
       .sm-l { font-size: .72rem; font-weight: 700; color: var(--muted); }
       .sm-dia.hoje .sm-l { color: var(--accent); }
       .sm-b { width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; background: #f1f3f7; color: #fff; border: 2px solid #f1f3f7; }
-      .sm-dia.s-feito .sm-b, .sm-dia.s-parcial .sm-b { background: linear-gradient(#ff9a1a, #ff7a00); border-color: #ff7a00; }
+      .sm-dia.s-feito .sm-b { background: linear-gradient(#ff9a1a, #ff7a00); border-color: #ff7a00; }
       .sm-dia.s-escudo .sm-b { background: #3b9bff; border-color: #3b9bff; }
       .sm-dia.s-resgatado .sm-b { background: #2fbf6a; border-color: #2fbf6a; }
       .sm-dia.s-perdido .sm-b { background: #fff; border-color: #ffc9c4; color: #e5483b; }
       .sm-dia.s-folga .sm-b { background: #eef0f4; color: #8a94a3; border-color: #eef0f4; }
       .sm-dia.s-pendente .sm-b, .sm-dia.hoje.s-vazio .sm-b { background: #fff; border: 2px dashed var(--accent); }
       .sm-dia.s-futuro .sm-b { background: #fff; border: 2px solid #eef0f4; }
-      .sm-dia.s-parcial .sm-b { opacity: .55; }
+      .sm-dia.s-parcial .sm-b { background: #fff; border: 2px dashed #ff9a1a; }
 
       /* cartão do Início */
       .jg-cartao { display: block; width: 100%; text-align: left; background: #fff; border: 2px solid #ffd7a8; border-radius: 1.25rem; box-shadow: 0 4px 0 #ffd7a8; padding: 1rem 1rem .9rem; margin: 0 0 1.1rem; color: var(--ink); cursor: pointer; }
@@ -217,12 +234,28 @@
         <div class="jg-topo">${chama(R.estado, 46, true)}<div><span class="jg-num">${n}</span><span class="jg-un">${plural(n, 'dia', 'dias')} de ofensiva</span></div>${window.BrainMascote ? `<span class="jg-masc">${window.BrainMascote.svg(R.estado === 'quebrada' ? 'triste' : (R.xp_hoje >= R.meta_xp_dia ? 'festa' : 'feliz'), 74)}</span>` : ''}</div>
         <p class="jg-msg">${esc(m.t)}</p><p class="jg-sub">${esc(m.s)}</p>
         <div style="margin-top:.9rem">${faixa(R)}</div>
-        <div class="jg-mini"><span class="jg-pill">Nível ${R.nivel.n} · ${esc(R.nivel.titulo)}</span><span class="jg-pill o">${R.xp_hoje} XP hoje</span></div></button>`;
+        <div class="jg-mini"><span class="jg-pill">Nível ${R.nivel.n} · ${esc(R.nivel.titulo)}</span><span class="jg-pill o">${R.modo === 'leve' ? R.xp_hoje + ' XP hoje' : Math.min(R.xp_hoje, R.meta_xp_dia) + '/' + R.meta_xp_dia + ' XP hoje'}</span>${R.modo !== 'leve' && R.dia ? `<span class="jg-pill ${R.dia.entrega ? 'ok' : 'o'}">${R.dia.entrega ? 'Entrega feita' : 'Falta entrega'}</span>` : ''}</div></button>`;
       el.querySelector('button').addEventListener('click', abrir);
     });
   }
 
   // ------------------------------------------------------------ painel
+  function missao(r) {
+    const d = r.dia || {};
+    if (r.modo === 'leve') return `<div class="jg-bloco"><h4>Hoje</h4><p class="jg-sub">Modo leve: qualquer ação vale o dia. ${d.xp > 0 ? '<b>Dia completo!</b>' : ''}</p></div>`;
+    const pctXp = Math.min(100, Math.round(((d.xp || 0) / d.meta) * 100));
+    const prog = [];
+    if (d.tarefas) prog.push(`${d.tarefas} ${plural(d.tarefas, 'tarefa', 'tarefas')}`);
+    if (d.foco) prog.push(`${d.foco} min de foco`);
+    if (d.revisoes) prog.push(`${d.revisoes} ${plural(d.revisoes, 'revisão', 'revisões')}`);
+    if (d.rotina) prog.push(`${d.rotina}/3 da rotina`);
+    return `<div class="jg-bloco"><h4>Complete o dia</h4>
+      <div class="jg-miss ${d.xp_ok ? 'ok' : ''}"><span class="jg-ck" aria-hidden="true">${d.xp_ok ? '✓' : ''}</span><div><b>${Math.min(d.xp || 0, d.meta)}/${d.meta} XP</b>
+        <div class="jg-barra" role="progressbar" aria-valuenow="${pctXp}" aria-valuemin="0" aria-valuemax="100" aria-label="XP do dia"><i style="width:${pctXp}%"></i></div></div></div>
+      <div class="jg-miss ${d.entrega ? 'ok' : ''}"><span class="jg-ck" aria-hidden="true">${d.entrega ? '✓' : ''}</span><div><b>Uma entrega real</b>
+        <small>${prog.length ? esc(prog.join(' · ')) : 'Ainda nada hoje'}. Vale: ${OPCOES}.</small></div></div>
+      <p class="jg-sub" style="margin-top:.5rem">${d.completo ? 'Dia completo! Sua ofensiva está garantida hoje.' : esc(falta(r))}</p></div>`;
+  }
   function corpoPainel(r) {
     const m = mensagem(r);
     const n = r.estado === 'quebrada' ? 0 : r.sequencia;
@@ -242,14 +275,13 @@
       <div class="jg-bloco"><div class="jg-nivel"><span>Nível ${r.nivel.n} · ${esc(r.nivel.titulo)}</span><small>${r.xp_total} XP</small></div>
         <div class="jg-barra az" role="progressbar" aria-valuenow="${r.nivel.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso do nível"><i style="width:${r.nivel.pct}%"></i></div>
         <p class="jg-sub" style="margin-top:.5rem">Faltam ${r.nivel.xp_prox - r.nivel.xp_nivel} XP para o próximo nível.</p></div>
-      <div class="jg-bloco"><div class="jg-nivel"><span>Meta do dia</span><small>${Math.min(r.xp_hoje, r.meta_xp_dia)}/${r.meta_xp_dia} XP</small></div>
-        <div class="jg-barra" role="progressbar" aria-valuenow="${metaDia}" aria-valuemin="0" aria-valuemax="100" aria-label="Meta de XP do dia"><i style="width:${metaDia}%"></i></div></div>
+      ${missao(r)}
       <div class="jg-bloco"><h4>Marcas de ofensiva</h4><div class="jg-marcos">${marcos}</div></div>
       <div class="jg-bloco"><h4>Como funciona</h4>
         <ul class="jg-como" style="list-style:disc;background:none;border:0;border-radius:0;overflow:visible">
-          <li>Um dia vale com <b>uma ação</b> em qualquer parte do app.</li>
+          <li>Um dia só entra na ofensiva quando está <b>completo</b>: ${r.meta_xp_dia} XP e <b>uma entrega real</b> (tarefa concluída, 15 min de foco, uma revisão ou 3 itens da rotina). Anotar gasto ou avaliar o dia ajuda no XP, mas não é entrega.${r.modo === 'leve' ? ' (Modo leve ligado: qualquer ação vale.)' : ' Prefere algo mais simples? Ligue a <b>Ofensiva leve</b> em ⚙.'}</li>
           <li>O <b>escudo</b> cobre um dia perdido sozinho. Você ganha um a cada 7 dias seguidos (máximo ${r.escudos_max}).</li>
-          <li>Perdeu um dia sem escudo? Faça <b>${r.meta_resgate} XP</b> no dia seguinte e a ofensiva é salva.</li>
+          <li>Perdeu um dia sem escudo? No dia seguinte faça <b>${r.meta_resgate} XP</b>${r.modo === 'leve' ? '' : ' com uma entrega real'} e a ofensiva é salva.</li>
           <li>Dias de folga e o modo férias (⚙) não quebram a ofensiva.</li>
         </ul>
         <div class="jg-como-xp"><span>Concluir tarefa</span><b>+10</b><span>Sessão de foco (25 min)</span><b>+15</b><span>Revisão de estudo</span><b>+8</b><span>Item da rotina</span><b>+5</b><span>Avaliar o dia (Jornada)</span><b>+10</b><span>Anotar gasto (até 3/dia)</span><b>+4</b></div></div>

@@ -133,6 +133,7 @@
           <div class="cfg-linha flex"><div><div class="rot">Meta semanal</div><p class="dica">Tarefas concluídas por semana. Zero desliga.</p></div><div class="passo" data-passo="meta_semanal" data-min="0" data-max="300" data-p="5"><button type="button" data-d="-1" aria-label="Diminuir meta semanal">−</button><output></output><button type="button" data-d="1" aria-label="Aumentar meta semanal">+</button></div></div>
           <div class="cfg-linha"><div class="rot">Dias de folga</div><p class="dica">Nesses dias a meta não é cobrada.</p><div class="ctl dias" id="cfg-folgas">${DIAS_LETRA.map((l, i) => `<button type="button" data-d="${i}" aria-pressed="false" aria-label="${DIAS_NOME[i]}">${l}</button>`).join('')}</div></div>
           <div class="cfg-linha flex"><div><div class="rot">Modo férias</div><p class="dica">Pausa as metas sem cobrar nada.</p></div><label class="chave"><input type="checkbox" data-check="modo_ferias" aria-label="Modo férias"><span></span></label></div>
+          <div class="cfg-linha flex"><div><div class="rot">Ofensiva leve</div><p class="dica">Qualquer ação vale o dia. Desligado: o dia só conta com 30 XP e uma entrega (tarefa, foco, revisão ou rotina).</p></div><label class="chave"><input type="checkbox" data-check="ofensiva_leve" aria-label="Ofensiva leve"><span></span></label></div>
         </div>
 
         <h3>Coach</h3>
