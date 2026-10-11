@@ -103,8 +103,14 @@
   .pontos { display: flex; gap: .4rem; justify-content: center; margin: 0 0 .8rem; }
   .pontos i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--bv-line); transition: all .3s; }
   .pontos i.on { width: 1.5rem; border-radius: .3rem; background: var(--bv-pill); }
-  .splash { position: relative; overflow: hidden; }
+  .splash { position: relative; overflow: hidden; flex: 1; display: flex; flex-direction: column; margin: 0 -1.3rem; padding: 0 1.6rem; min-height: 0; }
+  .splash .faixa { position: relative; height: 8.5rem; flex: none; }
   .splash .deco { position: absolute; }
+  .splash .bloco { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; min-height: 0; }
+  .splash .masc { margin: 0 0 1rem; }
+  .splash .masc .mascote { margin: 0; width: 6.2rem; }
+  .splash .base { flex: none; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+  @media (max-height: 700px) { .splash .faixa { height: 5.2rem; } .splash .d2 { display: none; } .splash .masc .mascote { width: 4.8rem; } }
   .marca { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; font-size: 3.1rem; letter-spacing: -.045em; margin: 0; line-height: 1; }
   .splash .slogan { font-size: 1.15rem; line-height: 1.4; margin: .8rem 0 0; max-width: 17rem; font-weight: 500; }
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.1rem 0 0; }
@@ -262,15 +268,19 @@
     let html = '', depois = null, podeIr = true, mostrarProx = true, rotulo = '';
 
     if (p.t === 'splash') {
-      html = `<div class="splash" style="flex:1;display:flex;flex-direction:column;justify-content:center;margin:0 -1.3rem;padding:0 1.6rem">
-        <span class="deco" style="top:5.5rem;left:1.4rem;transform:rotate(-14deg)">${deco('lapis', 86)}</span>
-        <span class="deco" style="top:3.2rem;right:-1.6rem;transform:rotate(10deg)">${deco('livro', 110)}</span>
-        <span class="deco" style="top:58%;left:-2.2rem">${deco('moeda', 100)}</span>
-        <span class="deco" style="top:73%;right:-.8rem">${deco('relogio', 74)}</span>
-        <h1 class="marca" style="margin-top:3rem">brain</h1>
-        <p class="serif slogan">${refazer ? 'Vamos refazer as perguntas.' : 'Seu sistema de estudo e disciplina, do jeito que você vive.'}</p>
-        <div style="position:absolute;left:0;right:0;bottom:8rem">${mascote('oi')}</div>
-        <div style="position:absolute;left:1.6rem;right:1.6rem;bottom:calc(1rem + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:.2rem">
+      html = `<div class="splash">
+        <div class="faixa" aria-hidden="true">
+          <span class="deco" style="top:.4rem;left:.2rem;transform:rotate(-14deg)">${deco('lapis', 70)}</span>
+          <span class="deco" style="top:-.4rem;right:-1.6rem;transform:rotate(10deg)">${deco('livro', 92)}</span>
+          <span class="deco d2" style="top:3.6rem;left:42%">${deco('moeda', 56)}</span>
+          <span class="deco d2" style="top:3.4rem;right:.4rem">${deco('relogio', 52)}</span>
+        </div>
+        <div class="bloco">
+          <div class="masc">${mascote('oi')}</div>
+          <h1 class="marca">brain</h1>
+          <p class="serif slogan">${refazer ? 'Vamos refazer as perguntas.' : 'Seu sistema de estudo e disciplina, do jeito que você vive.'}</p>
+        </div>
+        <div class="base">
           <button class="pill" id="comecar" type="button" style="flex:none;width:11rem">Começar</button>
           ${refazer ? '' : '<div style="font-size:.88rem;color:var(--bv-muted)">Já usou o Brain? <button class="link" id="imp" type="button"><u>Importar backup</u></button></div>'}
         </div></div>`;
