@@ -37,7 +37,7 @@ open(bg, 'w', encoding='utf-8').write(g)
 # ---- ícones ----
 normal = Image.open(os.path.join(raiz, 'icon-512.png')).convert('RGBA')
 mask = Image.open(os.path.join(raiz, 'icon-maskable-512.png')).convert('RGBA')
-cor = mask.getpixel((2, 2))
+cor = (0x25, 0x73, 0xe6, 255)  # azul médio do degradê do ícone
 hexcor = '#%02x%02x%02x' % cor[:3]
 dens = {'mdpi': 1, 'hdpi': 1.5, 'xhdpi': 2, 'xxhdpi': 3, 'xxxhdpi': 4}
 for nome, f in dens.items():
@@ -50,10 +50,15 @@ for nome, f in dens.items():
     redondo.paste(legado, (0, 0), m.resize((t, t), Image.LANCZOS))
     redondo.save(os.path.join(pasta, 'ic_launcher_round.png'))
     c = int(108 * f)
-    tela = Image.new('RGBA', (c, c), (0, 0, 0, 0))
-    lado = int(c * 0.62)
-    tela.paste(normal.resize((lado, lado), Image.LANCZOS), ((c - lado) // 2, (c - lado) // 2), normal.resize((lado, lado), Image.LANCZOS))
-    tela.save(os.path.join(pasta, 'ic_launcher_foreground.png'))
+    fg = os.path.join(raiz, 'icon-foreground.png')
+    if os.path.exists(fg):
+        # arte própria só do cérebro (transparente, dentro da zona segura do ícone adaptativo)
+        Image.open(fg).convert('RGBA').resize((c, c), Image.LANCZOS).save(os.path.join(pasta, 'ic_launcher_foreground.png'))
+    else:
+        tela = Image.new('RGBA', (c, c), (0, 0, 0, 0))
+        lado = int(c * 0.62)
+        tela.paste(normal.resize((lado, lado), Image.LANCZOS), ((c - lado) // 2, (c - lado) // 2), normal.resize((lado, lado), Image.LANCZOS))
+        tela.save(os.path.join(pasta, 'ic_launcher_foreground.png'))
 fundo = os.path.join(res, 'values/ic_launcher_background.xml')
 t = open(fundo, encoding='utf-8').read().replace('#FFFFFF', hexcor)
 open(fundo, 'w', encoding='utf-8').write(t)
