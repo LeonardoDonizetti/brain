@@ -145,7 +145,7 @@
   }
 
   function desenharCard(passo, i, total, ultimo) {
-    const m = raiz.BrainMascote ? raiz.BrainMascote.svg(ultimo ? 'festa' : 'feliz', 52) : '';
+    const m = raiz.BrainMascote ? raiz.BrainMascote.svg(ultimo ? 'festa' : raiz.BrainMascote.poseDaPagina(), 56) : '';
     const pontos = Array.from({ length: total }, (_, k) => `<i class="${k <= i ? 'f' : ''}"></i>`).join('');
     est.card.innerHTML = `<div class="tr-topo">${m}<div><div class="tr-pas">Passo ${i + 1} de ${total}</div><div class="tr-pontos" aria-hidden="true">${pontos}</div></div></div>
       <h3></h3><p></p>

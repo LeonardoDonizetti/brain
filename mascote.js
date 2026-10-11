@@ -2,13 +2,77 @@
 (function (raiz) {
   'use strict';
   const B = '#ef9a95', D = '#d97d78';
+
+  // ===== Poses por seção: o mascote muda de postura e de objeto conforme a área do app =====
+  const T = '#2a2420';
+  const olhos = (dy) => `<ellipse cx="55" cy="${66 + dy}" rx="6.4" ry="7.4" fill="${T}"/><ellipse cx="85" cy="${66 + dy}" rx="6.4" ry="7.4" fill="${T}"/><circle cx="57.4" cy="${63 + dy}" r="2.6" fill="#fff"/><circle cx="87.4" cy="${63 + dy}" r="2.6" fill="#fff"/>`;
+  const sorriso = '<path d="M65 76q5 6.5 10 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  const bracoP = (d, cls) => `<path ${cls ? `class="${cls}" ` : ''}d="${d}" fill="none" stroke="${B}" stroke-width="8" stroke-linecap="round"/>`;
+  const mao = (x, y) => `<circle cx="${x}" cy="${y}" r="6" fill="${B}"/>`;
+  const POSES = {
+    // Início: acenando
+    aceno: {
+      rosto: olhos(0) + '<path d="M63 75q7 9 14 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/>',
+      bracos: bracoP('M18 70q-10 8-8 22') + `<g class="m-acena" style="transform-origin:122px 64px">${bracoP('M122 64q14-4 13-24')}${mao(135, 38)}</g>`,
+      frente: '<path d="M126 22q5-5 10 0M121 12q8-8 16 0" fill="none" stroke="#ffb21f" stroke-width="3" stroke-linecap="round"/>'
+    },
+    // Estudos: lendo um livro, de capelo
+    lendo: {
+      rosto: olhos(3) + '<path d="M66 78q4 4 8 0" fill="none" stroke="#2a2420" stroke-width="2.6" stroke-linecap="round"/><path d="M47 56q8-4 14 0M79 56q8-4 14 0" fill="none" stroke="#2a2420" stroke-width="2.4" stroke-linecap="round"/>',
+      bracos: bracoP('M18 70q4 22 26 28') + bracoP('M122 70q-4 22-26 28'),
+      pernas: false,
+      frente: `<g class="m-livro"><path d="M70 92q-14-7-32-3v22q18-4 32 3z" fill="#fff" stroke="#3b5bdb" stroke-width="2.6" stroke-linejoin="round"/><path d="M70 92q14-7 32-3v22q-18-4-32 3z" fill="#f4f7ff" stroke="#3b5bdb" stroke-width="2.6" stroke-linejoin="round"/><path d="M70 92v22" stroke="#3b5bdb" stroke-width="2.6"/><path d="M44 97q10-2 20 1M44 103q10-2 20 1M76 98q10-3 20-1M76 104q10-3 20-1" fill="none" stroke="#9fb4f5" stroke-width="2" stroke-linecap="round"/></g>${mao(40, 100)}${mao(100, 100)}
+        <g class="m-capelo"><path d="M70 2l32 12-32 12-32-12z" fill="#3a3f5c" stroke="#262a40" stroke-width="2" stroke-linejoin="round"/><path d="M52 21v10q18 8 36 0V21" fill="#4a5073" stroke="#262a40" stroke-width="2" stroke-linejoin="round"/><path d="M100 15v18" stroke="#ffb21f" stroke-width="2.6" stroke-linecap="round"/><circle cx="100" cy="35" r="3.2" fill="#ffb21f"/></g>
+        <path d="M18 26l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#a78bfa" opacity=".9"/>`
+    },
+    // Tarefas: com a prancheta e o check
+    prancheta: {
+      rosto: olhos(0) + '<path d="M63 75q7 9 14 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/>',
+      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 66q-6 14-12 22'),
+      frente: `<g class="m-prancheta" style="transform-origin:112px 78px"><rect x="94" y="56" width="38" height="50" rx="5" fill="#fff" stroke="#087590" stroke-width="3"/><rect x="104" y="51" width="18" height="9" rx="3" fill="#087590"/><path d="M101 74l4 4 7-8" fill="none" stroke="#16a34a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M116 74h10" stroke="#9fd0dc" stroke-width="3" stroke-linecap="round"/><path d="M101 88l4 4 7-8" fill="none" stroke="#16a34a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M116 88h10" stroke="#9fd0dc" stroke-width="3" stroke-linecap="round"/></g>${mao(108, 90)}`
+    },
+    // Rotina: caneca quentinha de manhã, sol ao lado
+    cafe: {
+      rosto: '<path d="M48 68q7-7 14 0M78 68q7-7 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M64 75q6 6 12 0" fill="none" stroke="#2a2420" stroke-width="2.8" stroke-linecap="round"/>',
+      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 70q4 10-2 18'),
+      frente: `<g><rect x="108" y="84" width="22" height="20" rx="5" fill="#fff" stroke="#c2410c" stroke-width="3"/><path d="M130 89q9 0 9 6t-9 6" fill="none" stroke="#c2410c" stroke-width="3" stroke-linecap="round"/><path d="M110 88h18" stroke="#c2410c" stroke-width="3" opacity=".35"/></g>${mao(119, 86)}
+        <g class="m-vapor" fill="none" stroke="#fdba74" stroke-width="3" stroke-linecap="round"><path d="M114 76q-4-5 0-9"/><path d="M123 76q-4-5 0-9"/></g>
+        <g class="m-sol" style="transform-origin:16px 18px"><circle cx="16" cy="18" r="7" fill="#ffb21f"/><g stroke="#ffb21f" stroke-width="3" stroke-linecap="round"><path d="M16 5v4M16 27v4M3 18h4M25 18h4M7 9l3 3M22 24l3 3M25 9l-3 3M10 24l-3 3"/></g></g>`
+    },
+    // Finanças: segurando uma moeda grande
+    moeda: {
+      rosto: olhos(0) + '<path d="M64 75q6 8 12 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/>',
+      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 68q-4 10-10 14'),
+      frente: `<g class="m-moeda" style="transform-origin:112px 78px"><circle cx="112" cy="74" r="19" fill="#ffc83d" stroke="#c98100" stroke-width="3"/><circle cx="112" cy="74" r="13.5" fill="none" stroke="#e0a010" stroke-width="2"/><text x="112" y="80" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="800" font-size="16" fill="#9a6200">$</text></g>${mao(104, 90)}
+        <g class="m-brilho"><path d="M130 48l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#ffb21f"/><path d="M14 30l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z" fill="#16a34a" opacity=".85"/></g>`
+    },
+    // Jornada: bandeira no alto
+    bandeira: {
+      rosto: '<path d="M48 68q7-8 14 0M78 68q7-8 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M62 74q8 13 16 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/>',
+      bracos: bracoP('M18 62q-12-6-10-22') + bracoP('M122 62q10-6 8-22'),
+      frente: `<g class="m-bandeira" style="transform-origin:128px 40px"><path d="M128 4v38" stroke="#7a4b2a" stroke-width="3" stroke-linecap="round"/><path d="M127 6h-22l5 8-5 8h22z" fill="#be1f68" stroke="#8c1450" stroke-width="2" stroke-linejoin="round"/></g>${mao(130, 40)}${mao(8, 38)}
+        <path d="M14 14l2.2 5 5 2.2-5 2.2-2.2 5-2.2-5-5-2.2 5-2.2z" fill="#ffb21f"/>`
+    }
+  };
+  const POSE_PAG = { inicio: 'aceno', estudos: 'lendo', tarefas: 'prancheta', rotina: 'cafe', financas: 'moeda', jornada: 'bandeira' };
+  const FALAS = {
+    inicio: ['Opa! Bora ver como tá o dia?', 'Oi! Hoje o dia é seu.', 'Um passinho de cada vez, a gente chega lá.'],
+    estudos: ['Shh... tô lendo aqui 📖', 'Cada revisão fixa mais um pouquinho!', 'Que tal 25 minutinhos de foco?'],
+    tarefas: ['Uma de cada vez e some tudo!', 'Riscar tarefa é o melhor.', 'Já fez a mais chata? Aí o resto é fácil.'],
+    rotina: ['Bom dia! Café na mão e bora.', 'Rotina boa é a que você consegue repetir.', 'Pequeno hábito, grande resultado.'],
+    financas: ['Anotou o gasto de hoje?', 'Cada real conta, viu?', 'Guardar um pouquinho já é vitória.'],
+    jornada: ['Olha só o quanto você andou!', 'Bandeira fincada, próxima meta!', 'Evoluir é isso: um dia depois do outro.']
+  };
   function svg(humor, px, cls) {
     humor = humor || 'feliz';
+    const PO = POSES[humor] || POSES[POSE_PAG[humor]] || null;
     const corpo = `<g fill="${B}"><circle cx="36" cy="52" r="22"/><circle cx="62" cy="36" r="25"/><circle cx="90" cy="40" r="22"/><circle cx="106" cy="60" r="17"/><circle cx="40" cy="74" r="19"/><circle cx="72" cy="78" r="22"/><circle cx="98" cy="76" r="17"/><ellipse cx="70" cy="62" rx="46" ry="26"/></g>
       <g fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 50c6-8 14-4 18-12"/><path d="M52 22c8 4 6 12 14 14"/><path d="M80 24c8 2 8 10 16 10"/><path d="M104 48c6 2 8 8 14 8"/><path d="M96 92c6-2 10-8 14-6"/><path d="M26 74c6 4 10 0 14 6"/></g>
       <circle cx="44" cy="77" r="7.5" fill="#f9a9a4" opacity=".85"/><circle cx="96" cy="77" r="7.5" fill="#f9a9a4" opacity=".85"/>`;
     let rosto;
-    if (humor === 'triste') {
+    if (PO) {
+      rosto = PO.rosto;
+    } else if (humor === 'triste') {
       rosto = `<ellipse cx="55" cy="68" rx="6.2" ry="7" fill="#2a2420"/><ellipse cx="85" cy="68" rx="6.2" ry="7" fill="#2a2420"/><circle cx="57" cy="65.5" r="2.4" fill="#fff"/><circle cx="87" cy="65.5" r="2.4" fill="#fff"/>
         <path d="M47 56l12 3M93 56l-12 3" stroke="#2a2420" stroke-width="2.6" stroke-linecap="round"/><path d="M64 82q6-6 12 0" fill="none" stroke="#2a2420" stroke-width="2.6" stroke-linecap="round"/><path d="M50 78q-2 7 0 10" fill="none" stroke="#7cc4f2" stroke-width="3" stroke-linecap="round"/>`;
     } else if (humor === 'festa') {
@@ -20,24 +84,46 @@
     }
     const pernas = `<path d="M56 98v9M84 98v9" fill="none" stroke="${B}" stroke-width="10" stroke-linecap="round"/><ellipse cx="55" cy="112" rx="9" ry="5" fill="${D}"/><ellipse cx="85" cy="112" rx="9" ry="5" fill="${D}"/>`;
     const br = (d) => `<path d="${d}" fill="none" stroke="${B}" stroke-width="8" stroke-linecap="round"/>`;
-    const bracos = humor === 'festa' ? br('M18 62q-12-6-10-22') + br('M122 62q12-6 12-22') : humor === 'triste' ? br('M18 72q-8 8-4 22') + br('M122 72q8 8 4 22') : br('M18 70q-10 8-8 22') + br('M122 62q12-6 12-22');
+    const bracos = PO ? PO.bracos : humor === 'festa' ? br('M18 62q-12-6-10-22') + br('M122 62q12-6 12-22') : humor === 'triste' ? br('M18 72q-8 8-4 22') + br('M122 72q8 8 4 22') : br('M18 70q-10 8-8 22') + br('M122 62q12-6 12-22');
     const w = px || 80;
-    return `<svg viewBox="0 0 140 120" width="${w}" height="${Math.round(w * 120 / 140)}" role="img" aria-hidden="true" class="mascote-b${cls ? ' ' + cls : ''}">${bracos}${pernas}${corpo}${rosto}</svg>`;
+    return `<svg viewBox="0 0 140 120" width="${w}" height="${Math.round(w * 120 / 140)}" role="img" aria-hidden="true" class="mascote-b${PO ? ' m-pose' : ''}${cls ? ' ' + cls : ''}">${bracos}${PO && PO.pernas === false ? '' : pernas}${corpo}${rosto}${PO ? PO.frente : ''}</svg>`;
+  }
+
+  function paginaAtual() { return (typeof document !== 'undefined' && document.documentElement.getAttribute('data-pg')) || 'inicio'; }
+  function poseDaPagina() { return POSE_PAG[paginaAtual()] || 'aceno'; }
+
+  /** Mascote da faixa do topo: muda de pose por seção e reage ao toque com uma fala. */
+  function companheiro(topo) {
+    if (!topo || topo.querySelector('.mascote-comp')) return;
+    const pg = paginaAtual();
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'mascote-comp'; b.setAttribute('aria-label', 'Conversar com o Brain');
+    b.innerHTML = svg(poseDaPagina(), 68);
+    topo.appendChild(b);
+    const fala = document.createElement('div'); fala.className = 'mascote-fala'; fala.setAttribute('role', 'status'); fala.setAttribute('aria-live', 'polite'); document.body.appendChild(fala); let k = Math.floor(Math.random() * 3), t;
+    b.addEventListener('click', () => {
+      const f = FALAS[pg] || FALAS.inicio; fala.textContent = f[k++ % f.length];
+      const r = b.getBoundingClientRect(); fala.style.top = Math.round(r.bottom + 8) + 'px'; fala.style.right = Math.max(12, Math.round(innerWidth - r.right - 4)) + 'px';
+      b.classList.remove('pulo'); void b.offsetWidth; b.classList.add('pulo'); fala.classList.add('on');
+      clearTimeout(t); t = setTimeout(() => fala.classList.remove('on'), 2800);
+      try { if (navigator.vibrate && !matchMedia('(prefers-reduced-motion: reduce)').matches) navigator.vibrate(12); } catch (e) { /* sem vibração */ }
+    });
   }
 
   // Põe o mascote nos estados vazios (sem mexer no texto de cada tela).
   function decorar(no) {
     (no.querySelectorAll ? no.querySelectorAll('.vazio-t:not([data-m]), .vazio-i:not([data-m]), .vazio-total:not([data-m]):not([hidden])') : []).forEach((el) => {
       el.setAttribute('data-m', '1');
-      el.insertAdjacentHTML('afterbegin', `<div class="mascote-vazio">${svg('feliz', 84)}</div>`);
+      el.insertAdjacentHTML('afterbegin', `<div class="mascote-vazio">${svg(poseDaPagina(), 84)}</div>`);
     });
   }
   function iniciar() {
     decorar(document);
+    companheiro(document.querySelector('.topo-config'));
     new MutationObserver((ms) => { for (const m of ms) { if (m.addedNodes.length) { decorar(document); break; } if (m.type === 'attributes') { decorar(document); break; } } })
       .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
   }
-  const API = { svg, decorar };
+  const API = { svg, decorar, companheiro, poseDaPagina, POSES: Object.keys(POSES) };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else {
     raiz.BrainMascote = API;
