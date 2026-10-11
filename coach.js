@@ -139,7 +139,7 @@
     const tars = ctx.tarefas || [];
     const pend = tars.filter((t) => !t.feita);
     const atrasadas = pend.filter((t) => t.data && t.data < hoje);
-    const dehoje = pend.filter((t) => t.data === hoje).sort((a, b) => (a.hora || '99').localeCompare(b.hora || '99'));
+    const dehoje = pend.filter((t) => t.data === hoje).sort((a, b) => (b.prioridade || 0) - (a.prioridade || 0) || (a.hora || '99').localeCompare(b.hora || '99'));
     const feitasHoje = tars.filter((t) => t.feita && t.concluida_em === hoje).length;
     const alvo = dehoje[0] || atrasadas[atrasadas.length - 1] || pend.find((t) => !t.data);
     if (atrasadas.length) add('tarefa', 'aviso', tom.tar_atrasadas(atrasadas.length), 75);

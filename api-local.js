@@ -9,6 +9,7 @@
   const T = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./texto.js') : root.BrainTexto;
   const P = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./prefs.js') : (root.BrainPrefs || root.BrainPrefsLib);
   const C = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./categorias.js') : root.BrainCategorias;
+  const TF = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./tarefas.js') : root.BrainTarefas;
   const ES = typeof require !== 'undefined' && typeof module !== 'undefined' ? require('./estudos.js') : root.BrainEstudos;
   const { iso, addDias, hojeData, deIso } = T;
 
@@ -278,11 +279,13 @@
   const cmpNulo = (a, b) => (a === null || a === undefined ? 1 : 0) - (b === null || b === undefined ? 1 : 0);
   const cmpTxt = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
+  const tarefaPublica = (t) => Object.assign({ id: t.id, titulo: t.titulo, data: t.data, hora: t.hora, feita: t.feita, concluida_em: t.concluida_em || null }, TF.extras(t));
+
   async function tarefasListar(estado) {
     const lista = estado.tarefas.slice().sort((a, b) =>
       (a.feita - b.feita) || cmpNulo(a.data, b.data) || cmpTxt(a.data || '', b.data || '') ||
       cmpNulo(a.hora, b.hora) || cmpTxt(a.hora || '', b.hora || '') || (a.id - b.id));
-    return { tarefas: lista.map((t) => ({ id: t.id, titulo: t.titulo, data: t.data, hora: t.hora, feita: t.feita, concluida_em: t.concluida_em || null })) };
+    return { tarefas: lista.map(tarefaPublica) };
   }
 
   function lerTarefa(corpo) {
@@ -295,29 +298,61 @@
   }
 
   async function tarefasCriar(estado, ctx, q, corpo) {
+    corpo = corpo || {};
     let { titulo, data, hora } = lerTarefa(corpo);
+    // Marcas rápidas no título: !alta, #lista, "todo dia"; o que vier nos campos tem prioridade
+    const m = TF.extrairMarcas(titulo);
+    if (m.titulo) titulo = m.titulo;
     // Datas e horas escritas no título ("prova sexta 14h") preenchem o que faltar
     const lido = T.interpretarTarefa(titulo);
     data = data || (lido.data ? iso(lido.data) : null);
     hora = hora || lido.hora || null;
     if (data || hora) titulo = lido.titulo;
     titulo = titulo.slice(0, 200);
+    const ex = TF.extras({ prioridade: corpo.prioridade !== undefined ? corpo.prioridade : m.prioridade, lista: corpo.lista !== undefined ? corpo.lista : m.lista, repetir: corpo.repetir !== undefined ? corpo.repetir : m.repetir, nota: corpo.nota, subtarefas: corpo.subtarefas });
+    if (ex.repetir && !data) data = iso(hojeData());   // tarefa que se repete precisa de uma data de partida
     const id = proximoId(estado.tarefas);
-    estado.tarefas.push({ id, titulo, data, hora, feita: 0, concluida_em: null });
+    estado.tarefas.push(Object.assign({ id, titulo, data, hora, feita: 0, concluida_em: null }, ex));
     ctx.salvar = true;
-    return { id, titulo, data, hora };
+    return Object.assign({ id, titulo, data, hora }, ex);
   }
 
   async function tarefasEditar(estado, ctx, q, corpo, params) {
     const { titulo, data, hora } = lerTarefa(corpo);
     const t = estado.tarefas.find((x) => x.id === params.id);
-    if (t) { Object.assign(t, { titulo: titulo.slice(0, 200), data, hora }); ctx.salvar = true; }
+    if (t) {
+      const atual = TF.extras(t);
+      const novo = {};
+      for (const k of ['prioridade', 'lista', 'repetir', 'nota', 'subtarefas']) novo[k] = corpo[k] !== undefined ? corpo[k] : atual[k];
+      const ex = TF.extras(novo);
+      if (ex.repetir && !data) { ex.repetir = ''; }
+      Object.assign(t, { titulo: titulo.slice(0, 200), data, hora }, ex);
+      ctx.salvar = true;
+    }
     return { ok: true };
   }
 
   async function tarefasAlternar(estado, ctx, q, corpo, params) {
     const t = estado.tarefas.find((x) => x.id === params.id);
-    if (t) { t.feita = 1 - t.feita; t.concluida_em = t.feita ? iso(hojeData()) : null; ctx.salvar = true; }
+    if (!t) return { ok: true };
+    t.feita = 1 - t.feita; t.concluida_em = t.feita ? iso(hojeData()) : null; ctx.salvar = true;
+    if (t.feita && t.repetir && t.data) {
+      // tarefa que se repete: conclui esta e já cria a próxima ocorrência (subtarefas zeradas)
+      const ex = TF.extras(t);
+      const prox = TF.proximaData(t.data < iso(hojeData()) ? iso(hojeData()) : t.data, ex.repetir);
+      if (prox) {
+        ex.subtarefas = ex.subtarefas.map((s) => Object.assign({}, s, { feita: 0 }));
+        const id = proximoId(estado.tarefas);
+        estado.tarefas.push(Object.assign({ id, titulo: t.titulo, data: prox, hora: t.hora, feita: 0, concluida_em: null }, ex));
+        t.gerou = id;
+        return { ok: true, proxima: { id, data: prox } };
+      }
+    } else if (!t.feita && t.gerou) {
+      // desfez a conclusão: remove a próxima ocorrência se ela ainda não foi mexida
+      const g = estado.tarefas.find((x) => x.id === t.gerou);
+      if (g && !g.feita) estado.tarefas = estado.tarefas.filter((x) => x.id !== t.gerou);
+      delete t.gerou;
+    }
     return { ok: true };
   }
 
@@ -336,7 +371,7 @@
       const livre = Number.isInteger(it.id) && it.id > 0 && !estado.tarefas.some((t) => t.id === it.id);
       const id = livre ? it.id : proximoId(estado.tarefas);
       const feita = it.feita ? 1 : 0;
-      estado.tarefas.push({ id, titulo: titulo.slice(0, 200), data, hora, feita, concluida_em: feita && it.concluida_em ? iso(validarData(it.concluida_em)) : null });
+      estado.tarefas.push(Object.assign({ id, titulo: titulo.slice(0, 200), data, hora, feita, concluida_em: feita && it.concluida_em ? iso(validarData(it.concluida_em)) : null }, TF.extras(it)));
       ctx.salvar = true;
       return { ok: true, id };
     }
@@ -747,7 +782,7 @@
     }
     for (const t of lista(obj.tarefas)) {
       if (!texto(t.titulo).trim()) continue;
-      novo.tarefas.push({ id: Number.isInteger(t.id) ? t.id : 0, titulo: texto(t.titulo).slice(0, 200), data: ehData(t.data) ? t.data : null, hora: /^([01]\d|2[0-3]):[0-5]\d$/.test(texto(t.hora)) ? t.hora : null, feita: t.feita ? 1 : 0, concluida_em: t.feita && ehData(t.concluida_em) ? t.concluida_em : null });
+      novo.tarefas.push({ id: Number.isInteger(t.id) ? t.id : 0, titulo: texto(t.titulo).slice(0, 200), data: ehData(t.data) ? t.data : null, hora: /^([01]\d|2[0-3]):[0-5]\d$/.test(texto(t.hora)) ? t.hora : null, feita: t.feita ? 1 : 0, concluida_em: t.feita && ehData(t.concluida_em) ? t.concluida_em : null, ...TF.extras(t) });
     }
     for (const i of lista(obj.rotina_itens)) {
       if (!PERIODOS.includes(i.periodo) || !TIPOS.includes(i.tipo) || !texto(i.titulo).trim() || !Number.isInteger(i.id)) continue;
