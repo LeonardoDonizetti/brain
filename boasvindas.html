@@ -104,13 +104,18 @@
   .pontos i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--bv-line); transition: all .3s; }
   .pontos i.on { width: 1.5rem; border-radius: .3rem; background: var(--bv-pill); }
   .splash { position: relative; overflow: hidden; flex: 1; display: flex; flex-direction: column; margin: 0 -1.3rem; padding: 0 1.6rem; min-height: 0; }
-  .splash .faixa { position: relative; height: 8.5rem; flex: none; }
-  .splash .deco { position: absolute; }
-  .splash .bloco { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; min-height: 0; }
-  .splash .masc { margin: 0 0 1rem; }
-  .splash .masc .mascote { margin: 0; width: 7.4rem; }
+  .splash .faixa { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+  .splash .deco { position: absolute; display: block; opacity: .95; }
+  .splash .deco svg { display: block; }
+  .splash .bloco, .splash .base { position: relative; z-index: 1; }
+  .splash .bloco { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 0; padding-bottom: 2rem; }
+  .splash .masc { margin: 0 0 .9rem; }
+  .splash .masc .mascote { margin: 0 auto; width: 10.5rem; }
+  .splash .slogan { text-align: center; margin-left: auto; margin-right: auto; }
   .splash .base { flex: none; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
-  @media (max-height: 700px) { .splash .faixa { height: 6rem; } .splash .d2 { top: 2.7rem !important; } .splash .d2 svg { width: 2.6rem; height: 2.6rem; } .splash .deco.d2:last-child { top: 3.5rem !important; right: .2rem !important; } .splash .masc .mascote { width: 5.8rem; } }
+  @media (prefers-reduced-motion: no-preference) { .splash .masc .mascote { animation: flutua 3.2s ease-in-out infinite; } .splash .deco { animation: flutua 5s ease-in-out infinite alternate; } @keyframes flutua { 50% { translate: 0 -5px; } } }
+  @media (max-height: 740px) { .splash .masc .mascote { width: 8rem; } .splash .deco.b, .splash .deco.m { display: none; } .splash .faixa .deco:nth-child(1) { top: 2% !important; } .splash .faixa .deco:nth-child(2) { top: 1% !important; right: 3% !important; } .splash .deco svg { transform: scale(.82); } .splash .bloco { padding-bottom: 1rem; } }
+  @media (max-height: 600px) { .splash .masc .mascote { width: 6.6rem; } .splash .deco svg { transform: scale(.7); } }
   .marca { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; font-size: 3.1rem; letter-spacing: -.045em; margin: 0; line-height: 1; }
   .splash .slogan { font-size: 1.15rem; line-height: 1.4; margin: .8rem 0 0; max-width: 17rem; font-weight: 500; }
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.1rem 0 0; }
@@ -178,10 +183,11 @@
     // cérebro visto de lado: largo, em nuvem, com dobras (giros) e rostinho
     const corpo = `<g fill="${B}"><circle cx="36" cy="52" r="22"/><circle cx="62" cy="36" r="25"/><circle cx="90" cy="40" r="22"/><circle cx="106" cy="60" r="17"/><circle cx="40" cy="74" r="19"/><circle cx="72" cy="78" r="22"/><circle cx="98" cy="76" r="17"/><ellipse cx="70" cy="62" rx="46" ry="26"/></g>
       <g fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 50c6-8 14-4 18-12"/><path d="M52 22c8 4 6 12 14 14"/><path d="M80 24c8 2 8 10 16 10"/><path d="M104 48c6 2 8 8 14 8"/><path d="M96 92c6-2 10-8 14-6"/><path d="M26 74c6 4 10 0 14 6"/></g>
-      <circle cx="50" cy="72" r="6" fill="#f7bdb8"/><circle cx="90" cy="72" r="6" fill="#f7bdb8"/>
-      <circle cx="56" cy="62" r="4.2" fill="#2a2420"/><circle cx="84" cy="62" r="4.2" fill="#2a2420"/><circle cx="57.4" cy="60.6" r="1.4" fill="#fff"/><circle cx="85.4" cy="60.6" r="1.4" fill="#fff"/>
-      <path d="M63 73q7 7 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/>`;
-    const pernas = `<path d="M54 98v14M86 98v14" fill="none" stroke="${B}" stroke-width="9" stroke-linecap="round"/><path d="M48 114h12M80 114h12" fill="none" stroke="${D}" stroke-width="5" stroke-linecap="round"/>`;
+      <circle cx="44" cy="77" r="7.5" fill="#f9a9a4" opacity=".85"/><circle cx="96" cy="77" r="7.5" fill="#f9a9a4" opacity=".85"/>
+      <ellipse cx="55" cy="66" rx="6.4" ry="7.4" fill="#2a2420"/><ellipse cx="85" cy="66" rx="6.4" ry="7.4" fill="#2a2420"/>
+      <circle cx="57.4" cy="63" r="2.6" fill="#fff"/><circle cx="87.4" cy="63" r="2.6" fill="#fff"/><circle cx="53.2" cy="69.2" r="1.3" fill="#fff"/><circle cx="83.2" cy="69.2" r="1.3" fill="#fff"/>
+      <path d="M65 76q5 6.5 10 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const pernas = `<path d="M56 98v9M84 98v9" fill="none" stroke="${B}" stroke-width="10" stroke-linecap="round"/><ellipse cx="55" cy="112" rx="9" ry="5" fill="${D}"/><ellipse cx="85" cy="112" rx="9" ry="5" fill="${D}"/>`;
     const braco = (d) => `<path d="${d}" fill="none" stroke="${B}" stroke-width="8" stroke-linecap="round"/>`;
     const bracos = { oi: braco('M18 70q-10 8-8 22') + braco('M122 62q12-6 12-22'), festa: braco('M18 62q-12-6-10-22') + braco('M122 62q12-6 12-22'), calmo: braco('M18 72q-8 8-4 22') + braco('M122 72q8 8 4 22') }[pose || 'oi'];
     return SV('0 0 140 120', bracos + pernas + corpo, 'mascote' + (cls ? ' ' + cls : ''));
@@ -274,12 +280,17 @@
     let html = '', depois = null, podeIr = true, mostrarProx = true, rotulo = '';
 
     if (p.t === 'splash') {
+      const D = (k, t, pos, rot, cls) => `<span class="deco${cls ? ' ' + cls : ''}" style="${pos};transform:rotate(${rot}deg)">${deco(k, t)}</span>`;
       html = `<div class="splash">
         <div class="faixa" aria-hidden="true">
-          <span class="deco" style="top:.4rem;left:.2rem;transform:rotate(-14deg)">${deco('lapis', 70)}</span>
-          <span class="deco" style="top:-.4rem;right:-1.6rem;transform:rotate(10deg)">${deco('livro', 92)}</span>
-          <span class="deco d2" style="top:3.6rem;left:42%">${deco('moeda', 56)}</span>
-          <span class="deco d2" style="top:3.4rem;right:.4rem">${deco('relogio', 52)}</span>
+          ${D('lapis', 78, 'top:6%;left:6%', -18)}
+          ${D('livro', 118, 'top:4%;right:5%', 12)}
+          ${D('lampada', 54, 'top:8%;left:44%', 6, 'm')}
+          ${D('moeda', 66, 'top:31%;left:3%', -8)}
+          ${D('relogio', 68, 'top:34%;right:3%', 10)}
+          ${D('calc', 72, 'bottom:22%;left:8%', -12, 'b')}
+          ${D('bandeira', 66, 'bottom:21%;right:10%', 8, 'b')}
+          ${D('clip', 52, 'bottom:30%;left:46%', 14, 'b m')}
         </div>
         <div class="bloco">
           <div class="masc">${mascote('oi')}</div>
