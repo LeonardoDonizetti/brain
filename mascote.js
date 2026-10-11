@@ -28,29 +28,29 @@
     // Tarefas: com a prancheta e o check
     prancheta: {
       rosto: olhos(0) + '<path d="M63 75q7 9 14 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/>',
-      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 66q-6 14-12 22'),
-      frente: `<g class="m-prancheta" style="transform-origin:112px 78px"><rect x="94" y="56" width="38" height="50" rx="5" fill="#fff" stroke="#087590" stroke-width="3"/><rect x="104" y="51" width="18" height="9" rx="3" fill="#087590"/><path d="M101 74l4 4 7-8" fill="none" stroke="#16a34a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M116 74h10" stroke="#9fd0dc" stroke-width="3" stroke-linecap="round"/><path d="M101 88l4 4 7-8" fill="none" stroke="#16a34a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M116 88h10" stroke="#9fd0dc" stroke-width="3" stroke-linecap="round"/></g>${mao(108, 90)}`
+      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 64q-4 22-26 28'),
+      frente: `<g class="m-prancheta" style="transform-origin:112px 78px"><rect x="94" y="56" width="38" height="50" rx="5" fill="#fff" stroke="#087590" stroke-width="3"/><rect x="104" y="51" width="18" height="9" rx="3" fill="#087590"/><path d="M101 74l4 4 7-8" fill="none" stroke="#16a34a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M116 74h10" stroke="#9fd0dc" stroke-width="3" stroke-linecap="round"/><path d="M101 88l4 4 7-8" fill="none" stroke="#16a34a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M116 88h10" stroke="#9fd0dc" stroke-width="3" stroke-linecap="round"/></g>${mao(97, 92)}`
     },
     // Rotina: caneca quentinha de manhã, sol ao lado
     cafe: {
       rosto: '<path d="M48 68q7-7 14 0M78 68q7-7 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M64 75q6 6 12 0" fill="none" stroke="#2a2420" stroke-width="2.8" stroke-linecap="round"/>',
-      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 70q4 10-2 18'),
-      frente: `<g><rect x="108" y="84" width="22" height="20" rx="5" fill="#fff" stroke="#c2410c" stroke-width="3"/><path d="M130 89q9 0 9 6t-9 6" fill="none" stroke="#c2410c" stroke-width="3" stroke-linecap="round"/><path d="M110 88h18" stroke="#c2410c" stroke-width="3" opacity=".35"/></g>${mao(119, 86)}
-        <g class="m-vapor" fill="none" stroke="#fdba74" stroke-width="3" stroke-linecap="round"><path d="M114 76q-4-5 0-9"/><path d="M123 76q-4-5 0-9"/></g>
+      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 68q-8 6-15 26'),
+      frente: `<g><rect x="108" y="82" width="22" height="22" rx="6" fill="#fff" stroke="#c2410c" stroke-width="3"/><path d="M130 88q9 0 9 6.5t-9 6.5" fill="none" stroke="#c2410c" stroke-width="3" stroke-linecap="round"/><path d="M111 90h16" stroke="#c2410c" stroke-width="3" opacity=".3" stroke-linecap="round"/></g>${mao(107, 95)}
+        <g class="m-vapor" fill="none" stroke="#fdba74" stroke-width="3" stroke-linecap="round"><path d="M114 75q-4-5 0-9"/><path d="M123 75q-4-5 0-9"/></g>
         <g class="m-sol" style="transform-origin:16px 18px"><circle cx="16" cy="18" r="7" fill="#ffb21f"/><g stroke="#ffb21f" stroke-width="3" stroke-linecap="round"><path d="M16 5v4M16 27v4M3 18h4M25 18h4M7 9l3 3M22 24l3 3M25 9l-3 3M10 24l-3 3"/></g></g>`
     },
     // Finanças: segurando uma moeda grande
     moeda: {
       rosto: olhos(0) + '<path d="M64 75q6 8 12 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/>',
-      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 68q-4 10-10 14'),
-      frente: `<g class="m-moeda" style="transform-origin:112px 78px"><circle cx="112" cy="74" r="19" fill="#ffc83d" stroke="#c98100" stroke-width="3"/><circle cx="112" cy="74" r="13.5" fill="none" stroke="#e0a010" stroke-width="2"/><text x="112" y="80" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="800" font-size="16" fill="#9a6200">$</text></g>${mao(104, 90)}
+      bracos: bracoP('M18 70q-10 8-8 22') + bracoP('M122 68q-10 14-25 22'),
+      frente: `<g class="m-moeda" style="transform-origin:112px 78px"><circle cx="112" cy="74" r="19" fill="#ffc83d" stroke="#c98100" stroke-width="3"/><circle cx="112" cy="74" r="13.5" fill="none" stroke="#e0a010" stroke-width="2"/><text x="112" y="80" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="800" font-size="16" fill="#9a6200">$</text></g>${mao(97, 91)}
         <g class="m-brilho"><path d="M130 48l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#ffb21f"/><path d="M14 30l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z" fill="#16a34a" opacity=".85"/></g>`
     },
     // Jornada: bandeira no alto
     bandeira: {
       rosto: '<path d="M48 68q7-8 14 0M78 68q7-8 14 0" fill="none" stroke="#2a2420" stroke-width="3" stroke-linecap="round"/><path d="M62 74q8 13 16 0z" fill="#b8453f" stroke="#2a2420" stroke-width="2" stroke-linejoin="round"/>',
-      bracos: bracoP('M18 62q-12-6-10-22') + bracoP('M122 62q10-6 8-22'),
-      frente: `<g class="m-bandeira" style="transform-origin:128px 40px"><path d="M128 4v38" stroke="#7a4b2a" stroke-width="3" stroke-linecap="round"/><path d="M127 6h-22l5 8-5 8h22z" fill="#be1f68" stroke="#8c1450" stroke-width="2" stroke-linejoin="round"/></g>${mao(130, 40)}${mao(8, 38)}
+      bracos: bracoP('M18 62q-12-6-10-22') + bracoP('M122 62q4-8 2-18'),
+      frente: `<g class="m-bandeira" style="transform-origin:124px 12px"><path d="M124 3v43" stroke="#7a4b2a" stroke-width="3" stroke-linecap="round"/><path d="M126 5h13l-4 7 4 7h-13z" fill="#be1f68" stroke="#8c1450" stroke-width="2" stroke-linejoin="round"/></g>${mao(124, 44)}${mao(8, 38)}
         <path d="M14 14l2.2 5 5 2.2-5 2.2-2.2 5-2.2-5-5-2.2 5-2.2z" fill="#ffb21f"/>`
     }
   };

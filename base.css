@@ -392,3 +392,5 @@ html:not([data-pg="tarefas"]) .stats div { background: none; border: 0; box-shad
   .m-bandeira { animation: m-band 1.6s ease-in-out infinite; }
   @keyframes m-band { 50% { transform: skewY(-4deg); } }
 }
+
+html[data-pg] .topo-config { min-height: 4.9rem; }
