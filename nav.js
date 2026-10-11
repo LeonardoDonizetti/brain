@@ -380,6 +380,7 @@
     montarEngrenagem();
     const arq = location.pathname.split('/').pop();
     const atual = !arq || arq === 'index.html' ? './' : arq;
+    document.documentElement.setAttribute('data-pg', (atual === './' ? 'inicio' : atual.replace('.html', '')));
     const nav = document.createElement('nav');
     nav.className = 'tabbar';
     nav.setAttribute('aria-label', 'Navegação principal');
@@ -388,6 +389,7 @@
     ABAS.forEach((aba) => {
       const a = document.createElement('a');
       a.href = aba.href;
+      a.dataset.k = aba.href === './' ? 'inicio' : aba.href.replace('.html', '');
       a.innerHTML = aba.icone + '<span></span>';
       a.querySelector('span').textContent = aba.nome;
       if (aba.href === atual) { a.setAttribute('aria-current', 'page'); a.insertAdjacentHTML('afterbegin', '<i class="ind" aria-hidden="true"></i>'); }

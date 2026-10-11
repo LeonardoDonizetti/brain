@@ -107,6 +107,7 @@
       .jg-cartao { display: block; width: 100%; text-align: left; background: #fff; border: 2px solid #ffd7a8; border-radius: 1.25rem; box-shadow: 0 4px 0 #ffd7a8; padding: 1rem 1rem .9rem; margin: 0 0 1.1rem; color: var(--ink); cursor: pointer; }
       .jg-cartao:active { box-shadow: none; transform: translateY(4px) !important; }
       .jg-cartao[data-e="quebrada"], .jg-cartao[data-e="inicio"], .jg-cartao[data-e="nova"] { border-color: var(--line); box-shadow: 0 4px 0 var(--line); }
+      .jg-masc { margin-left: auto; line-height: 0; }
       .jg-topo { display: flex; align-items: center; gap: .9rem; margin-bottom: .8rem; }
       .jg-num { font-size: 2.3rem; line-height: 1; font-weight: 850; letter-spacing: -.02em; color: #d65500; }
       .jg-cartao[data-e="quebrada"] .jg-num, .jg-cartao[data-e="inicio"] .jg-num, .jg-cartao[data-e="nova"] .jg-num { color: #667085; }
@@ -213,7 +214,7 @@
       const m = mensagem(R);
       const n = R.estado === 'quebrada' ? 0 : R.sequencia;
       el.innerHTML = `<button type="button" class="jg-cartao" data-e="${R.estado}" aria-label="Abrir a ofensiva">
-        <div class="jg-topo">${chama(R.estado, 46, true)}<div><span class="jg-num">${n}</span><span class="jg-un">${plural(n, 'dia', 'dias')} de ofensiva</span></div></div>
+        <div class="jg-topo">${chama(R.estado, 46, true)}<div><span class="jg-num">${n}</span><span class="jg-un">${plural(n, 'dia', 'dias')} de ofensiva</span></div>${window.BrainMascote ? `<span class="jg-masc">${window.BrainMascote.svg(R.estado === 'quebrada' ? 'triste' : (R.xp_hoje >= R.meta_xp_dia ? 'festa' : 'feliz'), 74)}</span>` : ''}</div>
         <p class="jg-msg">${esc(m.t)}</p><p class="jg-sub">${esc(m.s)}</p>
         <div style="margin-top:.9rem">${faixa(R)}</div>
         <div class="jg-mini"><span class="jg-pill">Nível ${R.nivel.n} · ${esc(R.nivel.titulo)}</span><span class="jg-pill o">${R.xp_hoje} XP hoje</span></div></button>`;

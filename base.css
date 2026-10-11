@@ -272,3 +272,63 @@ dialog input:focus, dialog select:focus, dialog textarea:focus, .composer input:
 .tabs a .ind { display: none; }
 .composer { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; border-top: 2px solid var(--line); }
 .snack { border-radius: 1rem; }
+
+/* ===== v5: cada seção tem a sua cor (Duolingo/Foodvisor/Mimo: cor saturada + tons claros + mascote) =====
+   --accent muda por página; se a pessoa escolher outra cor nas Configurações, o estilo inline vence. */
+html[data-pg] { --accent-soft: #e8f1fe; --on-accent: #fff; }
+html[data-pg="inicio"]   { --accent: #1565d8; --accent-soft: #e8f1fe; --tom2: #4f9bff; }
+html[data-pg="rotina"]   { --accent: #c2410c; --accent-soft: #ffedd5; --tom2: #ffa23a; }
+html[data-pg="estudos"]  { --accent: #7c3aed; --accent-soft: #f1e9fe; --tom2: #b07cff; }
+html[data-pg="jornada"]  { --accent: #be1f68; --accent-soft: #fde7f1; --tom2: #ff6fa8; }
+html[data-pg="tarefas"]  { --accent: #087590; --accent-soft: #dff4fa; --tom2: #35c0e0; }
+html[data-pg="financas"] { --accent: #11793a; --accent-soft: #dff6e6; --tom2: #4fd17c; }
+html[data-pg] { --chunk: color-mix(in srgb, var(--accent) 72%, #000); --borda-t: color-mix(in srgb, var(--accent) 24%, #fff); }
+html[data-pg] body { background: color-mix(in srgb, var(--accent) 5%, #fff); }
+
+/* faixa colorida no topo */
+html[data-pg] .topo-config {
+  background: linear-gradient(135deg, var(--accent), var(--tom2, var(--accent)));
+  border-radius: 0 0 1.75rem 1.75rem; padding-bottom: 1.1rem; margin-bottom: 1rem; position: relative; overflow: hidden;
+  box-shadow: 0 4px 0 var(--chunk);
+}
+html[data-pg] .topo-config::before, html[data-pg] .topo-config::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255,255,255,.16); pointer-events: none; }
+html[data-pg] .topo-config::before { width: 7rem; height: 7rem; right: 26%; top: -3.2rem; }
+html[data-pg] .topo-config::after { width: 4rem; height: 4rem; left: 30%; bottom: -2rem; }
+html[data-pg] .topo-config button.eng { background: rgba(255,255,255,.22); border: 2px solid rgba(255,255,255,.55); color: #fff; box-shadow: none; position: relative; z-index: 1; }
+html[data-pg] .topo-config .jg-chip { position: relative; z-index: 1; }
+
+/* títulos e cartões */
+html[data-pg] h1 { color: var(--accent); }
+html[data-pg] h2 { color: var(--accent); }
+html[data-pg] .cats, html[data-pg] .grafico-sec, html[data-pg] .cal, html[data-pg] .cartao, html[data-pg] .es, html[data-pg] .bloco,
+html[data-pg] ul.lt, html[data-pg] .res, html[data-pg] .hero, html[data-pg] .meta-c, html[data-pg] .nums, html[data-pg] .mat > section,
+html[data-pg] .stats div, html[data-pg] .resumo > div {
+  border: 2px solid var(--borda-t); box-shadow: 0 3px 0 var(--borda-t); border-radius: 1.1rem;
+}
+html[data-pg] .stats div, html[data-pg] .resumo > div { background: var(--accent-soft); box-shadow: none; }
+html[data-pg] dialog { border-color: var(--borda-t); }
+html[data-pg] .icon, html[data-pg] .lapis { border-color: var(--borda-t); box-shadow: 0 2px 0 var(--borda-t); color: var(--accent); }
+
+/* abas internas (pílulas) */
+html[data-pg] .abas button[aria-pressed="true"],
+html[data-pg] #abas-f button[aria-pressed="true"] {
+  background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 3px 0 var(--chunk);
+}
+
+/* barra inferior: ícone de cada seção na sua cor */
+.tabs a svg { transition: transform .15s; }
+.tabs a[data-k="inicio"]   { --ic: #1565d8; --ic-soft: #e8f1fe; }
+.tabs a[data-k="rotina"]   { --ic: #c2410c; --ic-soft: #ffedd5; }
+.tabs a[data-k="estudos"]  { --ic: #7c3aed; --ic-soft: #f1e9fe; }
+.tabs a[data-k="jornada"]  { --ic: #be1f68; --ic-soft: #fde7f1; }
+.tabs a[data-k="tarefas"]  { --ic: #087590; --ic-soft: #dff4fa; }
+.tabs a[data-k="financas"] { --ic: #11793a; --ic-soft: #dff6e6; }
+.tabs a[data-k] svg { color: var(--ic); stroke: var(--ic); }
+.tabs a[data-k][aria-current="page"] { background: var(--ic-soft); border-color: color-mix(in srgb, var(--ic) 45%, #fff); color: var(--ic); }
+.tabs a[data-k][aria-current="page"] svg { transform: scale(1.12); stroke-width: 2.4; }
+
+/* mascote */
+.mascote-vazio { display: grid; place-items: center; margin: 0 0 .5rem; }
+@media (prefers-reduced-motion: no-preference) { .mascote-vazio svg { animation: masc-flutua 3.4s ease-in-out infinite; } @keyframes masc-flutua { 50% { transform: translateY(-5px); } } }
+.vazio-t, .vazio-i, .vazio-total { text-align: center; }
+.vazio-total .acoes { justify-content: center; }
