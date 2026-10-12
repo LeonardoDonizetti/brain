@@ -141,6 +141,18 @@ Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTA
     }
     return { itens, ignorados };
   }
+  /** Marca os itens que já existem (mesmo tipo, valor e data) e os repetidos dentro da própria foto. existentes: [{tipo, valor, data, descricao}] */
+  function marcarDuplicados(itens, existentes) {
+    const chave = (x) => `${x.tipo === 'receita' ? 'r' : 'd'}|${Math.round(x.valor * 100)}|${x.data}`;
+    const mapa = new Map();
+    for (const e of existentes || []) { const k = chave(e); if (!mapa.has(k)) mapa.set(k, e); }
+    const vistos = new Set();
+    return itens.map((x) => {
+      const k = chave(x), ja = mapa.get(k);
+      const rep = vistos.has(k); vistos.add(k);
+      return Object.assign({}, x, ja ? { dup: ja.descricao || 'lançamento' } : rep ? { dup: 'repetido nesta foto' } : {});
+    });
+  }
   async function lerComprovante({ chave, imagem, hoje, modelo, fetchFn }) {
     const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPromptComprovante(hoje), esquema: ESQUEMA_GASTO, modelo, fetchFn });
     const r = interpretarComprovante(resposta, hoje);
@@ -148,6 +160,6 @@ Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTA
     return { itens: r.itens, ignorados: r.ignorados, modelo: usado };
   }
 
-  const api = { montarPrompt, escolherModelo, interpretar, lerFoto, hora, montarPromptComprovante, interpretarComprovante, lerComprovante, CATS };
+  const api = { montarPrompt, escolherModelo, interpretar, lerFoto, hora, montarPromptComprovante, interpretarComprovante, lerComprovante, marcarDuplicados, CATS };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.BrainLeitor = api;
 })(typeof window !== 'undefined' ? window : globalThis);

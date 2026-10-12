@@ -736,14 +736,17 @@ async function montarCron() {
       cron.rotina = r.blocos; cron.ignoradas = r.ignoradas;
       if (!r.blocos.length) { st.textContent = 'A IA não encontrou compromissos nessa foto. Tente uma foto mais nítida, de frente e com boa luz.'; return; }
     }
-    let fixos = (cron.rotina || []).slice();
-    if (cronOpt.considerar && E.blocos.length) fixos = fixos.concat(E.blocos);
+    // compromissos da foto que já estão na semana não entram de novo
+    const jaTem = (cron.rotina || []).filter((b) => E.blocos.some((x) => ES.blocoIgual(x, b)));
+    const novos = (cron.rotina || []).filter((b) => !jaTem.includes(b));
+    let fixos = novos.slice();
+    if (cronOpt.considerar && E.blocos.length) fixos = fixos.concat(E.blocos); else fixos = fixos.concat(jaTem);
     const plano = ES.montarCronograma(fixos, {
       horasSemana: cronOpt.horas, sessaoMin: cronOpt.sessao, janelaIni: cronOpt.ini, janelaFim: cronOpt.fim, diasLivres: cronOpt.livres,
       foco: cronOpt.foco.split(/[,;]/).map((x) => x.trim()).filter(Boolean), materias: E.materias,
     });
-    cron.plano = { ...plano, rotina: cron.rotina || [], semFoto: !cron.rotina };
-    st.textContent = cron.rotina ? `A IA leu ${cron.rotina.length} compromissos da foto.${cron.ignoradas.length ? ` ${cron.ignoradas.length} não deu para entender.` : ''}` : (fixos.length ? 'Usei os blocos que já estão na sua semana.' : 'Sem foto nem blocos, usei a semana toda livre. Anexe a foto da sua rotina para um plano sob medida.');
+    cron.plano = { ...plano, rotina: novos, jaTem: jaTem.length, semFoto: !cron.rotina };
+    st.textContent = cron.rotina ? `A IA leu ${cron.rotina.length} compromissos da foto.${jaTem.length ? ` ${jaTem.length} já estavam na sua semana e não serão repetidos.` : ''}${cron.ignoradas.length ? ` ${cron.ignoradas.length} não deu para entender.` : ''}` : (fixos.length ? 'Usei os blocos que já estão na sua semana.' : 'Sem foto nem blocos, usei a semana toda livre. Anexe a foto da sua rotina para um plano sob medida.');
     desenharCron();
     const o = $('cr-saida'); if (o) o.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) { st.textContent = err.message || 'Não consegui montar agora.'; }
@@ -798,8 +801,8 @@ function desenharCron() {
     const idDe = (nome) => { let m = E.materias.find((x) => ES.norm(x.nome) === ES.norm(nome)); if (!m) { m = { id: ES.novoId(E), nome, cor: ES.CORES_MATERIA[E.materias.length % ES.CORES_MATERIA.length], prioridade: 2, meta_h: 0 }; E.materias.push(m); } return m.id; };
     const igual = (x, y) => x.dia === y.dia && x.ini === y.ini && x.fim === y.fim && ES.norm(x.titulo) === ES.norm(y.titulo);
     let n = 0;
-    if (incl) for (const b of p.rotina) if (!E.blocos.some((x) => igual(x, b))) { E.blocos.push({ id: ES.novoId(E), dia: b.dia, ini: b.ini, fim: b.fim, titulo: b.titulo, tipo: b.tipo, materia_id: null }); n++; }
-    for (const b of p.blocos) { E.blocos.push({ id: ES.novoId(E), dia: b.dia, ini: b.ini, fim: b.fim, titulo: b.titulo, tipo: 'estudo', materia_id: b.nome ? idDe(b.nome) : null }); n++; }
+    if (incl) for (const b of p.rotina) if (!E.blocos.some((x) => ES.blocoIgual(x, b))) { E.blocos.push({ id: ES.novoId(E), dia: b.dia, ini: b.ini, fim: b.fim, titulo: b.titulo, tipo: b.tipo, materia_id: null }); n++; }
+    for (const b of p.blocos) { if (E.blocos.some((x) => x.dia === b.dia && x.ini === b.ini && x.fim === b.fim && x.tipo === 'estudo')) continue; E.blocos.push({ id: ES.novoId(E), dia: b.dia, ini: b.ini, fim: b.fim, titulo: b.titulo, tipo: 'estudo', materia_id: b.nome ? idDe(b.nome) : null }); n++; }
     cron.plano = null; cron.rotina = null;
     await salvar(); aviso(`${n} blocos adicionados. Veja na aba Semana.`); aba = 'semana'; desenhar();
   };

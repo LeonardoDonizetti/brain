@@ -167,6 +167,11 @@
       const dataOk = /^\d{4}-\d{2}-\d{2}$/.test(String(it.data || '')) ? it.data : iso(hojeData());
       const tipoI = corpo.tipo === 'receita' ? 'receita' : 'despesa';
       const categoria = tipoI === 'receita' ? CAT_ENTRADA : (C.CATEGORIAS && C.CATEGORIAS.includes(it.categoria) ? it.categoria : C.classificador.prever(descricao));
+      // IA (foto, Coach): mesmo tipo, valor e data de um lançamento que já existe = provável repetição
+      if (!corpo.forcar) {
+        const igual = estado.gastos.find((g) => (g.tipo === 'receita' ? 'receita' : 'despesa') === tipoI && Math.round(g.valor * 100) === Math.round(valor * 100) && g.data === dataOk);
+        if (igual) erro(409, `Já existe ${tipoI === 'receita' ? 'uma entrada' : 'um gasto'} de ${valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} em ${dataBR(dataOk)} (${igual.descricao}). Não adicionei de novo.`);
+      }
       const id1 = proximoId(estado.gastos);
       estado.gastos.push({ id: id1, tipo: tipoI, valor, categoria, descricao, data: dataOk, texto_original: '', corrigido: 0 });
       if (tipoI === 'despesa') retreinar(estado);
@@ -387,6 +392,9 @@
     return { titulo, data, hora };
   }
 
+  const semAcento = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const dataBR = (d) => String(d).split('-').reverse().slice(0, 2).join('/');
+
   async function tarefasCriar(estado, ctx, q, corpo) {
     corpo = corpo || {};
     let { titulo, data, hora } = lerTarefa(corpo);
@@ -401,6 +409,11 @@
     titulo = titulo.slice(0, 200);
     const ex = TF.extras({ prioridade: corpo.prioridade !== undefined ? corpo.prioridade : m.prioridade, lista: corpo.lista !== undefined ? corpo.lista : m.lista, repetir: corpo.repetir !== undefined ? corpo.repetir : m.repetir, nota: corpo.nota, subtarefas: corpo.subtarefas });
     if (ex.repetir && !data) data = iso(hojeData());   // tarefa que se repete precisa de uma data de partida
+    // vindo da IA (foto, Coach): não repete uma tarefa que já existe e ainda está aberta
+    if (corpo.origem === 'ia' && !corpo.forcar) {
+      const igual = estado.tarefas.find((x) => !x.feita && semAcento(x.titulo) === semAcento(titulo) && (x.data || null) === (data || null));
+      if (igual) erro(409, `Você já tem a tarefa "${igual.titulo}"${data ? ' para ' + dataBR(data) : ''}. Não adicionei de novo.`);
+    }
     const id = proximoId(estado.tarefas);
     estado.tarefas.push(Object.assign({ id, titulo, data, hora, feita: 0, concluida_em: null }, ex));
     ctx.salvar = true;

@@ -768,3 +768,27 @@ test('estudos: cor livre da matéria e texto legível', () => {
   assert.strictEqual(ES.textoSobre('#000000'), '#ffffff');
   assert.strictEqual(ES.textoSobre('#2f5fb3'), '#ffffff');
 });
+
+test('IA não repete o que já existe (gasto, entrada, tarefa, compromisso)', async () => {
+  zerar();
+  const item = { valor: 87.45, descricao: 'Supermercado Dia', data: hoje() };
+  await ok('POST', '/api/financas/gastos', '', { tipo: 'despesa', item });
+  const rep = await A.chamar('POST', '/api/financas/gastos', '', { tipo: 'despesa', item: { ...item, descricao: 'Mercado' } });
+  assert.strictEqual(rep.status, 409);
+  assert.match(rep.corpo.detail, /Já existe um gasto de R\$\s?87,45/);
+  await ok('POST', '/api/financas/gastos', '', { tipo: 'receita', item });          // tipo diferente não conta
+  await ok('POST', '/api/financas/gastos', '', { tipo: 'despesa', forcar: true, item }); // "adicionar mesmo assim"
+  await ok('POST', '/api/financas/gastos', '', { tipo: 'despesa', item: { ...item, valor: 10 } });
+  assert.strictEqual((await ok('GET', '/api/financas/gastos', '')).gastos.filter((g) => g.valor === 87.45).length, 3);
+  // tarefas: só a IA é barrada; manual continua livre
+  await ok('POST', '/api/tarefas', '', { titulo: 'Estudar química', data: hoje(), origem: 'ia' });
+  assert.strictEqual((await A.chamar('POST', '/api/tarefas', '', { titulo: 'estudar quimica', data: hoje(), origem: 'ia' })).status, 409);
+  await ok('POST', '/api/tarefas', '', { titulo: 'Estudar química', data: hoje() });
+  await ok('POST', '/api/tarefas', '', { titulo: 'Estudar química', data: hoje(), origem: 'ia', forcar: true });
+  // helpers de foto
+  const L = require('../site/leitor.js'), ES = require('../site/estudos.js');
+  const m = L.marcarDuplicados([{ valor: 87.45, data: hoje(), tipo: 'despesa', descricao: 'a' }, { valor: 5, data: hoje(), tipo: 'despesa', descricao: 'b' }, { valor: 5, data: hoje(), tipo: 'despesa', descricao: 'c' }], [{ tipo: 'despesa', valor: 87.45, data: hoje(), descricao: 'Mercado' }]);
+  assert.deepStrictEqual(m.map((x) => x.dup), ['Mercado', undefined, 'repetido nesta foto']);
+  assert.ok(ES.blocoIgual({ dia: 1, ini: '07:00', fim: '12:00', titulo: 'Escola' }, { dia: 1, ini: '07:00', fim: '12:00', titulo: 'escola' }));
+  assert.ok(!ES.blocoIgual({ dia: 1, ini: '07:00', fim: '12:00', titulo: 'Escola' }, { dia: 2, ini: '07:00', fim: '12:00', titulo: 'Escola' }));
+});

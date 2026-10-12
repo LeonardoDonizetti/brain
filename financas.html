@@ -207,6 +207,8 @@
   #dlg-foto-g { max-height: 90vh; overflow: auto; }
   #dlg-foto-g .acoes { position: sticky; bottom: -1.4rem; background: var(--surface); padding: .8rem 0 .2rem; margin-top: .8rem; }
   .fg-it .fg-tipo.rec { color: var(--ok); }
+  .fg-it .fg-tipo.dupl { color: var(--warm, #b45309); }
+  .fg-it.dup { border-style: dashed; }
 </style>
 </head>
 <body>
@@ -1193,7 +1195,13 @@ async function fgArquivo(f) {
     $('fg-mini').src = img;
     const r = await BrainLeitor.lerComprovante({ chave, imagem: img, hoje: HOJE });
     if (!r.itens.length) { $('fg-st').textContent = 'Não encontrei nenhum valor nessa imagem. Tente uma foto mais nítida, de frente e com boa luz.'; $('fg-escolha').hidden = false; return; }
-    fgItens = r.itens.map((x) => ({ ...x, on: true }));
+    // compara com o que já está registrado (nos meses das datas lidas) para não repetir
+    let existentes = [];
+    try {
+      const meses = [...new Set(r.itens.map((x) => (x.data || HOJE).slice(0, 7)))];
+      for (const m of meses) existentes = existentes.concat((await api('/api/financas/gastos?mes=' + m)).gastos);
+    } catch (e) { /* sem comparação; o servidor ainda barra repetidos */ }
+    fgItens = BrainLeitor.marcarDuplicados(r.itens, existentes).map((x) => ({ ...x, on: !x.dup }));
     $('fg-leitura').hidden = true; desenharPrevia(r.ignorados);
   } catch (err) { $('fg-st').textContent = err.message || 'Não consegui ler agora.'; $('fg-escolha').hidden = false; }
 }
@@ -1207,7 +1215,8 @@ function desenharPrevia(ign) {
     d.innerHTML = `<input type="checkbox" aria-label="Incluir este lançamento"><input class="fg-v" type="number" step="0.01" min="0.01" inputmode="decimal" aria-label="Valor em reais"><input class="fg-d" type="date" aria-label="Data"><input class="fg-desc" type="text" maxlength="80" aria-label="Descrição"><div class="fg-tipo"></div><select class="fg-c" aria-label="Categoria"></select>`;
     const [ck, v, dt, ds, tp, sel] = d.children;
     ck.checked = x.on; v.value = x.valor; dt.value = x.data; ds.value = x.descricao;
-    tp.textContent = x.tipo === 'receita' ? 'Entrada' : 'Gasto'; tp.classList.toggle('rec', x.tipo === 'receita');
+    tp.textContent = (x.tipo === 'receita' ? 'Entrada' : 'Gasto') + (x.dup ? ' · já registrado' : ''); tp.classList.toggle('rec', x.tipo === 'receita' && !x.dup); tp.classList.toggle('dupl', !!x.dup);
+    if (x.dup) { d.classList.add('dup'); ck.setAttribute('aria-label', 'Incluir mesmo assim (parece já registrado: ' + x.dup + ')'); }
     if (x.tipo === 'receita') sel.hidden = true; else {
       const auto = document.createElement('option'); auto.value = ''; auto.textContent = 'Categoria automática'; sel.append(auto);
       cats.filter((c) => c !== 'Entrada').forEach((c) => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.append(o); });
@@ -1217,7 +1226,8 @@ function desenharPrevia(ign) {
     v.oninput = () => { x.valor = Number(v.value); contarFg(); }; dt.onchange = () => { x.data = dt.value; }; ds.oninput = () => { x.descricao = ds.value; }; sel.onchange = () => { x.categoria = sel.value; };
     box.append(d);
   });
-  $('fg-res').textContent = (fgItens.length === 1 ? 'A IA leu 1 lançamento.' : `A IA leu ${fgItens.length} lançamentos.`) + (ign ? ` ${ign} não deu para entender.` : '') + ' Confira os valores e corrija o que precisar.';
+  const nDup = fgItens.filter((x) => x.dup).length;
+  $('fg-res').textContent = (fgItens.length === 1 ? 'A IA leu 1 lançamento.' : `A IA leu ${fgItens.length} lançamentos.`) + (nDup ? ` ${nDup === 1 ? 'Um já estava registrado e ficou desmarcado' : nDup + ' já estavam registrados e ficaram desmarcados'}; marque se quiser repetir.` : '') + (ign ? ` ${ign} não deu para entender.` : '') + ' Confira os valores e corrija o que precisar.';
   $('fg-previa').hidden = false; $('fg-ok').hidden = false; contarFg();
 }
 function contarFg() {
@@ -1227,19 +1237,19 @@ function contarFg() {
 $('fg-ok').onclick = async () => {
   const lista = fgItens.filter((x) => x.on && x.valor > 0 && x.descricao.trim());
   if (!lista.length) return;
-  $('fg-ok').disabled = true; let ok = 0, ultimo = null, falhou = '';
+  $('fg-ok').disabled = true; let ok = 0, pulados = 0, ultimo = null, falhou = '';
   for (const x of lista) {
     try {
-      await api('/api/financas/gastos', { method: 'POST', headers: JSON_HDR, body: JSON.stringify({ tipo: x.tipo, item: { valor: x.valor, descricao: x.descricao, data: x.data || HOJE, categoria: x.categoria || undefined } }) });
+      await api('/api/financas/gastos', { method: 'POST', headers: JSON_HDR, body: JSON.stringify({ tipo: x.tipo, forcar: !!x.dup, item: { valor: x.valor, descricao: x.descricao, data: x.data || HOJE, categoria: x.categoria || undefined } }) });
       ok++; ultimo = x;
-    } catch (err) { falhou = err.message; }
+    } catch (err) { if (/Já existe/.test(err.message)) pulados++; else falhou = err.message; }
   }
   $('dlg-foto-g').close();
   if (ok) {
-    aviso(`${ok} ${ok === 1 ? 'lançamento registrado' : 'lançamentos registrados'} pela foto.${falhou ? ' Um não passou: ' + falhou : ''}`, !!falhou && !ok);
+    aviso(`${ok} ${ok === 1 ? 'lançamento registrado' : 'lançamentos registrados'} pela foto.${pulados ? ` ${pulados} já existia${pulados > 1 ? 'm' : ''} e não ${pulados > 1 ? 'foram repetidos' : 'foi repetido'}.` : ''}${falhou ? ' Um não passou: ' + falhou : ''}`, !!falhou && !ok);
     if (window.BrainCelebrar) { if (lista.some((x) => x.tipo === 'receita')) window.BrainCelebrar.moedas(); else window.BrainCelebrar.micro($('foto-btn'), { xp: 4 * ok }); }
     mes = (ultimo.data || HOJE).slice(0, 7); carregar();
-  } else aviso(falhou || 'Não consegui registrar.', true);
+  } else aviso(pulados ? 'Tudo isso já estava registrado. Não repeti nada.' : (falhou || 'Não consegui registrar.'), !pulados);
 };
 
 carregar();

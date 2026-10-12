@@ -332,19 +332,22 @@
       const rap = () => dlg.querySelector('.coach-rap');
       const sugerir = (l) => { rap().replaceChildren(); l.forEach((t) => { const b = el('button', null, t); b.type = 'button'; b.onclick = () => perguntar(t); rap().append(b); }); };
       const json = (m, c) => ({ method: m, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(c) });
-      async function aplicar(a) {
+      async function aplicar(a, forcar) {
         const r = a.tipo === 'criar_tarefa'
-          ? await fetch('/api/tarefas', json('POST', Object.assign({ titulo: a.titulo, data: a.data, hora: a.hora }, a.prioridade ? { prioridade: a.prioridade } : {})))
-          : await fetch('/api/financas/gastos', json('POST', { tipo: a.tipo === 'registrar_entrada' ? 'receita' : 'despesa', item: { valor: a.valor, descricao: a.descricao, categoria: a.categoria, data: a.data } }));
-        if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.detail || j.erro || 'Não consegui salvar.'); }
+          ? await fetch('/api/tarefas', json('POST', Object.assign({ titulo: a.titulo, data: a.data, hora: a.hora, origem: 'ia', forcar: !!forcar }, a.prioridade ? { prioridade: a.prioridade } : {})))
+          : await fetch('/api/financas/gastos', json('POST', { tipo: a.tipo === 'registrar_entrada' ? 'receita' : 'despesa', forcar: !!forcar, item: { valor: a.valor, descricao: a.descricao, categoria: a.categoria, data: a.data } }));
+        if (!r.ok) { const j = await r.json().catch(() => ({})); const e = new Error(j.detail || j.erro || 'Não consegui salvar.'); e.duplicado = r.status === 409; throw e; }
       }
       function cartaoAcao(a) {
         const d = el('div', 'coach-acao'); d.append(el('span', null, a.rotulo));
-        const bts = el('div', 'bts'); const ok = el('button', 'ok', 'Adicionar'); const no = el('button', null, 'Ignorar'); ok.type = no.type = 'button';
+        let forcar = false; const bts = el('div', 'bts'); const ok = el('button', 'ok', 'Adicionar'); const no = el('button', null, 'Ignorar'); ok.type = no.type = 'button';
         ok.onclick = async () => {
           ok.disabled = no.disabled = true;
-          try { await aplicar(a); d.className = 'coach-acao feito'; d.replaceChildren(el('span', null, '✓ ' + a.rotulo)); }
-          catch (e) { ok.disabled = no.disabled = false; let m = d.querySelector('.err'); if (!m) { m = el('span', 'err'); m.setAttribute('role', 'alert'); d.append(m); } m.textContent = e.message; }
+          try { await aplicar(a, forcar); d.className = 'coach-acao feito'; d.replaceChildren(el('span', null, '✓ ' + a.rotulo)); }
+          catch (e) {
+            ok.disabled = no.disabled = false; let m = d.querySelector('.err'); if (!m) { m = el('span', 'err'); m.setAttribute('role', 'alert'); d.append(m); } m.textContent = e.message;
+            if (e.duplicado) { forcar = true; ok.textContent = 'Adicionar mesmo assim'; m.style.color = 'var(--muted)'; }
+          }
         };
         no.onclick = () => d.remove();
         bts.append(ok, no); d.append(bts); log.append(d); log.scrollTop = log.scrollHeight;

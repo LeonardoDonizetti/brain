@@ -435,6 +435,8 @@
     return formato === 'tsv' ? corpo : '﻿' + corpo;
   }
 
-  const api = { TIPOS, DIAS, DIAS_CURTO, ORDEM_SEMANA, INTERVALOS, MOTIVOS, CORES_MATERIA, DICA_ERRO, estadoVazio, sanitizar, novoId, lerTexto, agoraProximo, conflitos, gerarPlano, estatisticas, inicioSemana, fmtMin, criarRevisao, concluirRevisao, avaliarRevisao, revisoesDevidas, proximoVestibular, mensagens, responder, montarCronograma, grade, planilhaTexto, janelasLivres, MATERIAS_PADRAO, corMateria, textoSobre, CORES_EXTRA, minutos, hhmm, somaDias, isoDe, norm };
+  /** Mesmo compromisso? (mesmo dia, mesmo horário e mesmo título) */
+  const blocoIgual = (a, b) => a.dia === b.dia && a.ini === b.ini && a.fim === b.fim && norm(a.titulo) === norm(b.titulo);
+  const api = { blocoIgual, TIPOS, DIAS, DIAS_CURTO, ORDEM_SEMANA, INTERVALOS, MOTIVOS, CORES_MATERIA, DICA_ERRO, estadoVazio, sanitizar, novoId, lerTexto, agoraProximo, conflitos, gerarPlano, estatisticas, inicioSemana, fmtMin, criarRevisao, concluirRevisao, avaliarRevisao, revisoesDevidas, proximoVestibular, mensagens, responder, montarCronograma, grade, planilhaTexto, janelasLivres, MATERIAS_PADRAO, corMateria, textoSobre, CORES_EXTRA, minutos, hhmm, somaDias, isoDe, norm };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.BrainEstudos = api;
 })(typeof window !== 'undefined' ? window : globalThis);
