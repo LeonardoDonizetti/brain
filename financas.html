@@ -379,15 +379,15 @@
 
 <dialog id="dlg-foto-g" aria-labelledby="fg-titulo">
   <h3 id="fg-titulo">Registrar por foto</h3>
-  <p class="dica" id="fg-info">Tire uma foto ou anexe a imagem de um cupom, nota, comprovante de Pix ou print do banco. A IA lê e você confere antes de registrar.</p>
+  <p class="dica" id="fg-info">Tire uma foto ou anexe uma imagem ou PDF de um cupom, nota, comprovante de Pix, fatura ou print do banco. A IA lê e você confere antes de registrar.</p>
   <div id="fg-escolha">
-    <div class="fg-bts"><label class="fg-bt pri">Tirar foto<input type="file" accept="image/*" capture="environment" id="fg-cam" hidden></label><label class="fg-bt">Anexar imagem<input type="file" accept="image/*" id="fg-arq" hidden></label></div>
+    <div class="fg-bts"><label class="fg-bt pri">Tirar foto<input type="file" accept="image/*" capture="environment" id="fg-cam" hidden></label><label class="fg-bt">Anexar arquivo ou imagem<input type="file" accept="image/*,application/pdf,.pdf" id="fg-arq" hidden></label></div>
     <div id="fg-chave-box" hidden>
       <label for="fg-chave">Chave grátis do Google (para a IA ler a foto)</label>
       <input id="fg-chave" type="password" autocomplete="off" placeholder="Cole sua chave (AIza...)" aria-label="Chave da API do Google AI Studio">
       <p class="dica" style="margin:.4rem 0 0"><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:650">Pegar chave grátis</a>, sem cartão. Fica só neste aparelho.</p>
     </div>
-    <p class="dica" style="margin:.9rem 0 0">Privacidade: a imagem é enviada ao Google só para ser lida e não fica guardada no app. Evite fotos com dados que você não quer compartilhar, como CPF ou número de cartão.</p>
+    <p class="dica" style="margin:.9rem 0 0">Privacidade: a imagem ou o PDF é enviado ao Google só para ser lido e não fica guardado no app. Evite fotos com dados que você não quer compartilhar, como CPF ou número de cartão.</p>
   </div>
   <div id="fg-leitura" hidden><img id="fg-mini" alt="Foto enviada"><p id="fg-st" role="status" aria-live="polite"></p></div>
   <div id="fg-previa" hidden>
@@ -1191,8 +1191,10 @@ async function fgArquivo(f) {
   $('fg-escolha').hidden = true; $('fg-leitura').hidden = false; $('fg-previa').hidden = true; $('fg-ok').hidden = true;
   $('fg-st').textContent = 'A IA está lendo o comprovante...';
   try {
-    const img = await fgReduzir(f);
-    $('fg-mini').src = img;
+    const pdf = BrainLeitor.ehPdf(f);
+    const img = pdf ? await BrainLeitor.lerPdf(f) : await fgReduzir(f);
+    $('fg-mini').src = pdf ? 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="10" fill="#fdecec"/><path d="M18 10h20l10 10v34H18z" fill="#fff" stroke="#d64545" stroke-width="3" stroke-linejoin="round"/><text x="32" y="45" font-family="Arial" font-weight="700" font-size="14" text-anchor="middle" fill="#d64545">PDF</text></svg>') : img;
+    $('fg-st').textContent = pdf ? 'A IA está lendo o PDF...' : 'A IA está lendo o comprovante...';
     const r = await BrainLeitor.lerComprovante({ chave, imagem: img, hoje: HOJE });
     if (!r.itens.length) { $('fg-st').textContent = 'Não encontrei nenhum valor nessa imagem. Tente uma foto mais nítida, de frente e com boa luz.'; $('fg-escolha').hidden = false; return; }
     // compara com o que já está registrado (nos meses das datas lidas) para não repetir

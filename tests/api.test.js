@@ -376,7 +376,7 @@ test('leitor de foto: interpreta resposta da IA e trata erros', async () => {
   const res = await L.lerFoto({ chave: 'AIza' + 'x'.repeat(30), imagem: img, materias: mats, fetchFn: ok2 });
   assert.strictEqual(res.blocos.length, 1); assert.strictEqual(res.modelo, 'gemini-2.5-flash');
   await assert.rejects(L.lerFoto({ chave: 'curta', imagem: img, materias: mats, fetchFn: ok2 }), /chave/);
-  await assert.rejects(L.lerFoto({ chave: 'AIza' + 'x'.repeat(30), imagem: 'oi', materias: mats, fetchFn: ok2 }), /Imagem/);
+  await assert.rejects(L.lerFoto({ chave: 'AIza' + 'x'.repeat(30), imagem: 'oi', materias: mats, fetchFn: ok2 }), /Arquivo inválido/);
   await assert.rejects(L.lerFoto({ chave: 'AIza' + 'x'.repeat(30), imagem: img, materias: mats, fetchFn: falso({ error: { message: 'API key not valid' } }, 400) }), /não foi aceita/);
   await assert.rejects(L.lerFoto({ chave: 'AIza' + 'x'.repeat(30), imagem: img, materias: mats, modelo: 'm', fetchFn: falso({}, 429) }), /Limite/);
   await assert.rejects(L.lerFoto({ chave: 'AIza' + 'x'.repeat(30), imagem: img, materias: mats, modelo: 'm', fetchFn: async () => { throw new Error('x'); } }), /conexão/);
@@ -791,4 +791,15 @@ test('IA não repete o que já existe (gasto, entrada, tarefa, compromisso)', as
   assert.deepStrictEqual(m.map((x) => x.dup), ['Mercado', undefined, 'repetido nesta foto']);
   assert.ok(ES.blocoIgual({ dia: 1, ini: '07:00', fim: '12:00', titulo: 'Escola' }, { dia: 1, ini: '07:00', fim: '12:00', titulo: 'escola' }));
   assert.ok(!ES.blocoIgual({ dia: 1, ini: '07:00', fim: '12:00', titulo: 'Escola' }, { dia: 2, ini: '07:00', fim: '12:00', titulo: 'Escola' }));
+});
+
+test('leitor aceita PDF além de imagem', async () => {
+  const L = require('../site/leitor.js');
+  let corpo = null;
+  const f = async (url, o) => { if (String(url).includes(':generateContent')) { corpo = JSON.parse(o.body); return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '[{"valor":10,"descricao":"x"}]' }] } }] }) }; } return { ok: true, status: 200, json: async () => ({ models: [{ name: 'models/gemini-2.5-flash', supportedGenerationMethods: ['generateContent'] }] }) }; };
+  const r = await L.lerComprovante({ chave: 'AIza' + 'x'.repeat(30), imagem: 'data:application/pdf;base64,JVBERi0=', hoje: '2026-10-12', fetchFn: f });
+  assert.strictEqual(r.itens.length, 1);
+  assert.strictEqual(corpo.contents[0].parts[1].inline_data.mime_type, 'application/pdf');
+  await assert.rejects(L.lerComprovante({ chave: 'AIza' + 'x'.repeat(30), imagem: 'data:text/plain;base64,AAAA', hoje: '2026-10-12', fetchFn: f }), /inválido/);
+  assert.ok(L.ehPdf({ name: 'Fatura.PDF', type: '' }) && !L.ehPdf({ name: 'a.png', type: 'image/png' }));
 });
