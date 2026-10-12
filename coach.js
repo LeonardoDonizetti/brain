@@ -333,6 +333,11 @@
       const sugerir = (l) => { rap().replaceChildren(); l.forEach((t) => { const b = el('button', null, t); b.type = 'button'; b.onclick = () => perguntar(t); rap().append(b); }); };
       const json = (m, c) => ({ method: m, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(c) });
       async function aplicar(a, forcar) {
+        if (a.tipo === 'definir_limites') {
+          const rl = await fetch('/api/financas/orcamento', json('PUT', { total: a.total, categorias: a.limites }));
+          if (!rl.ok) { const j = await rl.json().catch(() => ({})); throw new Error(j.detail || 'Não consegui salvar os limites.'); }
+          return;
+        }
         const r = a.tipo === 'criar_tarefa'
           ? await fetch('/api/tarefas', json('POST', Object.assign({ titulo: a.titulo, data: a.data, hora: a.hora, origem: 'ia', forcar: !!forcar }, a.prioridade ? { prioridade: a.prioridade } : {})))
           : await fetch('/api/financas/gastos', json('POST', { tipo: a.tipo === 'registrar_entrada' ? 'receita' : 'despesa', forcar: !!forcar, item: { valor: a.valor, descricao: a.descricao, categoria: a.categoria, data: a.data } }));

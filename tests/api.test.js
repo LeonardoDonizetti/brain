@@ -803,3 +803,39 @@ test('leitor aceita PDF além de imagem', async () => {
   await assert.rejects(L.lerComprovante({ chave: 'AIza' + 'x'.repeat(30), imagem: 'data:text/plain;base64,AAAA', hoje: '2026-10-12', fetchFn: f }), /inválido/);
   assert.ok(L.ehPdf({ name: 'Fatura.PDF', type: '' }) && !L.ehPdf({ name: 'a.png', type: 'image/png' }));
 });
+
+test('consultor: diagnóstico, limites sugeridos e respostas', () => {
+  const K = require('../site/consultor.js');
+  const mes = (por, entradas) => ({ por_categoria: Object.entries(por).map(([categoria, valor]) => ({ categoria, valor, quantidade: 1 })), total: Object.values(por).reduce((a, b) => a + b, 0), entradas });
+  const d = K.diagnostico([mes({ Alimentação: 400, Lazer: 300, Transporte: 100 }, 1500), mes({ Alimentação: 500, Lazer: 100, Transporte: 100 }, 1500), null]);
+  assert.strictEqual(d.mesesComGasto, 2);
+  assert.strictEqual(d.medias.Alimentação, 450); assert.strictEqual(d.medias.Lazer, 200);
+  assert.strictEqual(d.rendaMedia, 1500); assert.strictEqual(d.maior.categoria, 'Alimentação');
+  // gasta 800/mês de 1500: guardar 20% => teto 1200, cabe
+  const a = K.sugerirLimites({ renda: 1500, medias: d.medias, poupancaPct: 0.2 });
+  assert.ok(a.total <= a.teto + 0.01, 'não passa do teto');
+  assert.ok(a.limites.Alimentação >= 450 && a.limites.Lazer >= 200);
+  assert.ok(a.poupar >= 300);
+  // aperto: gasta 1400 de 1500 e quer guardar 30% => corta
+  const dd = K.diagnostico([mes({ Alimentação: 500, Transporte: 200, Lazer: 400, Compras: 300 }, 1500)]);
+  const b = K.sugerirLimites({ renda: 1500, medias: dd.medias, poupancaPct: 0.3 });
+  assert.ok(b.total <= b.teto + 0.01 && b.total < dd.gastoMedio);
+  assert.ok(b.limites.Lazer < 400 && b.limites.Compras < 300);      // corta primeiro os desejos
+  assert.ok(b.limites.Alimentação >= 400);                            // necessidades preservadas
+  // sem histórico: usa 50/30/20 (80% da renda em gastos)
+  const c = K.sugerirLimites({ renda: 2000, medias: {}, poupancaPct: 0.2 });
+  assert.ok(c.total <= 1600 && c.total >= 1400 && !c.temHistorico);
+  // impossível: avisa
+  const e = K.sugerirLimites({ renda: 1000, medias: { Alimentação: 700, Moradia: 600 }, poupancaPct: 0.3 });
+  assert.ok(e.total <= 700 && e.avisos.length === 1);
+  assert.strictEqual(K.poupancaRecomendada('guardar', 0, 0), 0.2);
+  assert.ok(K.poupancaRecomendada('guardar', 1500, 1400) <= 0.1);
+  for (const q of ['o que é 50/30/20', 'reserva de emergência', 'quanto devo guardar', 'como economizar', 'tenho dívida no cartão', 'quero investir no tesouro']) assert.ok(K.responder(q, d), q);
+  assert.strictEqual(K.responder('qual a capital da França', d), null);
+  assert.match(K.contextoFin(d, { total: 1000, categorias: { Lazer: 100 } }, 1500), /Renda mensal.*1\.500/);
+  // ação da IA validada
+  const I = require('../site/ia.js');
+  assert.deepStrictEqual(I.validarAcoes([{ tipo: 'definir_limites', limites: [{ categoria: 'Lazer', valor: 120 }, { categoria: 'Nada', valor: 5 }] }], '2026-10-12')[0].limites, { Lazer: 120 });
+  assert.deepStrictEqual(I.validarAcoes([{ tipo: 'definir_limites', limites: [] }], '2026-10-12'), []);
+  assert.match(I.instrucoesConsultor({ hoje: '2026-10-12', contexto: 'dados' }), /50\/30\/20/);
+});

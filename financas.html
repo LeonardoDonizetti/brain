@@ -26,6 +26,7 @@
 <script src="anexo.js"></script>
 <script src="ia.js"></script>
 <script src="coach.js"></script>
+<script src="consultor.js"></script>
 <script src="nav.js" defer></script>
 <script src="jogo-ui.js" defer></script>
 <script src="mascote.js" defer></script>
@@ -259,6 +260,7 @@
   <section class="cats" id="cats" data-vw="resumo" aria-label="Gastos por categoria"></section>
   <p class="dica-vazia" id="cats-vazio" data-vw="resumo" hidden style="color:var(--muted);font-size:.9rem;margin:.2rem 0">Nenhum gasto neste mês.</p>
 
+  <section class="cartao" id="consultor" data-vw="plan" aria-label="Consultor financeiro" style="margin:.8rem 0;padding:1rem"></section>
   <div class="sec-topo" data-vw="plan"><h2>Orçamento do mês</h2><button type="button" class="link" id="b-limites2">Editar limites</button></div>
   <section class="bloco" id="plano-orc" data-vw="plan" aria-label="Orçamento"></section>
 
@@ -315,6 +317,7 @@
   <form id="lim-form">
     <h3>Limites do mês</h3>
     <p class="dica">Como no Organizze e no Mobills: defina quanto quer gastar. Deixe vazio para não limitar. Vale para todos os meses.</p>
+    <button type="button" class="linkb" id="l-consultor" style="text-align:left">Não sabe quanto definir? Falar com o consultor</button>
     <label for="l-total">Limite total do mês (R$)</label>
     <input id="l-total" type="number" step="0.01" min="0" inputmode="decimal" placeholder="sem limite">
     <div class="grid-lim" id="lim-cats"></div>
@@ -1257,6 +1260,8 @@ $('fg-ok').onclick = async () => {
   } else aviso(pulados ? 'Tudo isso já estava registrado. Não repeti nada.' : (falhou || 'Não consegui registrar.'), !pulados);
 };
 
+if (window.BrainConsultor) window.BrainConsultor.montarCartao($('consultor'));
+$('l-consultor').onclick = () => { $('dlg-lim').close(); if (window.BrainConsultor) window.BrainConsultor.abrir(); };
 carregar();
 </script>
 <script src="toque.js" defer></script>
