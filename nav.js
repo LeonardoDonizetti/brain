@@ -149,6 +149,9 @@
           <div class="cfg-linha"><div class="cfg-botoes"><button type="button" id="cfg-cel-testar">Ver uma comemoração</button></div></div>
         </div>
 
+        <h3>Lembretes</h3>
+        <div class="cfg-cartao" id="cfg-notif"></div>
+
         <h3>Coach</h3>
         <div class="cfg-cartao">
           <div class="cfg-linha flex"><div><div class="rot">Coach ligado</div><p class="dica">Incentiva suas tarefas e avisa sobre gastos. Funciona por regras no seu aparelho, sem IA paga.</p></div><label class="chave"><input type="checkbox" data-check="coach" aria-label="Coach ligado"><span></span></label></div>
@@ -397,6 +400,14 @@
       try { await L().apagarTudo(); msg('Tudo foi apagado.'); setTimeout(() => location.reload(), 700); }
       catch (e) { msg('Não consegui apagar.', true); }
     });
+
+    // Lembretes (notificações locais do app Android): carrega o módulo e monta a seção
+    {
+      const caixa = $('cfg-notif');
+      const montar = () => { if (window.BrainNotif && window.BrainNotif.montarConfig && caixa) window.BrainNotif.montarConfig(caixa); };
+      if (window.BrainNotif && window.BrainNotif.montarConfig) montar();
+      else { const sc = document.createElement('script'); sc.src = 'notif.js'; sc.onload = montar; document.head.append(sc); }
+    }
 
     // Coach com IA: mostra o campo da chave quando ligado, guarda a chave só neste aparelho e testa
     {

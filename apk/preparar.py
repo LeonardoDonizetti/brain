@@ -12,6 +12,13 @@ app = os.path.join(android, 'app')
 mf = os.path.join(app, 'src/main/AndroidManifest.xml')
 s = open(mf, encoding='utf-8').read()
 s = s.replace('android:allowBackup="true"', 'android:allowBackup="false"\n        android:usesCleartextTraffic="false"')
+# lembretes: alarmes exatos (USE_EXACT_ALARM é concedida sozinha no Android 13+; SCHEDULE_EXACT_ALARM cobre o 12) para o aviso sair na hora marcada
+perm = ('    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\n'
+        '    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />\n'
+        '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n'
+        '    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />\n')
+if 'USE_EXACT_ALARM' not in s:
+    s = s.replace('<application', perm + '    <application', 1)
 open(mf, 'w', encoding='utf-8').write(s)
 
 # ---- versão e assinatura ----
@@ -62,6 +69,20 @@ for nome, f in dens.items():
 fundo = os.path.join(res, 'values/ic_launcher_background.xml')
 t = open(fundo, encoding='utf-8').read().replace('#FFFFFF', hexcor)
 open(fundo, 'w', encoding='utf-8').write(t)
+
+# ---- ícone pequeno das notificações: silhueta branca do cérebro (o Android pinta só o que não é transparente) ----
+fgp = os.path.join(raiz, 'icon-foreground.png')
+if os.path.exists(fgp):
+    base = Image.open(fgp).convert('RGBA')
+    alfa = base.split()[3]
+    for nome, f in {'mdpi': 1, 'hdpi': 1.5, 'xhdpi': 2, 'xxhdpi': 3, 'xxxhdpi': 4}.items():
+        pasta = os.path.join(res, 'drawable-' + nome); os.makedirs(pasta, exist_ok=True)
+        t = int(24 * f)
+        caixa = alfa.getbbox() or (0, 0, alfa.size[0], alfa.size[1])
+        rec = alfa.crop(caixa); rec.thumbnail((t, t), Image.LANCZOS)
+        a = Image.new('L', (t, t), 0); a.paste(rec, ((t - rec.size[0]) // 2, (t - rec.size[1]) // 2))
+        branco = Image.new('RGBA', (t, t), (255, 255, 255, 0)); branco.putalpha(a)
+        branco.save(os.path.join(pasta, 'ic_stat_brain.png'))
 
 # ---- splash: fundo liso na cor do app ----
 for raizd, _, arqs in os.walk(res):

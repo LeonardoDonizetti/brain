@@ -893,3 +893,61 @@ test('várias fotos de extrato que se sobrepõem: o mesmo lançamento conta uma 
   const lido = L.interpretarComprovante('[{"valor":30,"descricao":"Pavao"},{"valor":9,"descricao":"X","data":"2026-10-10"}]', '2026-10-12');
   assert.strictEqual(lido.itens[0].semData, true); assert.strictEqual(lido.itens[1].semData, false);
 });
+
+test('lembretes: ofensiva às 15h e 18h só se o dia ainda não contou', () => {
+  const N = require('../site/notif.js');
+  const agora = new Date(2026, 9, 12, 13, 0, 0); // segunda 13:00
+  const prefs = { ativo: true, tarefas: false, rotina: false, estudos: false };
+  const hhmm = (n) => `${String(n.quando.getHours()).padStart(2, '0')}:${String(n.quando.getMinutes()).padStart(2, '0')}`;
+  let r = N.planejar({ agora, prefs, dados: { jogo: { ativo_hoje: false, sequencia: 5 } } });
+  assert.deepStrictEqual(r.slice(0, 2).map(hhmm), ['15:00', '18:00']);
+  assert.match(r[0].titulo, /ofensiva de 5 dias/); assert.match(r[1].titulo, /5 dias de ofensiva/);
+  assert.strictEqual(r.length, 14); // 7 dias x 2 horários
+  // já fez hoje: hoje não avisa, amanhã sim
+  r = N.planejar({ agora, prefs, dados: { jogo: { ativo_hoje: true, sequencia: 5 } } });
+  assert.strictEqual(r.length, 12); assert.strictEqual(r[0].quando.getDate(), 13);
+  // depois das 15h só falta a das 18h
+  r = N.planejar({ agora: new Date(2026, 9, 12, 16, 0, 0), prefs, dados: { jogo: {} } });
+  assert.strictEqual(hhmm(r[0]), '18:00'); assert.strictEqual(r[0].quando.getDate(), 12);
+  // folga e férias não cobram
+  r = N.planejar({ agora, prefs, dados: { jogo: {}, folgas: [0, 6] } });
+  assert.ok(r.every((n) => ![0, 6].includes(n.quando.getDay())));
+  assert.deepStrictEqual(N.planejar({ agora, prefs, dados: { jogo: {}, ferias: true } }), []);
+  // desligado = nada
+  assert.deepStrictEqual(N.planejar({ agora, prefs: { ativo: false }, dados: {} }), []);
+  // horários inválidos voltam ao padrão
+  assert.strictEqual(N.limpar({ h1: '25:99' }).h1, '15:00');
+});
+test('lembretes: tarefas, rotina e estudos', () => {
+  const N = require('../site/notif.js');
+  const agora = new Date(2026, 9, 12, 7, 0, 0);
+  const dados = {
+    jogo: { ativo_hoje: true },
+    tarefas: [
+      { id: 1, titulo: 'Entregar trabalho', data: '2026-10-12', hora: '14:00', feita: false },
+      { id: 2, titulo: 'Comprar caderno', data: '2026-10-12', hora: null, feita: false },
+      { id: 3, titulo: 'Ligar pro banco', data: '2026-10-12', hora: null, feita: false },
+      { id: 4, titulo: 'Já feita', data: '2026-10-12', hora: '15:00', feita: true },
+      { id: 5, titulo: 'Atrasada', data: '2026-10-01', hora: '10:00', feita: false },
+    ],
+    rotina: [{ id: 7, titulo: 'Academia', hora: '17:30', feito: false }, { id: 8, titulo: 'Água', hora: '08:00', feito: true }, { id: 9, titulo: 'Sem hora', hora: null, feito: false }],
+    blocos: [{ dia: 1, ini: '19:00', titulo: 'Física', tipo: 'estudo' }, { dia: 1, ini: '07:30', titulo: 'Escola', tipo: 'escola' }],
+  };
+  const r = N.planejar({ agora, prefs: { ativo: true, ofensiva: false }, dados });
+  const por = (t) => r.filter((n) => n.tipo === t);
+  const tf = por('tarefa'); // 1 com hora (13:50) + resumo 08:00 (2 tarefas); feita e atrasada ficam de fora
+  assert.strictEqual(tf.length, 2);
+  assert.strictEqual(tf[0].quando.getHours(), 8); assert.match(tf[0].titulo, /2 tarefas para hoje/); assert.match(tf[0].corpo, /Comprar caderno · Ligar pro banco/);
+  assert.strictEqual(tf[1].quando.getHours() * 60 + tf[1].quando.getMinutes(), 13 * 60 + 50);
+  const rt = por('rotina'); // Academia hoje + 2 dias; Água (feita hoje) só nos outros 2; sem hora nunca
+  assert.strictEqual(rt.filter((n) => n.titulo === 'Academia').length, 3); assert.strictEqual(rt.filter((n) => n.titulo === 'Água').length, 2);
+  assert.ok(rt.every((n) => n.titulo !== 'Sem hora'));
+  assert.strictEqual(rt.find((n) => n.titulo === 'Academia').quando.getMinutes(), 25);
+  const es = por('estudo'); assert.strictEqual(es.length, 1); assert.strictEqual(es[0].quando.getMonth() * 100 + es[0].quando.getDate(), 912); // só a segunda de hoje (12/10): a próxima, 19/10, fica fora da janela de 7 dias // 12/10
+  assert.strictEqual(es[0].quando.getHours() * 60 + es[0].quando.getMinutes(), 18 * 60 + 55);
+  assert.strictEqual(new Set(r.map((n) => n.id)).size, r.length);
+  assert.ok(r.every((n) => n.quando > agora));
+  // limite de avisos pendentes
+  const muitos = Array.from({ length: 200 }, (_, i) => ({ id: 100 + i, titulo: 'T' + i, data: '2026-10-13', hora: `${String(8 + (i % 12)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}`, feita: false }));
+  assert.ok(N.planejar({ agora, prefs: { ativo: true }, dados: { tarefas: muitos, jogo: {} } }).length <= 60);
+});
