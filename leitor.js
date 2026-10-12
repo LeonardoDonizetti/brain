@@ -67,10 +67,11 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
   const PDF_MAX = 8 * 1024 * 1024;
   const ehPdf = (f) => !!f && (f.type === 'application/pdf' || /\.pdf$/i.test(f.name || ''));
   /** PDF anexado -> data URL (sem reduzir). Lança Error amigável se for grande demais. */
-  function lerPdf(f) {
+  function lerPdf(f, aoProgredir) {
     return new Promise((ok, no) => {
       if (f.size > PDF_MAX) return no(new Error('PDF grande demais (máximo 8 MB). Envie só as páginas que importam.'));
       const r = new FileReader();
+      if (aoProgredir) r.onprogress = (e) => { if (e.lengthComputable) aoProgredir(Math.round((e.loaded / e.total) * 100)); };
       r.onload = () => { const d = String(r.result || ''); ok(d.replace(/^data:[^;,]*/, 'data:application/pdf')); };
       r.onerror = () => no(new Error('Não consegui abrir esse arquivo.'));
       r.readAsDataURL(f);
@@ -78,7 +79,7 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
   }
 
   /** Chamada comum ao Gemini com uma imagem. Devolve { resposta (texto), modelo } ou lança Error com mensagem amigável. */
-  async function chamar({ chave, imagem, prompt, esquema, modelo, fetchFn }) {
+  async function chamar({ chave, imagem, prompt, esquema, modelo, fetchFn, aoEnviar }) {
     const f = fetchFn || root.fetch.bind(root);
     const m = String(imagem || '').match(/^data:(image\/(?:jpeg|png|webp)|application\/pdf);base64,(.+)$/);
     if (!m) throw new Error('Arquivo inválido. Use uma imagem ou um PDF.');
@@ -94,6 +95,7 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
       if (!usar) throw new Error('Sua chave não tem acesso a um modelo que leia imagens.');
     }
     const url = `${BASE}/models/${encodeURIComponent(usar)}:generateContent?key=${c}`;
+    if (aoEnviar) aoEnviar();
     const enviar = async (config) => {
       try {
         return await f(url, {
@@ -114,8 +116,8 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
   }
 
   /** Lê a foto (data URL jpeg/png/webp). Devolve { blocos, ignoradas, modelo } ou lança Error com mensagem amigável. */
-  async function lerFoto({ chave, imagem, materias, modelo, fetchFn }) {
-    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPrompt(materias), esquema: ESQUEMA, modelo, fetchFn });
+  async function lerFoto({ chave, imagem, materias, modelo, fetchFn, aoEnviar }) {
+    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPrompt(materias), esquema: ESQUEMA, modelo, fetchFn, aoEnviar });
     const r2 = interpretar(resposta, materias);
     if (r2.erro) throw new Error(r2.erro);
     return { blocos: r2.blocos, ignoradas: r2.ignoradas, modelo: usado };
@@ -166,8 +168,8 @@ Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTA
       return Object.assign({}, x, ja ? { dup: ja.descricao || 'lançamento' } : rep ? { dup: 'repetido nesta foto' } : {});
     });
   }
-  async function lerComprovante({ chave, imagem, hoje, modelo, fetchFn }) {
-    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPromptComprovante(hoje), esquema: ESQUEMA_GASTO, modelo, fetchFn });
+  async function lerComprovante({ chave, imagem, hoje, modelo, fetchFn, aoEnviar }) {
+    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPromptComprovante(hoje), esquema: ESQUEMA_GASTO, modelo, fetchFn, aoEnviar });
     const r = interpretarComprovante(resposta, hoje);
     if (r.erro) throw new Error(r.erro);
     return { itens: r.itens, ignorados: r.ignorados, modelo: usado };

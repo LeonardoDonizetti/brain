@@ -18,6 +18,7 @@
 <script src="estudos.js"></script>
 <script src="tarefas.js"></script>
 <script src="leitor.js"></script>
+<script src="anexo.js"></script>
 <script src="categorias.js"></script>
 <script src="cofre.js"></script>
 <script src="jogo.js"></script>
@@ -664,7 +665,7 @@ function abaPlano(w) {
 }
 // ---------- cronograma personalizado (foto da rotina -> IA lê -> encaixo os estudos nos horários livres)
 const cronOpt = { horas: null, sessao: 60, ini: '05:00', fim: '22:00', livres: [], foco: '', considerar: true, incluir: true, substituir: false };
-const cron = { rotina: null, ignoradas: [], plano: null, pdf: null };
+const cron = { rotina: null, ignoradas: [], plano: null, pdf: null, info: '' };
 function horasPadrao() { try { const p = (window.BrainPrefs && window.BrainPrefs.get().perfil) || {}; const h = Number(p.horas) * Number(p.dias); if (h >= 1 && h <= 60) return Math.round(h); } catch (e) { /* sem perfil */ } return 10; }
 const chaveIA = () => { try { return localStorage.getItem('brain-gemini-key') || ''; } catch (e) { return ''; } };
 const optsHtml = (lista, atual) => lista.map(([v, t]) => `<option value="${v}"${String(v) === String(atual) ? ' selected' : ''}>${t}</option>`).join('');
@@ -674,9 +675,10 @@ function cartaoCronograma(w) {
   const nBlocos = E.blocos.length;
   html(w, `<div class="es" id="cron-card"><h3>Cronograma com IA</h3>
     <p class="sub">Tire uma foto ou anexe uma imagem ou PDF da sua rotina (grade da escola, agenda, horário do trabalho). A IA lê os compromissos e eu encaixo os estudos nos horários livres, numa planilha que você pode baixar.</p>
-    ${cron.pdf ? `<div class="cr-thumb"><div class="cr-pdf" aria-hidden="true">PDF</div><div>${esc(cron.pdf.nome)}<br><button class="linkb" id="cr-tirar-pdf" type="button">Remover arquivo</button></div></div>` : ''}
-    ${!cron.pdf && E.foto ? `<div class="cr-thumb"><img id="cr-img" src="${E.foto}" alt="Foto da sua rotina"><div>Foto da rotina guardada.<br><button class="linkb" id="cr-tirar-foto" type="button">Remover foto</button></div></div>` : ''}
+    ${cron.pdf ? `<div class="cr-thumb"><div class="cr-pdf" aria-hidden="true">PDF</div> <div><b style="word-break:break-all">${esc(cron.pdf.nome)}</b><br>${esc(cron.info || '')}<br><button class="linkb" id="cr-tirar-pdf" type="button">Remover arquivo</button></div></div>` : ''}
+    ${!cron.pdf && E.foto ? `<div class="cr-thumb"><img id="cr-img" src="${E.foto}" alt="Foto da sua rotina"><div>${cron.info ? '<b style="word-break:break-all">' + esc(cron.info.split(' · ')[0]) + '</b><br>' + esc(cron.info.split(' · ').slice(1).join(' · ')) : 'Foto da rotina guardada.'}<br><button class="linkb" id="cr-tirar-foto" type="button">Remover foto</button></div></div>` : ''}
     <div class="linhas"><label class="btn2 pri cr-b">${E.foto ? 'Tirar outra foto' : 'Tirar foto'}<input type="file" accept="image/*" capture="environment" id="cr-cam" hidden></label><label class="btn2 cr-b">${E.foto || cron.pdf ? 'Anexar outro arquivo' : 'Anexar arquivo ou imagem'}<input type="file" accept="image/*,application/pdf,.pdf" id="cr-arq" hidden></label></div>
+    <div id="cr-anexo" hidden></div>
     <div class="cr-g">
       <label>Horas de estudo por semana<input type="number" id="cr-horas" min="1" max="60" inputmode="numeric" value="${cronOpt.horas}"></label>
       <label>Duração de cada sessão<select id="cr-sessao">${optsHtml([[45, '45 min'], [60, '1 hora'], [90, '1h30'], [120, '2 horas']], cronOpt.sessao)}</select></label>
@@ -707,14 +709,24 @@ function lerOpcoes() {
 
 async function novaFotoRotina(f) {
   if (!f) return;
-  if (BrainLeitor.ehPdf(f)) {
-    try { const d = await BrainLeitor.lerPdf(f); cron.pdf = { dados: d, nome: f.name || 'arquivo.pdf' }; cron.rotina = null; cron.plano = null; E.foto = null; await salvar(); aviso('PDF anexado. Toque em "Montar cronograma".'); }
-    catch (err) { aviso(err.message || 'Não consegui abrir esse PDF.', true); }
-    return;
-  }
-  cron.pdf = null;
-  try { E.foto = await reduzirFoto(f); cron.rotina = null; cron.plano = null; await salvar(); aviso('Foto guardada. Toque em "Montar cronograma".'); }
-  catch (err) { aviso('Não consegui usar essa imagem.', true); }
+  const anx = BrainAnexo.criar($('cr-anexo'));
+  try {
+    anx.etapa('Carregando o arquivo...', 8);
+    const dim = await anx.arquivo(f);
+    const info = (extra) => (f.name || (BrainLeitor.ehPdf(f) ? 'documento.pdf' : 'foto')) + ' · ' + BrainAnexo.descrever(f, dim) + (extra ? ' · ' + extra : '');
+    if (BrainLeitor.ehPdf(f)) {
+      const d = await BrainLeitor.lerPdf(f, (p) => anx.etapa(`Carregando o arquivo... ${p}%`, 10 + p * 0.8));
+      cron.pdf = { dados: d, nome: f.name || 'arquivo.pdf' }; cron.info = BrainAnexo.descrever(f, dim); cron.rotina = null; cron.plano = null; E.foto = null;
+    } else {
+      anx.etapa('Preparando a imagem...', 40);
+      const img = await reduzirFoto(f);
+      cron.pdf = null; E.foto = img; cron.info = info(`guardada com ${BrainAnexo.fmt(Math.round(img.length * 0.75))}`); cron.rotina = null; cron.plano = null;
+    }
+    anx.pronto('Anexado. Agora toque em "Montar cronograma".');
+    await new Promise((r) => setTimeout(r, 700));
+    await salvar();
+    aviso('Arquivo anexado. Toque em "Montar cronograma".');
+  } catch (err) { anx.erro(err.message || 'Não consegui usar esse arquivo.'); }
 }
 
 function ligarCronograma(w) {
@@ -723,7 +735,7 @@ function ligarCronograma(w) {
   $('cr-arq').onchange = (ev) => { const f = ev.target.files[0]; ev.target.value = ''; lerOpcoes(); novaFotoRotina(f); };
   const img = $('cr-img'); if (img) img.onclick = () => { $('foto-grande').src = E.foto; $('foto-grande').classList.remove('grande'); $('dlg-foto').showModal(); };
   const rp = $('cr-tirar-pdf'); if (rp) rp.onclick = () => { lerOpcoes(); cron.pdf = null; cron.rotina = null; cron.plano = null; desenhar(); };
-  const rm = $('cr-tirar-foto'); if (rm) rm.onclick = async () => { lerOpcoes(); E.foto = null; cron.rotina = null; cron.plano = null; await salvar(); };
+  const rm = $('cr-tirar-foto'); if (rm) rm.onclick = async () => { lerOpcoes(); E.foto = null; cron.rotina = null; cron.plano = null; cron.info = ''; await salvar(); };
   card.querySelectorAll('.cr-dias button').forEach((b) => { b.onclick = () => { b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); lerOpcoes(); }; });
   card.querySelectorAll('input, select').forEach((el) => { if (el.type !== 'file' && el.id !== 'ia-chave') el.addEventListener('change', lerOpcoes); });
   $('ia-chave').oninput = () => { try { localStorage.setItem('brain-gemini-key', $('ia-chave').value.trim()); } catch (e) { /* sem storage */ } };
@@ -740,8 +752,14 @@ async function montarCron() {
   try {
     if ((cron.pdf || E.foto) && !cron.rotina) {
       if (chave.length < 20) { st.textContent = 'Cole sua chave grátis do Google acima para a IA ler a foto.'; $('ia-chave').focus(); return; }
-      st.textContent = 'A IA está lendo o arquivo... pode levar alguns segundos.';
-      const r = await BrainLeitor.lerFoto({ chave, imagem: cron.pdf ? cron.pdf.dados : E.foto, materias: E.materias });
+      st.textContent = '';
+      const anx = BrainAnexo.criar($('cr-anexo'));
+      anx.mostrar({ nome: cron.pdf ? cron.pdf.nome : (cron.info || 'Foto da rotina').split(' · ')[0], det: cron.info ? cron.info.split(' · ').slice(cron.pdf ? 0 : 1).join(' · ') : '', mini: cron.pdf ? BrainAnexo.PDF_ICONE : E.foto });
+      anx.etapa('Enviando para a IA...', 30);
+      let r;
+      try { r = await BrainLeitor.lerFoto({ chave, imagem: cron.pdf ? cron.pdf.dados : E.foto, materias: E.materias, aoEnviar: () => anx.etapa('A IA está lendo o ' + (cron.pdf ? 'PDF' : 'horário') + '... pode levar alguns segundos.', null) }); }
+      catch (e) { anx.erro(e.message || 'Não consegui ler agora.'); throw e; }
+      anx.pronto(`Pronto: ${r.blocos.length} ${r.blocos.length === 1 ? 'compromisso encontrado' : 'compromissos encontrados'}.`);
       cron.rotina = r.blocos; cron.ignoradas = r.ignoradas;
       if (!r.blocos.length) { st.textContent = 'A IA não encontrou compromissos nessa foto. Tente uma foto mais nítida, de frente e com boa luz.'; return; }
     }

@@ -23,6 +23,7 @@
 <script src="api-local.js"></script>
 <script src="bloqueio.js"></script>
 <script src="leitor.js"></script>
+<script src="anexo.js"></script>
 <script src="ia.js"></script>
 <script src="coach.js"></script>
 <script src="nav.js" defer></script>
@@ -189,10 +190,7 @@
   .fg-bts { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-top: .9rem; }
   .fg-bt { display: grid; place-items: center; min-height: 3.2rem; border-radius: .8rem; border: 2px solid var(--line); background: var(--surface); font-weight: 700; cursor: pointer; text-align: center; padding: .4rem; color: var(--ink); margin: 0 !important; font-size: .95rem !important; }
   .fg-bt.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-  #fg-leitura { display: flex; gap: .8rem; align-items: center; margin-top: .9rem; }
   #fg-leitura[hidden] { display: none; }
-  #fg-mini { width: 4.2rem; height: 4.2rem; object-fit: cover; border-radius: .6rem; border: 1px solid var(--line); flex: none; }
-  #fg-st { margin: 0; font-size: .92rem; }
   .fg-it { border: 1px solid var(--line); border-radius: .8rem; padding: .6rem .7rem; margin-top: .6rem; display: grid; grid-template-columns: 1.6rem minmax(0, .8fr) minmax(0, 1.35fr); gap: .45rem .55rem; align-items: center; }
   .fg-it.off { opacity: .45; }
   .fg-it > :nth-child(1) { grid-column: 1; grid-row: 1 / span 2; width: 1.4rem; height: 1.4rem; margin: 0; justify-self: center; }
@@ -389,7 +387,7 @@
     </div>
     <p class="dica" style="margin:.9rem 0 0">Privacidade: a imagem ou o PDF é enviado ao Google só para ser lido e não fica guardado no app. Evite fotos com dados que você não quer compartilhar, como CPF ou número de cartão.</p>
   </div>
-  <div id="fg-leitura" hidden><img id="fg-mini" alt="Foto enviada"><p id="fg-st" role="status" aria-live="polite"></p></div>
+  <div id="fg-leitura" hidden></div>
   <div id="fg-previa" hidden>
     <p class="dica" id="fg-res"></p>
     <div id="fg-itens"></div>
@@ -1189,14 +1187,18 @@ async function fgArquivo(f) {
   if (chave.length < 20) { $('fg-chave-box').hidden = false; $('fg-chave').focus(); $('fg-info').textContent = 'Cole antes a sua chave grátis do Google; sem ela a IA não consegue ler a foto.'; return; }
   try { localStorage.setItem('brain-gemini-key', chave); } catch (e) { /* sem storage */ }
   $('fg-escolha').hidden = true; $('fg-leitura').hidden = false; $('fg-previa').hidden = true; $('fg-ok').hidden = true;
-  $('fg-st').textContent = 'A IA está lendo o comprovante...';
+  const anx = BrainAnexo.criar($('fg-leitura'));
   try {
+    anx.etapa('Carregando o arquivo...', 8);
+    await anx.arquivo(f);
     const pdf = BrainLeitor.ehPdf(f);
-    const img = pdf ? await BrainLeitor.lerPdf(f) : await fgReduzir(f);
-    $('fg-mini').src = pdf ? 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="10" fill="#fdecec"/><path d="M18 10h20l10 10v34H18z" fill="#fff" stroke="#d64545" stroke-width="3" stroke-linejoin="round"/><text x="32" y="45" font-family="Arial" font-weight="700" font-size="14" text-anchor="middle" fill="#d64545">PDF</text></svg>') : img;
-    $('fg-st').textContent = pdf ? 'A IA está lendo o PDF...' : 'A IA está lendo o comprovante...';
-    const r = await BrainLeitor.lerComprovante({ chave, imagem: img, hoje: HOJE });
-    if (!r.itens.length) { $('fg-st').textContent = 'Não encontrei nenhum valor nessa imagem. Tente uma foto mais nítida, de frente e com boa luz.'; $('fg-escolha').hidden = false; return; }
+    let img;
+    if (pdf) { img = await BrainLeitor.lerPdf(f, (p) => anx.etapa(`Carregando o arquivo... ${p}%`, 10 + p * 0.3)); }
+    else { anx.etapa('Preparando a imagem...', 25); img = await fgReduzir(f); anx.detalhe(BrainAnexo.descrever(f, await BrainAnexo.dimensoes(f)) + ` · enviada com ${BrainAnexo.fmt(Math.round(img.length * 0.75))}`); }
+    anx.etapa('Enviando para a IA...', 55);
+    const r = await BrainLeitor.lerComprovante({ chave, imagem: img, hoje: HOJE, aoEnviar: () => anx.etapa('A IA está lendo o ' + (pdf ? 'PDF' : 'comprovante') + '...', null) });
+    if (!r.itens.length) { anx.erro('Não encontrei nenhum valor aqui. Tente uma foto mais nítida, de frente e com boa luz.'); $('fg-escolha').hidden = false; return; }
+    anx.etapa('Conferindo com o que você já registrou...', 90);
     // compara com o que já está registrado (nos meses das datas lidas) para não repetir
     let existentes = [];
     try {
@@ -1204,8 +1206,9 @@ async function fgArquivo(f) {
       for (const m of meses) existentes = existentes.concat((await api('/api/financas/gastos?mes=' + m)).gastos);
     } catch (e) { /* sem comparação; o servidor ainda barra repetidos */ }
     fgItens = BrainLeitor.marcarDuplicados(r.itens, existentes).map((x) => ({ ...x, on: !x.dup }));
-    $('fg-leitura').hidden = true; desenharPrevia(r.ignorados);
-  } catch (err) { $('fg-st').textContent = err.message || 'Não consegui ler agora.'; $('fg-escolha').hidden = false; }
+    anx.pronto(`Pronto: ${r.itens.length} ${r.itens.length === 1 ? 'lançamento encontrado' : 'lançamentos encontrados'}.`);
+    desenharPrevia(r.ignorados);
+  } catch (err) { anx.erro(err.message || 'Não consegui ler agora.'); $('fg-escolha').hidden = false; }
 }
 $('fg-cam').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; fgArquivo(f); };
 $('fg-arq').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; fgArquivo(f); };
