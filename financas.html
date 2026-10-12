@@ -193,6 +193,15 @@
   .fg-bt.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
   #fg-leitura[hidden] { display: none; }
   .fg-it { border: 1px solid var(--line); border-radius: .8rem; padding: .6rem .7rem; margin-top: .6rem; display: grid; grid-template-columns: 1.6rem minmax(0, .8fr) minmax(0, 1.35fr); gap: .45rem .55rem; align-items: center; }
+  .fg-falhas { border: 1px solid var(--danger, #d64545); background: color-mix(in srgb, var(--danger, #d64545) 8%, transparent); border-radius: .8rem; padding: .6rem .7rem; margin-top: .6rem; display: grid; gap: .5rem; }
+  .fg-ft { margin: 0; font-weight: 700; font-size: .88rem; }
+  .fg-fl { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+  .fg-fl .fg-fi { grid-column: 1 / -1; }
+  .fg-fi { display: grid; gap: .1rem; min-width: 0; font-size: .8rem; color: var(--muted); }
+  .fg-fi b { color: var(--ink, inherit); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fg-re, .fg-rm { font: inherit; font-size: .82rem; font-weight: 700; padding: .45rem .7rem; border-radius: .6rem; border: 1px solid var(--line); background: var(--surface, #fff); color: inherit; cursor: pointer; min-height: 2.4rem; }
+  .fg-re { border-color: var(--accent, #1565d8); color: var(--accent, #1565d8); }
+  .fg-re.todos { width: 100%; }
   .fg-it.off { opacity: .45; }
   .fg-it > :nth-child(1) { grid-column: 1; grid-row: 1 / span 2; width: 1.4rem; height: 1.4rem; margin: 0; justify-self: center; }
   .fg-it > :nth-child(2) { grid-column: 2; grid-row: 1; }
@@ -392,6 +401,7 @@
   </div>
   <div id="fg-leitura" hidden></div>
   <div id="fg-previa" hidden>
+    <div id="fg-falhas" class="fg-falhas" hidden></div>
     <p class="dica" id="fg-res"></p>
     <div id="fg-itens"></div>
   </div>
@@ -1179,12 +1189,25 @@ function fgReduzir(arquivo) {
 }
 function fgReset() {
   $('fg-escolha').hidden = false; $('fg-leitura').hidden = true; $('fg-previa').hidden = true; $('fg-ok').hidden = true; $('fg-ok').disabled = false;
-  $('fg-chave-box').hidden = chaveG().length >= 20; $('fg-chave').value = chaveG(); fgItens = [];
+  $('fg-chave-box').hidden = chaveG().length >= 20; $('fg-chave').value = chaveG(); fgItens = []; fgFalhas = []; $('fg-falhas').hidden = true;
 }
 $('foto-btn').onclick = () => { fgReset(); $('dlg-foto-g').showModal(); };
 $('fg-cancelar').onclick = () => $('dlg-foto-g').close();
 $('fg-chave').addEventListener('input', () => { try { localStorage.setItem('brain-gemini-key', $('fg-chave').value.trim()); localStorage.removeItem('brain-gemini-model'); } catch (e) { /* sem storage */ } });
-async function fgArquivo(arquivos) {
+let fgIgn = 0, fgFalhas = []; // arquivos que a IA não conseguiu ler: { f, motivo }, para tentar de novo só eles
+async function fgLerUm(f, chave, anx, pre, base, fatia) {
+  anx.etapa(pre + 'Carregando o arquivo...', base + fatia * 0.1);
+  await anx.arquivo(f);
+  const pdf = BrainLeitor.ehPdf(f);
+  let img;
+  if (pdf) { img = await BrainLeitor.lerPdf(f, (p) => anx.etapa(`${pre}Carregando o arquivo... ${p}%`, base + fatia * (0.1 + p * 0.003))); }
+  else { anx.etapa(pre + 'Preparando a imagem...', base + fatia * 0.3); img = await fgReduzir(f); anx.detalhe(BrainAnexo.descrever(f, await BrainAnexo.dimensoes(f)) + ` · enviada com ${BrainAnexo.fmt(Math.round(img.length * 0.75))}`); }
+  anx.etapa(pre + 'Enviando para a IA...', base + fatia * 0.55);
+  const r = await BrainLeitor.lerComprovante({ chave, imagem: img, hoje: HOJE, aoEnviar: () => anx.etapa(pre + 'A IA está lendo o ' + (pdf ? 'PDF' : 'comprovante') + '...', null) });
+  if (!r.itens.length) throw new Error('Não encontrei nenhum valor neste arquivo. Tente uma foto mais nítida, de frente e com boa luz.');
+  return r;
+}
+async function fgArquivo(arquivos, retomar) {
   const fs = [...(arquivos || [])].filter(Boolean).slice(0, 6);
   if (!fs.length) return;
   const chave = ($('fg-chave').value || chaveG()).trim();
@@ -1192,45 +1215,61 @@ async function fgArquivo(arquivos) {
   try { localStorage.setItem('brain-gemini-key', chave); } catch (e) { /* sem storage */ }
   $('fg-escolha').hidden = true; $('fg-leitura').hidden = false; $('fg-previa').hidden = true; $('fg-ok').hidden = true;
   const anx = BrainAnexo.criar($('fg-leitura'));
-  const todos = [], ignorados = [], falhas = [];
+  // retomar = tentar de novo só alguns arquivos: mantém o que já foi lido (e as suas edições)
+  const lidos = retomar ? fgItens.map((x) => ({ ...x })) : [], ignorados = [];
+  if (!retomar) { fgFalhas = []; fgIgn = 0; }
+  else fgFalhas = fgFalhas.filter((x) => !fs.includes(x.f));
+  const novos = [];
   try {
-    // cada arquivo é lido por vez (uma chamada por foto); os lançamentos de todos vão juntos para a conferência
+    // cada arquivo é lido por vez (uma chamada por foto); um que falhe não derruba os outros
     for (let i = 0; i < fs.length; i++) {
       const f = fs[i], pre = fs.length > 1 ? `Arquivo ${i + 1} de ${fs.length}: ` : '';
       const base = (i / fs.length) * 85, fatia = 85 / fs.length;
       try {
-        anx.etapa(pre + 'Carregando o arquivo...', base + fatia * 0.1);
-        await anx.arquivo(f);
-        const pdf = BrainLeitor.ehPdf(f);
-        let img;
-        if (pdf) { img = await BrainLeitor.lerPdf(f, (p) => anx.etapa(`${pre}Carregando o arquivo... ${p}%`, base + fatia * (0.1 + p * 0.003))); }
-        else { anx.etapa(pre + 'Preparando a imagem...', base + fatia * 0.3); img = await fgReduzir(f); anx.detalhe(BrainAnexo.descrever(f, await BrainAnexo.dimensoes(f)) + ` · enviada com ${BrainAnexo.fmt(Math.round(img.length * 0.75))}`); }
-        anx.etapa(pre + 'Enviando para a IA...', base + fatia * 0.55);
-        const r = await BrainLeitor.lerComprovante({ chave, imagem: img, hoje: HOJE, aoEnviar: () => anx.etapa(pre + 'A IA está lendo o ' + (pdf ? 'PDF' : 'comprovante') + '...', null) });
-        todos.push(...r.itens); ignorados.push(...(r.ignorados || []));
-        if (!r.itens.length) falhas.push(f.name || 'arquivo ' + (i + 1));
-      } catch (err) {
-        if (fs.length === 1) throw err;
-        falhas.push((f.name || 'arquivo ' + (i + 1)) + ' (' + (err.message || 'erro') + ')');
-      }
+        const r = await fgLerUm(f, chave, anx, pre, base, fatia);
+        novos.push(...r.itens); ignorados.push(...(r.ignorados || []));
+      } catch (err) { fgFalhas.push({ f, motivo: err.message || 'Não consegui ler.' }); }
+      if (i < fs.length - 1) await new Promise((ok) => setTimeout(ok, 700)); // respeita o limite por minuto do plano grátis
     }
-    if (!todos.length) { anx.erro(fs.length > 1 ? 'Não encontrei nenhum valor nesses arquivos. Tente fotos mais nítidas, de frente e com boa luz.' : 'Não encontrei nenhum valor aqui. Tente uma foto mais nítida, de frente e com boa luz.'); $('fg-escolha').hidden = false; return; }
     anx.etapa('Conferindo com o que você já registrou...', 92);
     // compara com o que já está registrado (nos meses das datas lidas) para não repetir
+    const todos = lidos.concat(novos);
     let existentes = [];
     try {
       const meses = [...new Set(todos.map((x) => (x.data || HOJE).slice(0, 7)))];
       for (const m of meses) existentes = existentes.concat((await api('/api/financas/gastos?mes=' + m)).gastos);
     } catch (e) { /* sem comparação; o servidor ainda barra repetidos */ }
-    fgItens = BrainLeitor.marcarDuplicados(todos, existentes).map((x) => ({ ...x, on: !x.dup }));
-    anx.pronto(`Pronto: ${todos.length} ${todos.length === 1 ? 'lançamento encontrado' : 'lançamentos encontrados'}${fs.length > 1 ? ` em ${fs.length - falhas.length} de ${fs.length} arquivos` : ''}.`);
-    desenharPrevia(ignorados);
-    if (falhas.length && fs.length > 1) { const av = document.createElement('p'); av.className = 'sub'; av.textContent = 'Não consegui ler: ' + falhas.join('; ') + '.'; $('fg-previa').prepend(av); }
+    const marcados = BrainLeitor.marcarDuplicados(novos, existentes.concat(lidos.map((x) => ({ valor: x.valor, data: x.data, tipo: x.tipo, descricao: x.descricao })))).map((x) => ({ ...x, on: !x.dup }));
+    fgItens = lidos.concat(marcados);
+    const ok = fs.length - fgFalhas.filter((x) => fs.includes(x.f)).length;
+    if (!ok) anx.erro(fs.length > 1 ? 'Não consegui ler nenhum desses arquivos. Veja abaixo o motivo e tente de novo.' : fgFalhas[fgFalhas.length - 1].motivo);
+    else anx.pronto(`Pronto: ${novos.length} ${novos.length === 1 ? 'lançamento encontrado' : 'lançamentos encontrados'}${fs.length > 1 ? ` em ${ok} de ${fs.length} arquivos` : ''}.`);
+    fgIgn += ignorados.length; desenharPrevia(fgIgn);
+    $('fg-escolha').hidden = !!fgItens.length; // sem nenhum lançamento: deixa escolher outros arquivos
   } catch (err) { anx.erro(err.message || 'Não consegui ler agora.'); $('fg-escolha').hidden = false; }
+}
+function desenharFalhas() {
+  const box = $('fg-falhas'); box.replaceChildren(); box.hidden = !fgFalhas.length;
+  if (!fgFalhas.length) return;
+  const t = document.createElement('p'); t.className = 'fg-ft';
+  t.textContent = fgFalhas.length === 1 ? 'Não consegui ler 1 arquivo:' : `Não consegui ler ${fgFalhas.length} arquivos:`; box.append(t);
+  fgFalhas.forEach((x) => {
+    const l = document.createElement('div'); l.className = 'fg-fl';
+    const i = document.createElement('div'); i.className = 'fg-fi';
+    const n = document.createElement('b'); n.textContent = x.f.name || (BrainLeitor.ehPdf(x.f) ? 'documento.pdf' : 'foto'); const m = document.createElement('span'); m.textContent = x.motivo;
+    i.append(n, m);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'fg-re'; b.textContent = 'Tentar de novo';
+    b.onclick = () => fgArquivo([x.f], true);
+    const r = document.createElement('button'); r.type = 'button'; r.className = 'fg-rm'; r.textContent = 'Descartar'; r.setAttribute('aria-label', 'Descartar ' + n.textContent);
+    r.onclick = () => { fgFalhas = fgFalhas.filter((y) => y !== x); if (!fgFalhas.length && !fgItens.length) fgReset(); else desenharPrevia(); };
+    l.append(i, b, r); box.append(l);
+  });
+  if (fgFalhas.length > 1) { const a = document.createElement('button'); a.type = 'button'; a.className = 'fg-re todos'; a.textContent = 'Tentar todos de novo'; a.onclick = () => fgArquivo(fgFalhas.map((y) => y.f), true); box.append(a); }
 }
 $('fg-cam').onchange = (e) => { const f = [...e.target.files]; e.target.value = ''; fgArquivo(f); };
 $('fg-arq').onchange = (e) => { const f = [...e.target.files]; e.target.value = ''; fgArquivo(f); };
 function desenharPrevia(ign) {
+  desenharFalhas();
   const cats = (DADOS && DADOS.categorias) || BrainLeitor.CATS;
   const box = $('fg-itens'); box.replaceChildren();
   fgItens.forEach((x, k) => {
@@ -1251,7 +1290,7 @@ function desenharPrevia(ign) {
   });
   const nDup = fgItens.filter((x) => x.dup).length;
   $('fg-res').textContent = (fgItens.length === 1 ? 'A IA leu 1 lançamento.' : `A IA leu ${fgItens.length} lançamentos.`) + (nDup ? ` ${nDup === 1 ? 'Um já estava registrado e ficou desmarcado' : nDup + ' já estavam registrados e ficaram desmarcados'}; marque se quiser repetir.` : '') + (ign ? ` ${ign} não deu para entender.` : '') + ' Confira os valores e corrija o que precisar.';
-  $('fg-previa').hidden = false; $('fg-ok').hidden = false; contarFg();
+  $('fg-previa').hidden = false; $('fg-ok').hidden = !fgItens.length; $('fg-res').hidden = !fgItens.length; contarFg();
 }
 function contarFg() {
   const n = fgItens.filter((x) => x.on && x.valor > 0).length, tot = fgItens.filter((x) => x.on && x.valor > 0 && x.tipo !== 'receita').reduce((s, x) => s + x.valor, 0);

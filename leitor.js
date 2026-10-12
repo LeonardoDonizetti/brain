@@ -60,6 +60,7 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
     if (status === 400 && /API key/i.test(m)) return 'A chave não foi aceita. Confira se copiou inteira.';
     if (status === 401 || status === 403) return 'A chave não tem permissão. Gere uma nova em aistudio.google.com/apikey.';
     if (status === 429) return 'Limite do plano grátis atingido. Espere alguns minutos e tente de novo.';
+    if (status === 500 || status === 503) return 'A IA do Google está sobrecarregada agora. Tente de novo em instantes.';
     if (status === 404) return 'Esse modelo não está disponível para a sua chave.';
     return `O Google recusou o pedido (${status}). ${m.slice(0, 120)}`;
   }
@@ -79,7 +80,7 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
   }
 
   /** Chamada comum ao Gemini com uma imagem. Devolve { resposta (texto), modelo } ou lança Error com mensagem amigável. */
-  async function chamar({ chave, imagem, prompt, esquema, modelo, fetchFn, aoEnviar }) {
+  async function chamar({ chave, imagem, prompt, esquema, modelo, fetchFn, aoEnviar, esperaMs = 2500 }) {
     const f = fetchFn || root.fetch.bind(root);
     // aceita um arquivo (data URL) ou uma lista deles: a IA lê todos juntos, como páginas de um mesmo material
     const lista = (Array.isArray(imagem) ? imagem : [imagem]).filter(Boolean);
@@ -109,6 +110,8 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
     };
     // esquema JSON força o formato certo; se o modelo recusar o esquema, tenta de novo só com JSON livre
     let r = await enviar({ temperature: 0, responseMimeType: 'application/json', responseSchema: esquema });
+    // servidor do Google sobrecarregado (500/503): espera um pouco e tenta mais uma vez
+    if (r.status === 500 || r.status === 503) { await new Promise((ok) => setTimeout(ok, esperaMs)); r = await enviar({ temperature: 0, responseMimeType: 'application/json', responseSchema: esquema }); }
     let corpo = await r.json().catch(() => ({}));
     if (r.status === 400 && !/API key/i.test((corpo.error && corpo.error.message) || '')) { r = await enviar({ temperature: 0, responseMimeType: 'application/json' }); corpo = await r.json().catch(() => ({})); }
     if (!r.ok) throw new Error(msgErro(r.status, corpo));
@@ -119,8 +122,8 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
   }
 
   /** Lê a foto (data URL jpeg/png/webp). Devolve { blocos, ignoradas, modelo } ou lança Error com mensagem amigável. */
-  async function lerFoto({ chave, imagem, materias, modelo, fetchFn, aoEnviar }) {
-    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPrompt(materias), esquema: ESQUEMA, modelo, fetchFn, aoEnviar });
+  async function lerFoto({ chave, imagem, materias, modelo, fetchFn, aoEnviar, esperaMs }) {
+    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPrompt(materias), esquema: ESQUEMA, modelo, fetchFn, aoEnviar, esperaMs });
     const r2 = interpretar(resposta, materias);
     if (r2.erro) throw new Error(r2.erro);
     return { blocos: r2.blocos, ignoradas: r2.ignoradas, modelo: usado };
@@ -171,8 +174,8 @@ Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTA
       return Object.assign({}, x, ja ? { dup: ja.descricao || 'lançamento' } : rep ? { dup: 'repetido nesta foto' } : {});
     });
   }
-  async function lerComprovante({ chave, imagem, hoje, modelo, fetchFn, aoEnviar }) {
-    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPromptComprovante(hoje), esquema: ESQUEMA_GASTO, modelo, fetchFn, aoEnviar });
+  async function lerComprovante({ chave, imagem, hoje, modelo, fetchFn, aoEnviar, esperaMs }) {
+    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPromptComprovante(hoje), esquema: ESQUEMA_GASTO, modelo, fetchFn, aoEnviar, esperaMs });
     const r = interpretarComprovante(resposta, hoje);
     if (r.erro) throw new Error(r.erro);
     return { itens: r.itens, ignorados: r.ignorados, modelo: usado };

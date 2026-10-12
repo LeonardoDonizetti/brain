@@ -860,3 +860,14 @@ test('estudos guarda até 5 fotos extras válidas da rotina', async () => {
   const r2 = await ok('PUT', '/api/estudos', '', { estudos: { foto: null, mais: [b, b] } });
   assert.strictEqual(r2.estudos.foto, b); assert.strictEqual(r2.estudos.mais.length, 1);
 });
+
+test('leitor: erro 503 do Google tenta de novo uma vez antes de desistir', async () => {
+  const L = require('../site/leitor.js');
+  let n = 0;
+  const f = async () => { n++; return n === 1 ? { ok: false, status: 503, json: async () => ({}) } : { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '[{"valor":9.9,"descricao":"Padaria"}]' }] } }] }) }; };
+  const r = await L.lerComprovante({ chave: 'AIza' + 'x'.repeat(30), imagem: 'data:image/jpeg;base64,AAAA', hoje: '2026-10-12', modelo: 'm', fetchFn: f, esperaMs: 1 });
+  assert.strictEqual(r.itens.length, 1); assert.strictEqual(n, 2);
+  n = 0; const sempre = async () => { n++; return { ok: false, status: 503, json: async () => ({}) }; };
+  await assert.rejects(L.lerComprovante({ chave: 'AIza' + 'x'.repeat(30), imagem: 'data:image/jpeg;base64,AAAA', hoje: '2026-10-12', modelo: 'm', fetchFn: sempre, esperaMs: 1 }), /sobrecarregada/);
+  assert.strictEqual(n, 2);
+});
