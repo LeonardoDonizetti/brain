@@ -64,8 +64,8 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
     return `O Google recusou o pedido (${status}). ${m.slice(0, 120)}`;
   }
 
-  /** Lê a foto (data URL jpeg/png/webp). Devolve { blocos, ignoradas, modelo } ou lança Error com mensagem amigável. */
-  async function lerFoto({ chave, imagem, materias, modelo, fetchFn }) {
+  /** Chamada comum ao Gemini com uma imagem. Devolve { resposta (texto), modelo } ou lança Error com mensagem amigável. */
+  async function chamar({ chave, imagem, prompt, esquema, modelo, fetchFn }) {
     const f = fetchFn || root.fetch.bind(root);
     const m = String(imagem || '').match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
     if (!m) throw new Error('Imagem inválida.');
@@ -85,23 +85,69 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
       try {
         return await f(url, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: montarPrompt(materias) }, { inline_data: { mime_type: m[1], data: m[2] } }] }], generationConfig: config }),
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: m[1], data: m[2] } }] }], generationConfig: config }),
         });
       } catch (e) { throw new Error('Sem conexão com a internet.'); }
     };
     // esquema JSON força o formato certo; se o modelo recusar o esquema, tenta de novo só com JSON livre
-    let r = await enviar({ temperature: 0, responseMimeType: 'application/json', responseSchema: ESQUEMA });
+    let r = await enviar({ temperature: 0, responseMimeType: 'application/json', responseSchema: esquema });
     let corpo = await r.json().catch(() => ({}));
     if (r.status === 400 && !/API key/i.test((corpo.error && corpo.error.message) || '')) { r = await enviar({ temperature: 0, responseMimeType: 'application/json' }); corpo = await r.json().catch(() => ({})); }
     if (!r.ok) throw new Error(msgErro(r.status, corpo));
     const texto = (((corpo.candidates || [])[0] || {}).content || {}).parts;
-    const resp = Array.isArray(texto) ? texto.map((p) => p.text || '').join('') : '';
-    if (!resp) throw new Error('A IA não devolveu nada. Tente outra foto.');
-    const r2 = interpretar(resp, materias);
-    if (r2.erro) throw new Error(r2.erro);
-    return { blocos: r2.blocos, ignoradas: r2.ignoradas, modelo: usar };
+    const resposta = Array.isArray(texto) ? texto.map((p) => p.text || '').join('') : '';
+    if (!resposta) throw new Error('A IA não devolveu nada. Tente outra foto.');
+    return { resposta, modelo: usar };
   }
 
-  const api = { montarPrompt, escolherModelo, interpretar, lerFoto, hora };
+  /** Lê a foto (data URL jpeg/png/webp). Devolve { blocos, ignoradas, modelo } ou lança Error com mensagem amigável. */
+  async function lerFoto({ chave, imagem, materias, modelo, fetchFn }) {
+    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPrompt(materias), esquema: ESQUEMA, modelo, fetchFn });
+    const r2 = interpretar(resposta, materias);
+    if (r2.erro) throw new Error(r2.erro);
+    return { blocos: r2.blocos, ignoradas: r2.ignoradas, modelo: usado };
+  }
+
+  // ---------- comprovantes e notas: a foto vira lançamentos de finanças (a pessoa confere antes de registrar)
+  const CATS = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Educação', 'Compras', 'Assinaturas', 'Outros'];
+  const ESQUEMA_GASTO = { type: 'ARRAY', items: { type: 'OBJECT', properties: { valor: { type: 'NUMBER' }, descricao: { type: 'STRING' }, data: { type: 'STRING' }, categoria: { type: 'STRING', enum: CATS }, tipo: { type: 'STRING', enum: ['despesa', 'receita'] } }, required: ['valor', 'descricao'] } };
+  function montarPromptComprovante(hoje) {
+    return `Você lê a FOTO de um comprovante financeiro brasileiro (cupom ou nota fiscal, comprovante de Pix ou transferência, recibo, fatura, boleto, print de aplicativo de banco ou extrato) e devolve os lançamentos em JSON.
+Responda SOMENTE com um array JSON, sem texto extra. Cada item: {"valor": número em reais com ponto decimal (ex.: 32.9), "descricao": nome curto do estabelecimento ou do favorecido (máx. 40 caracteres), "data": "AAAA-MM-DD" se a data aparecer na imagem, senão omita, "categoria": uma de ${CATS.join('|')}, "tipo": "despesa" ou "receita"}.
+Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTAL pago (não liste cada produto). Um print de extrato com várias transações vira um item por transação. Pix ou transferência ENVIADA é despesa; dinheiro RECEBIDO (salário, Pix recebido) é receita. Use o valor realmente pago (total com descontos), nunca troco, saldo, limite ou juros informativos. Datas no formato dia/mês/ano brasileiro; hoje é ${hoje || 'desconhecido'}. Se a imagem não for um comprovante, devolva []. Não invente: se não conseguir ler o valor, não inclua o item.`;
+  }
+  const paraNumero = (v) => {
+    if (typeof v === 'number') return v;
+    let t = String(v == null ? '' : v).replace(/[^\d.,-]/g, '');
+    if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+    return Number(t);
+  };
+  /** Resposta do modelo -> itens válidos { valor, descricao, data, categoria, tipo }. */
+  function interpretarComprovante(resposta, hoje) {
+    let t = String(resposta || '').trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    const i = t.indexOf('['), j = t.lastIndexOf(']');
+    if (i >= 0 && j > i) t = t.slice(i, j + 1);
+    let arr; try { arr = JSON.parse(t); } catch (e) { return { itens: [], ignorados: 0, erro: 'A IA não devolveu um formato que eu entenda. Tente de novo com uma foto mais nítida.' }; }
+    if (arr && !Array.isArray(arr) && Array.isArray(arr.itens)) arr = arr.itens;
+    if (!Array.isArray(arr)) return { itens: [], ignorados: 0, erro: 'Resposta inesperada da IA.' };
+    const itens = []; let ignorados = 0;
+    for (const x of arr.slice(0, 30)) {
+      const valor = Math.round(paraNumero(x && x.valor) * 100) / 100;
+      if (!isFinite(valor) || valor <= 0 || valor > 9999999) { ignorados++; continue; }
+      const descricao = String((x && x.descricao) || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Gasto';
+      let data = /^\d{4}-\d{2}-\d{2}$/.test(String(x.data || '')) && !isNaN(new Date(x.data + 'T12:00:00')) ? x.data : '';
+      if (data && hoje && data > hoje) data = hoje;
+      itens.push({ valor, descricao, data: data || hoje || '', categoria: CATS.includes(x.categoria) ? x.categoria : '', tipo: x.tipo === 'receita' ? 'receita' : 'despesa' });
+    }
+    return { itens, ignorados };
+  }
+  async function lerComprovante({ chave, imagem, hoje, modelo, fetchFn }) {
+    const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPromptComprovante(hoje), esquema: ESQUEMA_GASTO, modelo, fetchFn });
+    const r = interpretarComprovante(resposta, hoje);
+    if (r.erro) throw new Error(r.erro);
+    return { itens: r.itens, ignorados: r.ignorados, modelo: usado };
+  }
+
+  const api = { montarPrompt, escolherModelo, interpretar, lerFoto, hora, montarPromptComprovante, interpretarComprovante, lerComprovante, CATS };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.BrainLeitor = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -734,3 +734,26 @@ test('rotina: reordenar por arraste respeita horários crescentes', async () => 
   const bk = JSON.parse(await A.exportar());
   assert.ok(bk.rotina_itens.some((i) => Number.isInteger(i.ordem)));
 });
+
+test('comprovante: interpreta a resposta da IA com validação', async () => {
+  const L = require('../site/leitor.js');
+  const r = L.interpretarComprovante('```json\n[{"valor":"R$ 1.234,56","descricao":"  Mercado   Bom Preço ","data":"2026-10-10","categoria":"Alimentação","tipo":"despesa"},{"valor":0,"descricao":"x"},{"valor":15,"descricao":"Uber","data":"2099-01-01","categoria":"Foo","tipo":"receita"},{"valor":"abc","descricao":"y"}]\n```', '2026-10-12');
+  assert.strictEqual(r.itens.length, 2);
+  assert.strictEqual(r.ignorados, 2);
+  assert.deepStrictEqual(r.itens[0], { valor: 1234.56, descricao: 'Mercado Bom Preço', data: '2026-10-10', categoria: 'Alimentação', tipo: 'despesa' });
+  assert.deepStrictEqual(r.itens[1], { valor: 15, descricao: 'Uber', data: '2026-10-12', categoria: '', tipo: 'receita' });
+  assert.ok(L.interpretarComprovante('não é json', '2026-10-12').erro);
+  assert.deepStrictEqual(L.interpretarComprovante('[]', '2026-10-12').itens, []);
+  assert.match(L.montarPromptComprovante('2026-10-12'), /VALOR TOTAL/);
+  // chamada completa com fetch simulado
+  const f = async (url) => (String(url).includes(':generateContent')
+    ? { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '[{"valor":32.9,"descricao":"iFood"}]' }] } }] }) }
+    : { ok: true, status: 200, json: async () => ({ models: [{ name: 'models/gemini-2.5-flash', supportedGenerationMethods: ['generateContent'] }] }) });
+  const out = await L.lerComprovante({ chave: 'AIza' + 'x'.repeat(30), imagem: 'data:image/jpeg;base64,AAAA', hoje: '2026-10-12', fetchFn: f });
+  assert.strictEqual(out.itens[0].valor, 32.9);
+  await assert.rejects(L.lerComprovante({ chave: 'curta', imagem: 'data:image/jpeg;base64,AAAA', hoje: '2026-10-12', fetchFn: f }), /chave/i);
+  // registro de item estruturado (o que a prévia envia)
+  zerar();
+  const reg = await ok('POST', '/api/financas/gastos', '', { tipo: 'despesa', item: { valor: 32.9, descricao: 'iFood', data: hoje() } });
+  assert.strictEqual(reg.registrados[0].valor, 32.9);
+});

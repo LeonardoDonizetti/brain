@@ -186,6 +186,27 @@
   .sec-topo .link, .chips button, .lapis, #g-valor, #g-qtd { min-height: 2.75rem !important; }
   .lapis { min-width: 2.75rem; }
   .sec-topo .link { padding: 0 .3rem; display: inline-flex; align-items: center; }
+  .fg-bts { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-top: .9rem; }
+  .fg-bt { display: grid; place-items: center; min-height: 3.2rem; border-radius: .8rem; border: 2px solid var(--line); background: var(--surface); font-weight: 700; cursor: pointer; text-align: center; padding: .4rem; color: var(--ink); margin: 0 !important; font-size: .95rem !important; }
+  .fg-bt.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  #fg-leitura { display: flex; gap: .8rem; align-items: center; margin-top: .9rem; }
+  #fg-leitura[hidden] { display: none; }
+  #fg-mini { width: 4.2rem; height: 4.2rem; object-fit: cover; border-radius: .6rem; border: 1px solid var(--line); flex: none; }
+  #fg-st { margin: 0; font-size: .92rem; }
+  .fg-it { border: 1px solid var(--line); border-radius: .8rem; padding: .6rem .7rem; margin-top: .6rem; display: grid; grid-template-columns: 1.6rem minmax(0, .8fr) minmax(0, 1.35fr); gap: .45rem .55rem; align-items: center; }
+  .fg-it.off { opacity: .45; }
+  .fg-it > :nth-child(1) { grid-column: 1; grid-row: 1 / span 2; width: 1.4rem; height: 1.4rem; margin: 0; justify-self: center; }
+  .fg-it > :nth-child(2) { grid-column: 2; grid-row: 1; }
+  .fg-it > :nth-child(3) { grid-column: 3; grid-row: 1; }
+  .fg-it > :nth-child(4) { grid-column: 2 / -1; grid-row: 2; }
+  .fg-it > :nth-child(5) { grid-column: 2; grid-row: 3; }
+  .fg-it > :nth-child(6) { grid-column: 3; grid-row: 3; }
+  .fg-it input:not([type=checkbox]), .fg-it select { padding: .45rem .55rem; min-height: 2.6rem; min-width: 0; width: 100%; box-sizing: border-box; }
+  .fg-it input[type=date] { font-size: .9rem; padding-right: .3rem; }
+  .fg-it .fg-tipo { font-size: .78rem; font-weight: 700; color: var(--muted); }
+  #dlg-foto-g { max-height: 90vh; overflow: auto; }
+  #dlg-foto-g .acoes { position: sticky; bottom: -1.4rem; background: var(--surface); padding: .8rem 0 .2rem; margin-top: .8rem; }
+  .fg-it .fg-tipo.rec { color: var(--ok); }
 </style>
 </head>
 <body>
@@ -354,6 +375,29 @@
   </form>
 </dialog>
 
+<dialog id="dlg-foto-g" aria-labelledby="fg-titulo">
+  <h3 id="fg-titulo">Registrar por foto</h3>
+  <p class="dica" id="fg-info">Tire uma foto ou anexe a imagem de um cupom, nota, comprovante de Pix ou print do banco. A IA lê e você confere antes de registrar.</p>
+  <div id="fg-escolha">
+    <div class="fg-bts"><label class="fg-bt pri">Tirar foto<input type="file" accept="image/*" capture="environment" id="fg-cam" hidden></label><label class="fg-bt">Anexar imagem<input type="file" accept="image/*" id="fg-arq" hidden></label></div>
+    <div id="fg-chave-box" hidden>
+      <label for="fg-chave">Chave grátis do Google (para a IA ler a foto)</label>
+      <input id="fg-chave" type="password" autocomplete="off" placeholder="Cole sua chave (AIza...)" aria-label="Chave da API do Google AI Studio">
+      <p class="dica" style="margin:.4rem 0 0"><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:650">Pegar chave grátis</a>, sem cartão. Fica só neste aparelho.</p>
+    </div>
+    <p class="dica" style="margin:.9rem 0 0">Privacidade: a imagem é enviada ao Google só para ser lida e não fica guardada no app. Evite fotos com dados que você não quer compartilhar, como CPF ou número de cartão.</p>
+  </div>
+  <div id="fg-leitura" hidden><img id="fg-mini" alt="Foto enviada"><p id="fg-st" role="status" aria-live="polite"></p></div>
+  <div id="fg-previa" hidden>
+    <p class="dica" id="fg-res"></p>
+    <div id="fg-itens"></div>
+  </div>
+  <div class="acoes">
+    <button type="button" id="fg-cancelar">Cancelar</button>
+    <button type="button" class="primario" id="fg-ok" hidden>Registrar</button>
+  </div>
+</dialog>
+
 <div class="composer" role="region" aria-label="Registrar gasto ou entrada">
   <div class="tipo" role="group" aria-label="Tipo de lançamento">
     <button type="button" data-t="despesa" aria-pressed="true">Gasto</button>
@@ -362,6 +406,7 @@
   <div id="status" role="status" aria-live="polite"></div>
   <form id="form">
     <input id="texto" type="text" autocomplete="off" placeholder="Ex.: 32 no iFood ontem e 15 de Uber" aria-label="Descreva o lançamento">
+    <button type="button" id="foto-btn" aria-label="Registrar por foto do comprovante"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 015.5 7H8l1.4-2h5.2L16 7h2.5A1.5 1.5 0 0120 8.5v9a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 17.5z"/><circle cx="12" cy="13" r="3.4"/></svg></button>
     <button type="button" id="mic" aria-label="Falar o lançamento" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0013 0"/><path d="M12 18v3.5M8.5 21.5h7"/></svg></button>
     <button type="submit" class="enviar" aria-label="Registrar lançamento">↑</button>
   </form>
@@ -1106,6 +1151,96 @@ if (SR) {
   };
   mic.onclick = () => { try { rec.start(); } catch (e) { /* já estava ouvindo */ } };
 }
+
+// ---------- registrar por foto do comprovante (a IA lê; a pessoa confere e confirma)
+const chaveG = () => { try { return localStorage.getItem('brain-gemini-key') || ''; } catch (e) { return ''; } };
+let fgItens = [];
+function fgReduzir(arquivo) {
+  return new Promise((ok, no) => {
+    const url = URL.createObjectURL(arquivo); const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let larg = Math.min(1600, img.width), q = 0.78, dados = '';
+      for (let i = 0; i < 5; i++) {
+        const c = document.createElement('canvas'); c.width = larg; c.height = Math.round(img.height * (larg / img.width));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        dados = c.toDataURL('image/jpeg', q);
+        if (dados.length <= 900000) return ok(dados);
+        larg = Math.round(larg * 0.8); q = Math.max(0.55, q - 0.06);
+      }
+      no(new Error('grande demais'));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); no(new Error('imagem inválida')); };
+    img.src = url;
+  });
+}
+function fgReset() {
+  $('fg-escolha').hidden = false; $('fg-leitura').hidden = true; $('fg-previa').hidden = true; $('fg-ok').hidden = true; $('fg-ok').disabled = false;
+  $('fg-chave-box').hidden = chaveG().length >= 20; $('fg-chave').value = chaveG(); fgItens = [];
+}
+$('foto-btn').onclick = () => { fgReset(); $('dlg-foto-g').showModal(); };
+$('fg-cancelar').onclick = () => $('dlg-foto-g').close();
+$('fg-chave').addEventListener('input', () => { try { localStorage.setItem('brain-gemini-key', $('fg-chave').value.trim()); localStorage.removeItem('brain-gemini-model'); } catch (e) { /* sem storage */ } });
+async function fgArquivo(f) {
+  if (!f) return;
+  const chave = ($('fg-chave').value || chaveG()).trim();
+  if (chave.length < 20) { $('fg-chave-box').hidden = false; $('fg-chave').focus(); $('fg-info').textContent = 'Cole antes a sua chave grátis do Google; sem ela a IA não consegue ler a foto.'; return; }
+  try { localStorage.setItem('brain-gemini-key', chave); } catch (e) { /* sem storage */ }
+  $('fg-escolha').hidden = true; $('fg-leitura').hidden = false; $('fg-previa').hidden = true; $('fg-ok').hidden = true;
+  $('fg-st').textContent = 'A IA está lendo o comprovante...';
+  try {
+    const img = await fgReduzir(f);
+    $('fg-mini').src = img;
+    const r = await BrainLeitor.lerComprovante({ chave, imagem: img, hoje: HOJE });
+    if (!r.itens.length) { $('fg-st').textContent = 'Não encontrei nenhum valor nessa imagem. Tente uma foto mais nítida, de frente e com boa luz.'; $('fg-escolha').hidden = false; return; }
+    fgItens = r.itens.map((x) => ({ ...x, on: true }));
+    $('fg-leitura').hidden = true; desenharPrevia(r.ignorados);
+  } catch (err) { $('fg-st').textContent = err.message || 'Não consegui ler agora.'; $('fg-escolha').hidden = false; }
+}
+$('fg-cam').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; fgArquivo(f); };
+$('fg-arq').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; fgArquivo(f); };
+function desenharPrevia(ign) {
+  const cats = (DADOS && DADOS.categorias) || BrainLeitor.CATS;
+  const box = $('fg-itens'); box.replaceChildren();
+  fgItens.forEach((x, k) => {
+    const d = document.createElement('div'); d.className = 'fg-it' + (x.on ? '' : ' off');
+    d.innerHTML = `<input type="checkbox" aria-label="Incluir este lançamento"><input class="fg-v" type="number" step="0.01" min="0.01" inputmode="decimal" aria-label="Valor em reais"><input class="fg-d" type="date" aria-label="Data"><input class="fg-desc" type="text" maxlength="80" aria-label="Descrição"><div class="fg-tipo"></div><select class="fg-c" aria-label="Categoria"></select>`;
+    const [ck, v, dt, ds, tp, sel] = d.children;
+    ck.checked = x.on; v.value = x.valor; dt.value = x.data; ds.value = x.descricao;
+    tp.textContent = x.tipo === 'receita' ? 'Entrada' : 'Gasto'; tp.classList.toggle('rec', x.tipo === 'receita');
+    if (x.tipo === 'receita') sel.hidden = true; else {
+      const auto = document.createElement('option'); auto.value = ''; auto.textContent = 'Categoria automática'; sel.append(auto);
+      cats.filter((c) => c !== 'Entrada').forEach((c) => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.append(o); });
+      sel.value = x.categoria || '';
+    }
+    ck.onchange = () => { x.on = ck.checked; d.classList.toggle('off', !x.on); contarFg(); };
+    v.oninput = () => { x.valor = Number(v.value); contarFg(); }; dt.onchange = () => { x.data = dt.value; }; ds.oninput = () => { x.descricao = ds.value; }; sel.onchange = () => { x.categoria = sel.value; };
+    box.append(d);
+  });
+  $('fg-res').textContent = (fgItens.length === 1 ? 'A IA leu 1 lançamento.' : `A IA leu ${fgItens.length} lançamentos.`) + (ign ? ` ${ign} não deu para entender.` : '') + ' Confira os valores e corrija o que precisar.';
+  $('fg-previa').hidden = false; $('fg-ok').hidden = false; contarFg();
+}
+function contarFg() {
+  const n = fgItens.filter((x) => x.on && x.valor > 0).length, tot = fgItens.filter((x) => x.on && x.valor > 0 && x.tipo !== 'receita').reduce((s, x) => s + x.valor, 0);
+  $('fg-ok').disabled = !n; $('fg-ok').textContent = n ? `Registrar ${n}${tot ? ' · ' + BRL.format(tot) : ''}` : 'Nada para registrar';
+}
+$('fg-ok').onclick = async () => {
+  const lista = fgItens.filter((x) => x.on && x.valor > 0 && x.descricao.trim());
+  if (!lista.length) return;
+  $('fg-ok').disabled = true; let ok = 0, ultimo = null, falhou = '';
+  for (const x of lista) {
+    try {
+      await api('/api/financas/gastos', { method: 'POST', headers: JSON_HDR, body: JSON.stringify({ tipo: x.tipo, item: { valor: x.valor, descricao: x.descricao, data: x.data || HOJE, categoria: x.categoria || undefined } }) });
+      ok++; ultimo = x;
+    } catch (err) { falhou = err.message; }
+  }
+  $('dlg-foto-g').close();
+  if (ok) {
+    aviso(`${ok} ${ok === 1 ? 'lançamento registrado' : 'lançamentos registrados'} pela foto.${falhou ? ' Um não passou: ' + falhou : ''}`, !!falhou && !ok);
+    if (window.BrainCelebrar) { if (lista.some((x) => x.tipo === 'receita')) window.BrainCelebrar.moedas(); else window.BrainCelebrar.micro($('foto-btn'), { xp: 4 * ok }); }
+    mes = (ultimo.data || HOJE).slice(0, 7); carregar();
+  } else aviso(falhou || 'Não consegui registrar.', true);
+};
 
 carregar();
 </script>
