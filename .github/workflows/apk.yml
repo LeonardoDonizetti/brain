@@ -35,6 +35,28 @@ jobs:
           mkdir -p apk/www
           rsync -a --exclude '.git' --exclude '.github' --exclude 'apk' --exclude '*.md' ./ apk/www/
 
+      # Chave do Google Gemini embutida SÓ no APK (nunca no repositório). Cadastre o segredo GEMINI_KEY em
+      # Settings > Secrets and variables > Actions. Sem o segredo, nada muda e a chave continua sendo colada no app.
+      - name: Embutir a chave da IA no APK (opcional)
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+        run: |
+          if [ -n "$GEMINI_KEY" ]; then
+            python3 - <<'PY'
+          import os, json, glob
+          k = os.environ['GEMINI_KEY'].strip()
+          js = "try{if(!localStorage.getItem('brain-gemini-key')&&!localStorage.getItem('brain-gemini-removida'))localStorage.setItem('brain-gemini-key'," + json.dumps(k) + ")}catch(e){}\n"
+          open('apk/www/chave-padrao.js', 'w').write(js)
+          for f in glob.glob('apk/www/*.html'):
+              t = open(f, encoding='utf-8').read()
+              if '<head>' in t and 'chave-padrao.js' not in t:
+                  open(f, 'w', encoding='utf-8').write(t.replace('<head>', '<head>\n<script src="chave-padrao.js"></script>', 1))
+          print('Chave da IA embutida no APK.')
+          PY
+          else
+            echo "Sem GEMINI_KEY: a chave continua sendo colada no app."
+          fi
+
       - name: Criar o projeto Android (Capacitor)
         working-directory: apk
         run: |
