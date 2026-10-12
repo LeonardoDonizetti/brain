@@ -81,8 +81,11 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
   /** Chamada comum ao Gemini com uma imagem. Devolve { resposta (texto), modelo } ou lança Error com mensagem amigável. */
   async function chamar({ chave, imagem, prompt, esquema, modelo, fetchFn, aoEnviar }) {
     const f = fetchFn || root.fetch.bind(root);
-    const m = String(imagem || '').match(/^data:(image\/(?:jpeg|png|webp)|application\/pdf);base64,(.+)$/);
-    if (!m) throw new Error('Arquivo inválido. Use uma imagem ou um PDF.');
+    // aceita um arquivo (data URL) ou uma lista deles: a IA lê todos juntos, como páginas de um mesmo material
+    const lista = (Array.isArray(imagem) ? imagem : [imagem]).filter(Boolean);
+    if (!lista.length || lista.length > 6) throw new Error(lista.length ? 'Envie no máximo 6 arquivos por vez.' : 'Arquivo inválido. Use uma imagem ou um PDF.');
+    const partes = lista.map((x) => String(x).match(/^data:(image\/(?:jpeg|png|webp)|application\/pdf);base64,(.+)$/));
+    if (partes.some((x) => !x)) throw new Error('Arquivo inválido. Use uma imagem ou um PDF.');
     if (!chave || chave.length < 20) throw new Error('Cole sua chave do Google AI Studio.');
     const c = encodeURIComponent(chave.trim());
     let usar = modelo;
@@ -100,7 +103,7 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
       try {
         return await f(url, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: m[1], data: m[2] } }] }], generationConfig: config }),
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }].concat(partes.map((m) => ({ inline_data: { mime_type: m[1], data: m[2] } }))) }], generationConfig: config }),
         });
       } catch (e) { throw new Error('Sem conexão com a internet.'); }
     };

@@ -235,6 +235,10 @@
   .cr-ck input { width: auto; margin-top: .15rem; }
   .cr-thumb { display: flex; gap: .7rem; align-items: center; margin-top: .7rem; font-size: .84rem; color: var(--muted); }
   .cr-thumb img { width: 4.4rem; height: 4.4rem; object-fit: cover; border-radius: .55rem; border: 1px solid var(--line); cursor: zoom-in; flex: none; }
+  .cr-fotos { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .7rem; }
+  .cr-f { position: relative; }
+  .cr-f img { width: 4.4rem; height: 4.4rem; object-fit: cover; border-radius: .55rem; border: 1px solid var(--line); cursor: zoom-in; display: block; }
+  .cr-x { position: absolute; top: -.4rem; right: -.4rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid var(--line); background: var(--surface, #fff); color: var(--ink, #222); font-size: .75rem; line-height: 1; cursor: pointer; padding: 0; }
   .cr-pdf { width: 4.4rem; height: 4.4rem; border-radius: .55rem; border: 1px solid var(--line); display: grid; place-items: center; font-weight: 800; color: #d64545; background: #fdecec; flex: none; }
   .cr-b { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
   #cr-saida h4 { margin: 1rem 0 .2rem; font-size: .95rem; }
@@ -676,8 +680,8 @@ function cartaoCronograma(w) {
   html(w, `<div class="es" id="cron-card"><h3>Cronograma com IA</h3>
     <p class="sub">Tire uma foto ou anexe uma imagem ou PDF da sua rotina (grade da escola, agenda, horário do trabalho). A IA lê os compromissos e eu encaixo os estudos nos horários livres, numa planilha que você pode baixar.</p>
     ${cron.pdf ? `<div class="cr-thumb"><div class="cr-pdf" aria-hidden="true">PDF</div> <div><b style="word-break:break-all">${esc(cron.pdf.nome)}</b><br>${esc(cron.info || '')}<br><button class="linkb" id="cr-tirar-pdf" type="button">Remover arquivo</button></div></div>` : ''}
-    ${!cron.pdf && E.foto ? `<div class="cr-thumb"><img id="cr-img" src="${E.foto}" alt="Foto da sua rotina"><div>${cron.info ? '<b style="word-break:break-all">' + esc(cron.info.split(' · ')[0]) + '</b><br>' + esc(cron.info.split(' · ').slice(1).join(' · ')) : 'Foto da rotina guardada.'}<br><button class="linkb" id="cr-tirar-foto" type="button">Remover foto</button></div></div>` : ''}
-    <div class="linhas"><label class="btn2 pri cr-b">${E.foto ? 'Tirar outra foto' : 'Tirar foto'}<input type="file" accept="image/*" capture="environment" id="cr-cam" hidden></label><label class="btn2 cr-b">${E.foto || cron.pdf ? 'Anexar outro arquivo' : 'Anexar arquivo ou imagem'}<input type="file" accept="image/*,application/pdf,.pdf" id="cr-arq" hidden></label></div>
+    ${!cron.pdf && fotosRot().length ? `<div class="cr-fotos">${fotosRot().map((f, i) => `<div class="cr-f"><img data-i="${i}" class="cr-img" src="${f}" alt="Foto ${i + 1} da sua rotina"><button class="cr-x" data-x="${i}" type="button" aria-label="Remover foto ${i + 1}">✕</button></div>`).join('')}</div><p class="sub" style="margin:.4rem 0 0">${fotosRot().length} ${fotosRot().length === 1 ? 'foto' : 'fotos'} da rotina${cron.info ? ' · ' + esc(cron.info) : ''}. A IA lê todas juntas.</p>` : ''}
+    <div class="linhas"><label class="btn2 pri cr-b">${fotosRot().length ? 'Tirar mais uma foto' : 'Tirar foto'}<input type="file" accept="image/*" capture="environment" id="cr-cam" hidden></label><label class="btn2 cr-b">${fotosRot().length || cron.pdf ? 'Anexar mais arquivos' : 'Anexar arquivos ou imagens'}<input type="file" accept="image/*,application/pdf,.pdf" id="cr-arq" multiple hidden></label></div>
     <div id="cr-anexo" hidden></div>
     <div class="cr-g">
       <label>Horas de estudo por semana<input type="number" id="cr-horas" min="1" max="60" inputmode="numeric" value="${cronOpt.horas}"></label>
@@ -707,35 +711,50 @@ function lerOpcoes() {
   cronOpt.livres = [...document.querySelectorAll('.cr-dias [aria-pressed="true"]')].map((b) => Number(b.dataset.d));
 }
 
-async function novaFotoRotina(f) {
-  if (!f) return;
+const MAX_FOTOS = 6;
+const fotosRot = () => [E.foto].concat(E.mais || []).filter(Boolean);
+async function novaFotoRotina(arquivos) {
+  const todos = [...(arquivos || [])].filter(Boolean); if (!todos.length) return;
+  const imgs = todos.filter((f) => !BrainLeitor.ehPdf(f)), pdfs = todos.filter((f) => BrainLeitor.ehPdf(f));
   const anx = BrainAnexo.criar($('cr-anexo'));
   try {
-    anx.etapa('Carregando o arquivo...', 8);
-    const dim = await anx.arquivo(f);
-    const info = (extra) => (f.name || (BrainLeitor.ehPdf(f) ? 'documento.pdf' : 'foto')) + ' · ' + BrainAnexo.descrever(f, dim) + (extra ? ' · ' + extra : '');
-    if (BrainLeitor.ehPdf(f)) {
+    if (!imgs.length) {
+      const f = pdfs[0];
+      anx.etapa('Carregando o arquivo...', 8);
+      const dim = await anx.arquivo(f);
       const d = await BrainLeitor.lerPdf(f, (p) => anx.etapa(`Carregando o arquivo... ${p}%`, 10 + p * 0.8));
-      cron.pdf = { dados: d, nome: f.name || 'arquivo.pdf' }; cron.info = BrainAnexo.descrever(f, dim); cron.rotina = null; cron.plano = null; E.foto = null;
+      cron.pdf = { dados: d, nome: f.name || 'arquivo.pdf' }; cron.info = BrainAnexo.descrever(f, dim); cron.rotina = null; cron.plano = null; E.foto = null; E.mais = [];
+      anx.pronto('Anexado. Agora toque em "Montar cronograma".');
     } else {
-      anx.etapa('Preparando a imagem...', 40);
-      const img = await reduzirFoto(f);
-      cron.pdf = null; E.foto = img; cron.info = info(`guardada com ${BrainAnexo.fmt(Math.round(img.length * 0.75))}`); cron.rotina = null; cron.plano = null;
+      const lugar = MAX_FOTOS - fotosRot().length, usar = imgs.slice(0, Math.max(0, lugar));
+      if (!usar.length) { anx.erro(`Já são ${MAX_FOTOS} fotos, o máximo. Remova alguma para adicionar outra.`); return; }
+      const novas = [];
+      for (let i = 0; i < usar.length; i++) {
+        const f = usar[i], pre = usar.length > 1 ? `Foto ${i + 1} de ${usar.length}: ` : '';
+        await anx.arquivo(f);
+        anx.etapa(pre + 'Preparando a imagem...', 20 + (i / usar.length) * 70);
+        novas.push(await reduzirFoto(f));
+      }
+      const todas = fotosRot().concat(novas);
+      cron.pdf = null; E.foto = todas[0]; E.mais = todas.slice(1); cron.rotina = null; cron.plano = null;
+      cron.info = BrainAnexo.fmt(Math.round(todas.reduce((t, x) => t + x.length, 0) * 0.75)) + ' no total';
+      const sobra = imgs.length - usar.length;
+      anx.pronto(`${usar.length === 1 ? 'Foto anexada' : usar.length + ' fotos anexadas'}${sobra > 0 ? ` (${sobra} ficaram de fora: máximo de ${MAX_FOTOS})` : ''}. Agora toque em "Montar cronograma".`);
+      if (pdfs.length) aviso('O PDF foi ignorado: envie PDF sozinho ou só imagens.', true);
     }
-    anx.pronto('Anexado. Agora toque em "Montar cronograma".');
     await new Promise((r) => setTimeout(r, 700));
     await salvar();
-    aviso('Arquivo anexado. Toque em "Montar cronograma".');
+    aviso('Anexado. Toque em "Montar cronograma".');
   } catch (err) { anx.erro(err.message || 'Não consegui usar esse arquivo.'); }
 }
 
 function ligarCronograma(w) {
   const card = $('cron-card'); if (!card) return;
-  $('cr-cam').onchange = (ev) => { const f = ev.target.files[0]; ev.target.value = ''; lerOpcoes(); novaFotoRotina(f); };
-  $('cr-arq').onchange = (ev) => { const f = ev.target.files[0]; ev.target.value = ''; lerOpcoes(); novaFotoRotina(f); };
-  const img = $('cr-img'); if (img) img.onclick = () => { $('foto-grande').src = E.foto; $('foto-grande').classList.remove('grande'); $('dlg-foto').showModal(); };
+  $('cr-cam').onchange = (ev) => { const f = [...ev.target.files]; ev.target.value = ''; lerOpcoes(); novaFotoRotina(f); };
+  $('cr-arq').onchange = (ev) => { const f = [...ev.target.files]; ev.target.value = ''; lerOpcoes(); novaFotoRotina(f); };
+  card.querySelectorAll('.cr-img').forEach((im) => { im.onclick = () => { $('foto-grande').src = im.src; $('foto-grande').classList.remove('grande'); $('dlg-foto').showModal(); }; });
   const rp = $('cr-tirar-pdf'); if (rp) rp.onclick = () => { lerOpcoes(); cron.pdf = null; cron.rotina = null; cron.plano = null; desenhar(); };
-  const rm = $('cr-tirar-foto'); if (rm) rm.onclick = async () => { lerOpcoes(); E.foto = null; cron.rotina = null; cron.plano = null; cron.info = ''; await salvar(); };
+  card.querySelectorAll('.cr-x').forEach((b) => { b.onclick = async () => { lerOpcoes(); const t = fotosRot(); t.splice(Number(b.dataset.x), 1); E.foto = t[0] || null; E.mais = t.slice(1); cron.rotina = null; cron.plano = null; cron.info = ''; await salvar(); }; });
   card.querySelectorAll('.cr-dias button').forEach((b) => { b.onclick = () => { b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); lerOpcoes(); }; });
   card.querySelectorAll('input, select').forEach((el) => { if (el.type !== 'file' && el.id !== 'ia-chave') el.addEventListener('change', lerOpcoes); });
   $('ia-chave').oninput = () => { try { localStorage.setItem('brain-gemini-key', $('ia-chave').value.trim()); } catch (e) { /* sem storage */ } };
@@ -750,14 +769,14 @@ async function montarCron() {
   try { localStorage.setItem('brain-gemini-key', chave); } catch (e) { /* sem storage */ }
   btn.disabled = true;
   try {
-    if ((cron.pdf || E.foto) && !cron.rotina) {
+    if ((cron.pdf || fotosRot().length) && !cron.rotina) {
       if (chave.length < 20) { st.textContent = 'Cole sua chave grátis do Google acima para a IA ler a foto.'; $('ia-chave').focus(); return; }
       st.textContent = '';
       const anx = BrainAnexo.criar($('cr-anexo'));
-      anx.mostrar({ nome: cron.pdf ? cron.pdf.nome : (cron.info || 'Foto da rotina').split(' · ')[0], det: cron.info ? cron.info.split(' · ').slice(cron.pdf ? 0 : 1).join(' · ') : '', mini: cron.pdf ? BrainAnexo.PDF_ICONE : E.foto });
+      anx.mostrar({ nome: cron.pdf ? cron.pdf.nome : (fotosRot().length > 1 ? fotosRot().length + ' fotos da rotina' : 'Foto da rotina'), det: cron.info || '', mini: cron.pdf ? BrainAnexo.PDF_ICONE : E.foto });
       anx.etapa('Enviando para a IA...', 30);
       let r;
-      try { r = await BrainLeitor.lerFoto({ chave, imagem: cron.pdf ? cron.pdf.dados : E.foto, materias: E.materias, aoEnviar: () => anx.etapa('A IA está lendo o ' + (cron.pdf ? 'PDF' : 'horário') + '... pode levar alguns segundos.', null) }); }
+      try { r = await BrainLeitor.lerFoto({ chave, imagem: cron.pdf ? cron.pdf.dados : fotosRot(), materias: E.materias, aoEnviar: () => anx.etapa('A IA está lendo o ' + (cron.pdf ? 'PDF' : 'horário') + '... pode levar alguns segundos.', null) }); }
       catch (e) { anx.erro(e.message || 'Não consegui ler agora.'); throw e; }
       anx.pronto(`Pronto: ${r.blocos.length} ${r.blocos.length === 1 ? 'compromisso encontrado' : 'compromissos encontrados'}.`);
       cron.rotina = r.blocos; cron.ignoradas = r.ignoradas;

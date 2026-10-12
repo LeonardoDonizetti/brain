@@ -34,7 +34,7 @@
   const diasEntre = (a, b) => Math.round((deIso(a) - deIso(b)) / 86400000);
 
   function estadoVazio() {
-    return { materias: [], blocos: [], vestibulares: [], sessoes: [], revisoes: [], erros: [], nota: '', foto: null, prox_id: 1 };
+    return { materias: [], blocos: [], vestibulares: [], sessoes: [], revisoes: [], erros: [], nota: '', foto: null, mais: [], prox_id: 1 };
   }
 
   /** Aceita qualquer objeto e devolve um estado de estudos válido (descarta o que estiver errado). */
@@ -73,6 +73,9 @@
     }
     e.nota = txt(o.nota, 3000);
     e.foto = typeof o.foto === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(o.foto) && o.foto.length <= 700000 ? o.foto : null;
+    // fotos extras da rotina (até 5 além da principal): várias páginas ou prints para a IA ler juntos
+    e.mais = (Array.isArray(o.mais) ? o.mais : []).filter((x) => typeof x === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(x) && x.length <= 700000).slice(0, 5);
+    if (!e.foto && e.mais.length) e.foto = e.mais.shift();
     e.prox_id = Math.max(maxId, 0) + 1;
     return e;
   }

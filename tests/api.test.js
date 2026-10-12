@@ -839,3 +839,24 @@ test('consultor: diagnóstico, limites sugeridos e respostas', () => {
   assert.deepStrictEqual(I.validarAcoes([{ tipo: 'definir_limites', limites: [] }], '2026-10-12'), []);
   assert.match(I.instrucoesConsultor({ hoje: '2026-10-12', contexto: 'dados' }), /50\/30\/20/);
 });
+
+test('várias fotos: o leitor envia todas na mesma chamada e o limite é 6', async () => {
+  const L = require('../site/leitor.js');
+  const img = (n) => 'data:image/jpeg;base64,AAA' + n;
+  let corpo = null;
+  const f = async (url, op) => (op ? ((corpo = JSON.parse(op.body)), { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '[{"dia":3,"ini":"08:00","fim":"09:00","titulo":"Química","tipo":"estudo"}]' }] } }] }) }) : { ok: true, status: 200, json: async () => ({ models: [{ name: 'models/gemini-2.5-flash', supportedGenerationMethods: ['generateContent'] }] }) });
+  const k = 'AIza' + 'x'.repeat(30);
+  await L.lerFoto({ chave: k, imagem: [img(1), img(2), img(3)], materias: [], fetchFn: f });
+  assert.strictEqual(corpo.contents[0].parts.length, 4); // texto + 3 imagens
+  assert.strictEqual(corpo.contents[0].parts[3].inline_data.data, 'AAA3');
+  await assert.rejects(L.lerFoto({ chave: k, imagem: [1, 2, 3, 4, 5, 6, 7].map(img), materias: [], fetchFn: f }), /no máximo 6/);
+  await assert.rejects(L.lerFoto({ chave: k, imagem: [img(1), 'oi'], materias: [], fetchFn: f }), /Arquivo inválido/);
+});
+test('estudos guarda até 5 fotos extras válidas da rotina', async () => {
+  zerar();
+  const b = 'data:image/jpeg;base64,AAAA';
+  const r = await ok('PUT', '/api/estudos', '', { estudos: { foto: b, mais: [b, 'lixo', b, b, b, b, b, b] } });
+  assert.strictEqual(r.estudos.mais.length, 5);
+  const r2 = await ok('PUT', '/api/estudos', '', { estudos: { foto: null, mais: [b, b] } });
+  assert.strictEqual(r2.estudos.foto, b); assert.strictEqual(r2.estudos.mais.length, 1);
+});
