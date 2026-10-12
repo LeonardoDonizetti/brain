@@ -545,10 +545,44 @@
     return saida;
   }
 
+  /** Ordem da rotina: a que a pessoa arrastou (campo `ordem`); itens novos entram pelo horário. */
+  function ordenarRotina(itens) {
+    const padrao = (a, b) => cmpNulo(a.hora, b.hora) || cmpTxt(a.hora || '', b.hora || '') || (a.id - b.id);
+    const com = itens.filter((i) => Number.isInteger(i.ordem)).sort((a, b) => a.ordem - b.ordem || a.id - b.id);
+    const sem = itens.filter((i) => !Number.isInteger(i.ordem)).sort(padrao);
+    if (!com.length) return sem;
+    const r = com.slice();
+    for (const it of sem) {
+      let pos = r.length;
+      if (it.hora) {
+        let ult = -1;
+        for (let k = 0; k < r.length; k++) if (r[k].hora && r[k].hora <= it.hora) ult = k;
+        if (ult >= 0) pos = ult + 1; else { const prox = r.findIndex((x) => x.hora && x.hora > it.hora); pos = prox >= 0 ? prox : r.length; }
+      }
+      r.splice(pos, 0, it);
+    }
+    return r;
+  }
+
+  async function rotinaOrdem(estado, ctx, q, corpo) {
+    const ids = corpo && Array.isArray(corpo.ids) ? corpo.ids : null;
+    if (!ids || !ids.length || !ids.every(Number.isInteger) || new Set(ids).size !== ids.length) erro(400, 'Ordem inválida.');
+    const por = new Map(estado.rotina_itens.map((i) => [i.id, i]));
+    if (!ids.every((id) => por.has(id))) erro(404, 'Item não encontrado.');
+    let ult = '';
+    for (const id of ids) { const h = por.get(id).hora; if (!h) continue; if (h < ult) erro(400, 'Itens com horário precisam ficar em ordem crescente.'); ult = h; }
+    const global = ordenarRotina(estado.rotina_itens.slice());
+    const marcados = new Set(ids); let k = 0;
+    const nova = global.map((i) => (marcados.has(i.id) ? por.get(ids[k++]) : i));
+    nova.forEach((i, n) => { i.ordem = n; });
+    ctx.salvar = true;
+    return { ok: true };
+  }
+
   async function rotinaListar(estado, ctx, q) {
     const hoje = hojeData();
     const dia = q.get('data') ? validarData(q.get('data')) : hoje;
-    const itens = estado.rotina_itens.slice().sort((a, b) => cmpNulo(a.hora, b.hora) || cmpTxt(a.hora || '', b.hora || '') || (a.id - b.id));
+    const itens = ordenarRotina(estado.rotina_itens.slice());
     const ids = new Set(itens.map((i) => i.id));
     const porItem = new Map();
     for (const r of estado.rotina_registros) {
@@ -582,6 +616,7 @@
     const item = lerItem(corpo);
     const atual = estado.rotina_itens.find((i) => i.id === params.id);
     if (!atual) erro(404, 'Item não encontrado.');
+    if (atual.hora !== item.hora || atual.periodo !== item.periodo || (atual.tipo === 'renuncia') !== (item.tipo === 'renuncia')) delete atual.ordem;
     Object.assign(atual, item);
     ctx.salvar = true;
     return { ok: true };
@@ -795,6 +830,7 @@
     ['PUT', `/api/rotina/itens/${id}`, rotinaEditar],
     ['DELETE', `/api/rotina/itens/${id}`, rotinaApagar],
     ['PUT', '/api/rotina/marcar', rotinaMarcar],
+    ['PUT', '/api/rotina/ordem', rotinaOrdem],
     ['POST', '/api/rotina/modelo', rotinaModelo],
     ['GET', '/api/estudos', estudosLer],
     ['PUT', '/api/estudos', estudosSalvar],
@@ -893,7 +929,7 @@
     for (const i of lista(obj.rotina_itens)) {
       if (!PERIODOS.includes(i.periodo) || !TIPOS.includes(i.tipo) || !texto(i.titulo).trim() || !Number.isInteger(i.id)) continue;
       const minutos = Number.isInteger(i.minutos) && i.minutos >= 1 && i.minutos <= 600 ? i.minutos : null;
-      novo.rotina_itens.push({ id: i.id, periodo: i.periodo, tipo: i.tipo, titulo: texto(i.titulo).slice(0, 120), hora: /^([01]\d|2[0-3]):[0-5]\d$/.test(texto(i.hora)) ? i.hora : null, minutos, criado: ehData(i.criado) ? i.criado : '' });
+      novo.rotina_itens.push({ id: i.id, periodo: i.periodo, tipo: i.tipo, titulo: texto(i.titulo).slice(0, 120), hora: /^([01]\d|2[0-3]):[0-5]\d$/.test(texto(i.hora)) ? i.hora : null, minutos, criado: ehData(i.criado) ? i.criado : '', ...(Number.isInteger(i.ordem) ? { ordem: i.ordem } : {}) });
     }
     const itensValidos = new Set(novo.rotina_itens.map((i) => i.id));
     const vistos = new Set();

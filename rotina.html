@@ -27,6 +27,7 @@
 <script src="nav.js" defer></script>
 <script src="jogo-ui.js" defer></script>
 <script src="mascote.js" defer></script>
+<script src="ordem.js"></script>
 <script src="animar.js"></script>
 <script src="celebrar.js"></script>
 <script src="tour.js" defer></script>
@@ -61,7 +62,22 @@
   .bloco-cont { margin-left: auto; color: var(--muted); font-size: .85rem; font-weight: 600; }
   .bloco-vazio { padding: .9rem 1rem; color: var(--muted); font-size: .9rem; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: .55rem; }
 
-  li.r { grid-template-columns: auto 1fr auto; gap: .85rem; padding: .8rem 1rem; }
+  li.r { grid-template-columns: auto 1fr auto auto; gap: .5rem .85rem; padding: .8rem .35rem .8rem 1rem; position: relative; }
+  .alca { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border: 0; background: none; color: var(--muted); border-radius: .7rem; padding: 0; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: grab; align-self: center; }
+  .alca svg { width: 1.3rem; height: 1.3rem; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; fill: none; pointer-events: none; }
+  .alca:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+  li.r.arrasta { z-index: 6; background: var(--surface); border-radius: .8rem; box-shadow: 0 12px 30px rgba(15, 23, 42, .26), 0 0 0 2px var(--accent); border-top-color: transparent; cursor: grabbing; }
+  li.r.arrasta .alca { color: var(--accent); cursor: grabbing; }
+  li.r.arrasta.nao { box-shadow: 0 12px 30px rgba(15, 23, 42, .26), 0 0 0 2px #d64545; }
+  li.r.arrasta.nao .alca { color: #d64545; }
+  ul.arrastando { overflow: visible !important; }
+  ul.arrastando li.r:not(.arrasta) { -webkit-user-select: none; user-select: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    li.r.desloca { transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
+    li.r.volta { transition: transform .26s cubic-bezier(.2, .8, .2, 1), box-shadow .26s; }
+    li.r.treme { animation: r-treme .38s ease; }
+    @keyframes r-treme { 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+  }
   .check { width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--surface); display: grid; place-items: center; padding: 0; color: transparent; flex: none; }
   .check svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   .check[aria-checked="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
@@ -278,16 +294,17 @@ function desenharBloco(secao, lista, textoVazio) {
     bloco.append(v);
   } else {
     const ul = document.createElement('ul');
-    lista.forEach((item) => ul.append(linha(item)));
+    lista.forEach((item) => ul.append(linha(item, lista)));
     bloco.append(ul);
   }
   $('blocos').append(bloco);
 }
 
-function linha(item) {
+function linha(item, lista) {
   const li = document.createElement('li');
   li.className = 'r' + (item.feito ? ' feito' : '');
-  li.innerHTML = `<button class="check" role="checkbox" type="button">${CHECK}</button><div class="corpo"><span class="titulo-item"></span><span class="meta"></span></div><button type="button" class="lapis" aria-label="Editar item">${LAPIS}</button>`;
+  li.innerHTML = `<button class="check" role="checkbox" type="button">${CHECK}</button><div class="corpo"><span class="titulo-item"></span><span class="meta"></span></div><button type="button" class="lapis" aria-label="Editar item">${LAPIS}</button><button type="button" class="alca" aria-label="Reordenar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button>`;
+  li.dataset.id = item.id;
   const check = li.querySelector('.check');
   check.setAttribute('aria-checked', String(item.feito));
   check.setAttribute('aria-label', (item.tipo === 'renuncia' ? 'Cumpri hoje: ' : 'Concluir: ') + item.titulo);
@@ -302,7 +319,95 @@ function linha(item) {
   if (item.minutos) { const m = document.createElement('span'); m.className = 'num'; m.textContent = `${item.minutos} min`; meta.append(m); }
   if (item.sequencia >= 2) { const s = document.createElement('span'); s.className = 'num'; s.className = 'num seq'; s.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 01-10 0c0-2 1-3 2-4 .3 1.2 1 2 2 2 0-3-1-5 1-8z"/></svg> ' + item.sequencia + ' dias'; meta.append(s); }
   li.querySelector('.lapis').onclick = () => abrirDialogo(item);
+  { const al = li.querySelector('.alca'); al.setAttribute('aria-label', 'Reordenar ' + item.titulo + '. Segure e arraste, ou use as setas para cima e para baixo.'); ligarArrasto(al, li, item, lista); }
   return li;
+}
+
+// ---------- reordenar arrastando (itens com horário não saem da ordem crescente)
+let arrastando = false;
+async function salvarOrdem(lista, id, novo) {
+  const ids = window.BrainOrdem.mover(lista, id, novo).map((i) => i.id);
+  try { await api('/api/rotina/ordem', { method: 'PUT', headers: JSON_HDR, body: JSON.stringify({ ids }) }); } catch (err) { aviso(err.message, true); }
+  await carregar();
+}
+function recusar(item, c) {
+  aviso(c ? `Das ${item.hora}: não passa de ${c.hora} (${c.titulo}). Voltou ao lugar.` : 'Esse item não pode ficar aí.', true);
+  if (navigator.vibrate) try { navigator.vibrate([30, 40, 30]); } catch (e) { /* sem vibração */ }
+}
+function ligarArrasto(alca, li, item, lista) {
+  alca.addEventListener('contextmenu', (e) => e.preventDefault());
+  alca.addEventListener('keydown', async (e) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const i0 = lista.findIndex((x) => x.id === item.id), novo = i0 + (e.key === 'ArrowUp' ? -1 : 1);
+    if (novo < 0 || novo >= lista.length) return;
+    const v = window.BrainOrdem.movimentoValido(lista, item.id, novo);
+    if (!v.ok) { recusar(item, v.conflito); return; }
+    await salvarOrdem(lista, item.id, novo);
+    const nova = document.querySelector(`li.r[data-id="${item.id}"] .alca`); if (nova) nova.focus();
+  });
+  alca.addEventListener('pointerdown', (e) => {
+    if (arrastando || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    e.preventDefault();
+    const ul = li.parentElement, lis = [...ul.children], idx0 = lis.indexOf(li);
+    if (lis.length < 2) { aviso('Só há um item aqui, não tem o que reordenar.'); return; }
+    arrastando = true;
+    try { alca.setPointerCapture(e.pointerId); } catch (err) { /* sem captura */ }
+    const y0 = window.scrollY, ponto0 = e.clientY;
+    const topo = lis.map((x) => x.getBoundingClientRect().top + y0), alt = lis.map((x) => x.offsetHeight);
+    let ptY = e.clientY, alvo = idx0, valido = true, conflito = null, raf = 0;
+    ul.classList.add('arrastando'); li.classList.add('arrasta');
+    lis.forEach((x) => { if (x !== li) x.classList.add('desloca'); });
+    if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) { /* sem vibração */ }
+    const mover = () => {
+      const delta = (ptY - ponto0) + (window.scrollY - y0);
+      li.style.transform = `translateY(${delta}px) scale(1.02)`;
+      const cy = topo[idx0] + alt[idx0] / 2 + delta;
+      let n = 0; lis.forEach((x, k) => { if (k !== idx0 && topo[k] + alt[k] / 2 < cy) n++; });
+      const v = window.BrainOrdem.movimentoValido(lista, item.id, n);
+      valido = v.ok; conflito = v.conflito || null; alvo = n;
+      li.classList.toggle('nao', !valido);
+      const efetivo = valido ? n : idx0;
+      lis.forEach((x, k) => {
+        if (k === idx0) return;
+        let d = 0;
+        if (efetivo > idx0 && k > idx0 && k <= efetivo) d = -alt[idx0];
+        else if (efetivo < idx0 && k >= efetivo && k < idx0) d = alt[idx0];
+        x.style.transform = d ? `translateY(${d}px)` : '';
+      });
+    };
+    const rolar = () => {
+      if (!arrastando) return;
+      const topoMax = 90, fundoMin = window.innerHeight - 130;
+      if (ptY < topoMax) window.scrollBy(0, -Math.ceil((topoMax - ptY) / 6)); else if (ptY > fundoMin) window.scrollBy(0, Math.ceil((ptY - fundoMin) / 6));
+      mover(); raf = requestAnimationFrame(rolar);
+    };
+    const mexe = (ev) => { if (ev.pointerId === e.pointerId) ptY = ev.clientY; };
+    const limpar = () => {
+      cancelAnimationFrame(raf); alca.removeEventListener('pointermove', mexe); alca.removeEventListener('pointerup', solta); alca.removeEventListener('pointercancel', cancela);
+      ul.classList.remove('arrastando');
+    };
+    const terminar = async (cancelado) => {
+      arrastando = false; limpar();
+      const moveu = !cancelado && valido && alvo !== idx0;
+      lis.forEach((x) => { x.classList.remove('desloca'); });
+      if (moveu) {
+        const dy = alvo > idx0 ? (topo[alvo] + alt[alvo]) - (topo[idx0] + alt[idx0]) : topo[alvo] - topo[idx0];
+        li.classList.add('volta'); li.style.transform = `translateY(${dy}px)`;
+        await new Promise((r) => setTimeout(r, 240));
+        await salvarOrdem(lista, item.id, alvo);
+      } else {
+        li.classList.add('volta'); li.classList.remove('nao'); li.style.transform = '';
+        lis.forEach((x) => { if (x !== li) { x.classList.add('volta'); x.style.transform = ''; } });
+        if (!cancelado && !valido && alvo !== idx0) { recusar(item, conflito); setTimeout(() => { li.classList.add('treme'); }, 200); }
+        setTimeout(() => { lis.forEach((x) => { x.classList.remove('volta', 'treme', 'arrasta', 'nao'); x.style.transform = ''; }); }, 700);
+      }
+    };
+    const solta = (ev) => { if (ev.pointerId === e.pointerId) terminar(false); };
+    const cancela = (ev) => { if (ev.pointerId === e.pointerId) terminar(true); };
+    alca.addEventListener('pointermove', mexe); alca.addEventListener('pointerup', solta); alca.addEventListener('pointercancel', cancela);
+    mover(); raf = requestAnimationFrame(rolar);
+  });
 }
 
 async function alternar(item) {

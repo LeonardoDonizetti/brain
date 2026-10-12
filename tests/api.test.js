@@ -702,3 +702,35 @@ test('estudos: cronograma personalizado encaixa os estudos nos horários livres'
   assert.ok(E.planilhaTexto(r.blocos, 'tsv').split('\r\n')[0].split('\t').length === 8);
   assert.ok(E.grade(r.blocos).linhas.length > 4);
 });
+
+test('rotina: reordenar por arraste respeita horários crescentes', async () => {
+  zerar();
+  const O = require('../site/ordem.js');
+  const mk = (titulo, hora) => ok('POST', '/api/rotina/itens', '', { periodo: 'manha', tipo: 'ritual', titulo, hora });
+  const a = (await mk('A 07', '07:00')).id, b = (await mk('B 08', '08:00')).id, c = (await mk('C livre', null)).id, d = (await mk('D 09', '09:00')).id;
+  const ids = async () => (await ok('GET', '/api/rotina', '')).itens.map((i) => i.id);
+  assert.deepStrictEqual(await ids(), [a, b, d, c]);
+  // regra pura
+  const L = (await ok('GET', '/api/rotina', '')).itens;
+  assert.strictEqual(O.movimentoValido(L, a, 1).ok, false);  // 07 não pode ficar depois das 08
+  assert.strictEqual(O.movimentoValido(L, d, 0).ok, false);  // 09 não pode subir acima das 07
+  assert.strictEqual(O.movimentoValido(L, d, 2).ok, true);   // passar para depois do livre vale
+  assert.strictEqual(O.movimentoValido(L, c, 0).ok, true);   // sem horário vai para qualquer lugar
+  // servidor: sem horário no topo, depois volta
+  await ok('PUT', '/api/rotina/ordem', '', { ids: [c, a, b, d] });
+  assert.deepStrictEqual(await ids(), [c, a, b, d]);
+  await ok('PUT', '/api/rotina/ordem', '', { ids: [a, c, b, d] });
+  assert.deepStrictEqual(await ids(), [a, c, b, d]);
+  assert.strictEqual((await A.chamar('PUT', '/api/rotina/ordem', '', { ids: [b, a, c, d] })).status, 400);
+  assert.strictEqual((await A.chamar('PUT', '/api/rotina/ordem', '', { ids: [a, 999] })).status, 404);
+  assert.strictEqual((await A.chamar('PUT', '/api/rotina/ordem', '', { ids: [] })).status, 400);
+  // item novo entra pelo horário, sem desmanchar o que foi arrastado
+  const e = (await mk('E 08:30', '08:30')).id, f = (await mk('F sem hora', null)).id;
+  assert.deepStrictEqual(await ids(), [a, c, b, e, d, f]);
+  // mudar o horário reposiciona o item
+  await ok('PUT', `/api/rotina/itens/${e}`, '', { periodo: 'manha', tipo: 'ritual', titulo: 'E', hora: '06:00' });
+  assert.deepStrictEqual((await ids()).slice(0, 2), [e, a]);
+  // sobrevive ao backup
+  const bk = JSON.parse(await A.exportar());
+  assert.ok(bk.rotina_itens.some((i) => Number.isInteger(i.ordem)));
+});
