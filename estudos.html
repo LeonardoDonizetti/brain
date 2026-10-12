@@ -245,6 +245,15 @@
   table.planilha td.e { color: #fff; font-weight: 650; }
   table.planilha td.e small { display: block; font-weight: 500; opacity: .9; }
   table.planilha td.f { background: var(--bg); color: var(--muted); }
+  .cores { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .cores .sw { width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 3px solid transparent; padding: 0; background: var(--c); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .85); display: grid; place-items: center; cursor: pointer; flex: none; min-height: 0; }
+  .cores .sw[aria-checked="true"] { border-color: var(--ink); }
+  .cores .sw svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: var(--t, #fff); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+  .cores .sw[aria-checked="true"] svg { opacity: 1; }
+  .cores .sw:focus-visible, .cores .pers:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .cores .pers { position: relative; width: auto; height: 2.4rem; border-radius: 1.2rem; border: 2px dashed var(--line-strong, var(--line)); display: inline-flex; align-items: center; gap: .4rem; padding: 0 .75rem 0 .3rem; font-size: .8rem; font-weight: 650; color: var(--muted); cursor: pointer; margin: 0 !important; }
+  .cores .pers[data-sel="1"] { border-style: solid; border-color: var(--ink); color: var(--ink); }
+  .cores .pers input { width: 1.7rem; height: 1.7rem; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; flex: none; }
 </style>
 </head>
 <body>
@@ -301,6 +310,8 @@
       <div><label for="m-prio">Prioridade</label><select id="m-prio"><option value="3">Alta</option><option value="2">Média</option><option value="1">Baixa</option></select></div>
       <div><label for="m-meta">Meta (h/semana)</label><input id="m-meta" type="number" min="0" max="80" step="0.5"></div>
     </div>
+    <label id="m-cor-l">Cor da matéria</label>
+    <div class="cores" id="m-cores" role="radiogroup" aria-labelledby="m-cor-l"></div>
     <div class="acoes">
       <button type="button" class="perigo" id="m-apagar">Apagar</button>
       <button type="button" id="m-cancelar">Cancelar</button>
@@ -393,7 +404,7 @@ async function salvar() {
 function montarCoach() { if (window.BrainCoach) window.BrainCoach.montar($('coach'), 'estudo', 2); }
 
 const mat = (id) => E.materias.find((m) => m.id === id) || null;
-const corDe = (b) => { const m = b.materia_id && mat(b.materia_id); return m ? ES.CORES_MATERIA[m.cor] : ({ aula: '#7a4f9e', escola: '#5f6b7a', trabalho: '#1f7f95', treino: '#b0701c', refeicao: '#8a7a4a', deslocamento: '#a08c80', descanso: '#8aa0b8', estudo: '#2f5fb3' }[b.tipo] || '#5f6b7a'); };
+const corDe = (b) => { const m = b.materia_id && mat(b.materia_id); return m ? ES.corMateria(m) : ({ aula: '#7a4f9e', escola: '#5f6b7a', trabalho: '#1f7f95', treino: '#b0701c', refeicao: '#8a7a4a', deslocamento: '#a08c80', descanso: '#8aa0b8', estudo: '#2f5fb3' }[b.tipo] || '#5f6b7a'); };
 
 // =================================================================== abas
 document.querySelectorAll('#abas button').forEach((b) => { b.onclick = () => { aba = b.dataset.aba; try { sessionStorage.setItem('estudos-aba', aba); } catch (e) {} desenhar(); }; });
@@ -553,14 +564,14 @@ function atualizarRelogio() {
 
 const CIRC = 2 * Math.PI * 45;
 function chipsMat(sel) {
-  return `<div class="chips-m" role="group" aria-label="Matéria"><button type="button" data-m="" aria-pressed="${sel === ''}"><i></i>Livre</button>${E.materias.map((m) => `<button type="button" data-m="${m.id}" aria-pressed="${String(m.id) === sel}" style="--c:${ES.CORES_MATERIA[m.cor]}"><i></i>${esc(m.nome)}</button>`).join('')}</div>`;
+  return `<div class="chips-m" role="group" aria-label="Matéria"><button type="button" data-m="" aria-pressed="${sel === ''}"><i></i>Livre</button>${E.materias.map((m) => `<button type="button" data-m="${m.id}" aria-pressed="${String(m.id) === sel}" style="--c:${ES.corMateria(m)}"><i></i>${esc(m.nome)}</button>`).join('')}</div>`;
 }
 function abaFoco(w) {
   const f = lerFoco();
   const opcoesMat = '<option value="">Sem matéria</option>' + E.materias.map((m) => `<option value="${m.id}">${esc(m.nome)}</option>`).join('');
   if (f) {
     const m = f.materia_id && mat(f.materia_id);
-    const cor = m ? ES.CORES_MATERIA[m.cor] : 'var(--accent)';
+    const cor = m ? ES.corMateria(m) : 'var(--accent)';
     const rest = f.restante != null ? f.restante : f.fim - Date.now();
     html(w, `<div class="es timer"><p class="sub" style="margin:0">${m ? esc(m.nome) : 'Foco livre'} · ${f.total} min</p><div class="anel-f" style="--c:${cor}"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="45"/><circle class="pg" id="anel-pg" cx="50" cy="50" r="45" stroke-dasharray="${CIRC}" stroke-dashoffset="${CIRC * (1 - Math.max(0, Math.min(1, rest / (f.total * 60000))))}"/></svg><div class="ct"><div class="tempo" id="relogio">${mmss(rest)}</div><small>${f.restante != null ? 'Pausado' : 'Concentre-se. Celular longe.'}</small></div></div><div class="linhas" style="justify-content:center"><button class="btn2 pri" id="f-pausa">${f.restante != null ? 'Retomar' : 'Pausar'}</button><button class="btn2" id="f-parar">Parar e registrar</button></div></div>`);
     $('f-pausa').onclick = pausarFoco; $('f-parar').onclick = () => pararFoco(false);
@@ -568,7 +579,7 @@ function abaFoco(w) {
   } else {
     if (!matSel) { const b = ES.agoraProximo(E.blocos, new Date()).atual; if (b && b.materia_id) matSel = String(b.materia_id); }
     const mSel = matSel && mat(Number(matSel));
-    html(w, `<div class="es timer"><h3>Sessão de foco</h3><p class="sub">Escolha a matéria e a duração. Blocos curtos com pausa mantêm a atenção.</p>${chipsMat(matSel)}<div class="anel-f" style="--c:${mSel ? ES.CORES_MATERIA[mSel.cor] : 'var(--accent)'}"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="45"/><circle class="pg" cx="50" cy="50" r="45" stroke-dasharray="${CIRC}" stroke-dashoffset="0"/></svg><div class="ct"><div class="tempo">${String(duracaoSel).padStart(2, '0')}:00</div><small>${mSel ? esc(mSel.nome) : 'sem matéria'}</small></div></div><div class="preset" role="group" aria-label="Duração">${[25, 50, 90].map((n) => `<button type="button" data-min="${n}" aria-pressed="${n === duracaoSel}">${n} min</button>`).join('')}</div><div class="linhas" style="justify-content:center"><button class="btn2 pri" id="f-ini" style="min-width:10rem">Iniciar</button></div></div>`);
+    html(w, `<div class="es timer"><h3>Sessão de foco</h3><p class="sub">Escolha a matéria e a duração. Blocos curtos com pausa mantêm a atenção.</p>${chipsMat(matSel)}<div class="anel-f" style="--c:${mSel ? ES.corMateria(mSel) : 'var(--accent)'}"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="45"/><circle class="pg" cx="50" cy="50" r="45" stroke-dasharray="${CIRC}" stroke-dashoffset="0"/></svg><div class="ct"><div class="tempo">${String(duracaoSel).padStart(2, '0')}:00</div><small>${mSel ? esc(mSel.nome) : 'sem matéria'}</small></div></div><div class="preset" role="group" aria-label="Duração">${[25, 50, 90].map((n) => `<button type="button" data-min="${n}" aria-pressed="${n === duracaoSel}">${n} min</button>`).join('')}</div><div class="linhas" style="justify-content:center"><button class="btn2 pri" id="f-ini" style="min-width:10rem">Iniciar</button></div></div>`);
     w.querySelectorAll('[data-m]').forEach((b) => { b.onclick = () => { matSel = b.dataset.m; desenhar(); }; });
     w.querySelectorAll('[data-min]').forEach((b) => { b.onclick = () => { duracaoSel = Number(b.dataset.min); desenhar(); }; });
     $('f-ini').onclick = iniciarFoco;
@@ -579,7 +590,7 @@ function abaFoco(w) {
   html(w, `<div class="es"><h3>Últimos 7 dias</h3><p class="sub">Hoje ${ES.fmtMin(st.hoje)} · semana ${ES.fmtMin(st.semana)} · ${st.sequencia} ${st.sequencia === 1 ? 'dia' : 'dias'} seguidos</p><div class="mini">${st.ultimos7.map((d) => `<div><span>${d.min ? Math.round(d.min / 6) / 10 + 'h' : ''}</span><i data-ak="es-mini-${d.data}" data-eixo="height" data-pct="${(d.min / mx) * 70}" style="height:${(d.min / mx) * 70}%"></i><span>${ES.DIAS_CURTO[new Date(d.data + 'T12:00').getDay()]}</span></div>`).join('')}</div></div>`);
   const linhas = E.materias.map((m) => ({ m, min: st.porMateria.get(m.id) || 0 })).filter((x) => x.min || x.m.meta_h);
   const semMat = st.porMateria.get(null) || 0;
-  html(w, `<div class="es"><h3>Por matéria (esta semana)</h3>${linhas.length || semMat ? '' : '<p class="vazio">Nenhum estudo registrado esta semana.</p>'}${linhas.map(({ m, min }) => { const alvo = m.meta_h * 60; const pct = alvo ? Math.min(100, (min / alvo) * 100) : Math.min(100, (min / Math.max(60, ...linhas.map((x) => x.min))) * 100); return `<div class="mrow"><span class="nm">${esc(m.nome)}</span><span class="b" style="--c:${ES.CORES_MATERIA[m.cor]}"><i data-ak="es-mat-${m.id}" data-pct="${pct}" style="width:${pct}%"></i></span><span class="v">${ES.fmtMin(min)}${alvo ? ' / ' + m.meta_h + ' h' : ''}</span></div>`; }).join('')}${semMat ? `<div class="mrow"><span class="nm">Sem matéria</span><span class="b"><i style="width:40%;opacity:.4"></i></span><span class="v">${ES.fmtMin(semMat)}</span></div>` : ''}</div>`);
+  html(w, `<div class="es"><h3>Por matéria (esta semana)</h3>${linhas.length || semMat ? '' : '<p class="vazio">Nenhum estudo registrado esta semana.</p>'}${linhas.map(({ m, min }) => { const alvo = m.meta_h * 60; const pct = alvo ? Math.min(100, (min / alvo) * 100) : Math.min(100, (min / Math.max(60, ...linhas.map((x) => x.min))) * 100); return `<div class="mrow"><span class="nm">${esc(m.nome)}</span><span class="b" style="--c:${ES.corMateria(m)}"><i data-ak="es-mat-${m.id}" data-pct="${pct}" style="width:${pct}%"></i></span><span class="v">${ES.fmtMin(min)}${alvo ? ' / ' + m.meta_h + ' h' : ''}</span></div>`; }).join('')}${semMat ? `<div class="mrow"><span class="nm">Sem matéria</span><span class="b"><i style="width:40%;opacity:.4"></i></span><span class="v">${ES.fmtMin(semMat)}</span></div>` : ''}</div>`);
   html(w, `<div class="es"><h3>Registrar tempo manualmente</h3><p class="sub">Estudou sem o cronômetro? Anote aqui.</p><div class="linha2" style="display:grid;grid-template-columns:1fr 6rem;gap:.5rem"><select id="mn-mat" aria-label="Matéria">${opcoesMat}</select><input id="mn-min" type="number" min="1" max="720" placeholder="min" aria-label="Minutos"></div><div class="linhas"><button class="btn2" id="mn-ok">Registrar</button></div></div>`);
   $('mn-ok').onclick = async () => { const n = Number($('mn-min').value); if (!(n >= 1 && n <= 720)) { aviso('Informe os minutos (1 a 720).', true); return; } await registrar(n, $('mn-mat').value ? Number($('mn-mat').value) : null); aviso('Tempo registrado.'); };
 }
@@ -627,7 +638,7 @@ function abaPlano(w) {
 
   html(w, `<div class="es"><div class="es-topo"><h3>Vestibulares e provas</h3><button class="linkb" id="nova-vest">+ Adicionar</button></div>${v.length ? v.map((x) => { const d = Math.round((new Date(x.data + 'T12:00') - new Date(HOJE + 'T12:00')) / 86400000); return `<div class="item"><div>${esc(x.nome)}${x.foco ? '<span class="chip">foco</span>' : ''}<small>${x.data.split('-').reverse().join('/')} · ${d < 0 ? 'já passou' : d === 0 ? 'hoje' : d + ' dias'}</small></div><button class="lapis2" data-vest="${x.id}" aria-label="Editar ${esc(x.nome)}">${LAPIS}</button></div>`; }).join('') : '<p class="vazio">Cadastre ENEM, UFSC, FUVEST ou qualquer prova para ter a contagem regressiva.</p>'}</div>`);
 
-  html(w, `<div class="es"><div class="es-topo"><h3>Matérias e metas</h3><button class="linkb" id="nova-mat">+ Matéria</button></div><p class="sub">Prioridade alta recebe mais tempo no ciclo. A meta semanal mostra seu progresso na aba Foco.</p>${E.materias.length ? E.materias.map((m) => `<div class="item"><div><span style="display:inline-block;width:.7rem;height:.7rem;border-radius:50%;background:${ES.CORES_MATERIA[m.cor]};margin-right:.4rem"></span>${esc(m.nome)}<small>Prioridade ${({ 3: 'alta', 2: 'média', 1: 'baixa' })[m.prioridade]}${m.meta_h ? ' · meta ' + m.meta_h + ' h/semana' : ''}</small></div><button class="lapis2" data-mat="${m.id}" aria-label="Editar ${esc(m.nome)}">${LAPIS}</button></div>`).join('') : '<p class="vazio">Nenhuma matéria ainda.</p><div class="linhas"><button class="btn2" id="mat-padrao">Adicionar matérias do ENEM</button></div>'}<div class="linhas"><button class="btn2 pri" id="gerar">Distribuir matérias nos blocos de estudo</button></div><p class="dica2" style="margin:.5rem 0 0">Preenche os blocos do tipo Estudo que ainda não têm matéria (como o "Ciclo de estudos"), alternando matérias e dando mais tempo às de prioridade alta.</p></div>`);
+  html(w, `<div class="es"><div class="es-topo"><h3>Matérias e metas</h3><button class="linkb" id="nova-mat">+ Matéria</button></div><p class="sub">Prioridade alta recebe mais tempo no ciclo. A meta semanal mostra seu progresso na aba Foco.</p>${E.materias.length ? E.materias.map((m) => `<div class="item"><div><span style="display:inline-block;width:.7rem;height:.7rem;border-radius:50%;background:${ES.corMateria(m)};margin-right:.4rem"></span>${esc(m.nome)}<small>Prioridade ${({ 3: 'alta', 2: 'média', 1: 'baixa' })[m.prioridade]}${m.meta_h ? ' · meta ' + m.meta_h + ' h/semana' : ''}</small></div><button class="lapis2" data-mat="${m.id}" aria-label="Editar ${esc(m.nome)}">${LAPIS}</button></div>`).join('') : '<p class="vazio">Nenhuma matéria ainda.</p><div class="linhas"><button class="btn2" id="mat-padrao">Adicionar matérias do ENEM</button></div>'}<div class="linhas"><button class="btn2 pri" id="gerar">Distribuir matérias nos blocos de estudo</button></div><p class="dica2" style="margin:.5rem 0 0">Preenche os blocos do tipo Estudo que ainda não têm matéria (como o "Ciclo de estudos"), alternando matérias e dando mais tempo às de prioridade alta.</p></div>`);
 
   html(w, `<div class="es"><h3>Técnicas que funcionam</h3><p class="sub">Resumo do que a pesquisa em aprendizagem mostra.</p>${TECNICAS.map(([t, d]) => `<details class="tec"><summary>${t}</summary><p>${d}</p></details>`).join('')}</div>`);
 
@@ -642,7 +653,7 @@ function abaPlano(w) {
   w.querySelectorAll('[data-vest]').forEach((b) => { b.onclick = () => abrirVest(E.vestibulares.find((x) => x.id === Number(b.dataset.vest))); });
   $('nova-mat').onclick = () => abrirMat(null);
   w.querySelectorAll('[data-mat]').forEach((b) => { b.onclick = () => abrirMat(E.materias.find((x) => x.id === Number(b.dataset.mat))); });
-  const pad = $('mat-padrao'); if (pad) pad.onclick = async () => { ['Matemática', 'Física', 'Química', 'Biologia', 'Português', 'Redação', 'História', 'Geografia', 'Inglês'].forEach((n, i) => E.materias.push({ id: ES.novoId(E), nome: n, cor: i % ES.CORES_MATERIA.length, prioridade: 2, meta_h: 0 })); await salvar(); };
+  const pad = $('mat-padrao'); if (pad) pad.onclick = async () => { ['Matemática', 'Física', 'Química', 'Biologia', 'Português', 'Redação', 'História', 'Geografia', 'Inglês'].forEach((n, i) => E.materias.push({ id: ES.novoId(E), nome: n, cor: ES.CORES_MATERIA[i % ES.CORES_MATERIA.length], prioridade: 2, meta_h: 0 })); await salvar(); };
   $('gerar').onclick = async () => {
     const r = ES.gerarPlano(E);
     if (!r.atribuicoes.length) { aviso(r.motivo || 'Nada para distribuir.', true); return; }
@@ -742,8 +753,8 @@ async function montarCron() {
 function celulaGrade(b) {
   if (b.tipo === 'estudo') {
     const m = b.materia_id ? E.materias.find((x) => x.id === b.materia_id) : E.materias.find((x) => ES.norm(x.nome) === ES.norm(b.titulo));
-    const cor = m ? ES.CORES_MATERIA[m.cor % ES.CORES_MATERIA.length] : (b.titulo === 'Revisão da semana' ? '#5f6b7a' : ES.CORES_MATERIA[Math.abs([...b.titulo].reduce((a, c) => a + c.charCodeAt(0), 0)) % ES.CORES_MATERIA.length]);
-    return { cls: 'e', style: `background:${cor}` };
+    const cor = m ? ES.corMateria(m) : (b.titulo === 'Revisão da semana' ? '#5f6b7a' : ES.CORES_MATERIA[Math.abs([...b.titulo].reduce((a, c) => a + c.charCodeAt(0), 0)) % ES.CORES_MATERIA.length]);
+    return { cls: 'e', style: `background:${cor};color:${ES.textoSobre(cor)}` };
   }
   return { cls: 'f', style: '' };
 }
@@ -784,7 +795,7 @@ function desenharCron() {
   const a = $('cr-aplicar'); if (a) a.onclick = async () => {
     const incl = $('cr-incl') ? $('cr-incl').checked : false, subst = $('cr-subst') ? $('cr-subst').checked : false;
     if (subst) E.blocos = E.blocos.filter((b) => b.tipo !== 'estudo');
-    const idDe = (nome) => { let m = E.materias.find((x) => ES.norm(x.nome) === ES.norm(nome)); if (!m) { m = { id: ES.novoId(E), nome, cor: E.materias.length % ES.CORES_MATERIA.length, prioridade: 2, meta_h: 0 }; E.materias.push(m); } return m.id; };
+    const idDe = (nome) => { let m = E.materias.find((x) => ES.norm(x.nome) === ES.norm(nome)); if (!m) { m = { id: ES.novoId(E), nome, cor: ES.CORES_MATERIA[E.materias.length % ES.CORES_MATERIA.length], prioridade: 2, meta_h: 0 }; E.materias.push(m); } return m.id; };
     const igual = (x, y) => x.dia === y.dia && x.ini === y.ini && x.fim === y.fim && ES.norm(x.titulo) === ES.norm(y.titulo);
     let n = 0;
     if (incl) for (const b of p.rotina) if (!E.blocos.some((x) => igual(x, b))) { E.blocos.push({ id: ES.novoId(E), dia: b.dia, ini: b.ini, fim: b.fim, titulo: b.titulo, tipo: b.tipo, materia_id: null }); n++; }
@@ -848,10 +859,31 @@ function abrirVest(x) { editVest = x; $('v-nome').value = x ? x.nome : ''; $('v-
 $('v-cancelar').onclick = () => $('dlg-vest').close();
 $('v-apagar').onclick = async () => { if (!editVest || !confirm('Apagar?')) return; E.vestibulares = E.vestibulares.filter((y) => y.id !== editVest.id); $('dlg-vest').close(); await salvar(); };
 $('f-vest').addEventListener('submit', async (e) => { e.preventDefault(); const d = { nome: $('v-nome').value.trim(), data: $('v-data').value, foco: $('v-foco').checked }; if (d.foco) E.vestibulares.forEach((y) => { y.foco = false; }); if (editVest) Object.assign(editVest, d); else E.vestibulares.push({ id: ES.novoId(E), ...d }); $('dlg-vest').close(); await salvar(); });
-function abrirMat(m) { editMat = m; $('m-nome').value = m ? m.nome : ''; $('m-prio').value = String(m ? m.prioridade : 2); $('m-meta').value = m ? m.meta_h : 0; $('m-apagar').hidden = !m; $('dlg-mat').showModal(); }
+// cor da matéria: paleta pronta + cor livre
+let corSel = '#2f5fb3';
+function desenharCores() {
+  const box = $('m-cores'); box.replaceChildren();
+  const lista = ES.CORES_MATERIA.concat(ES.CORES_EXTRA);
+  const nomeCor = (c) => c;
+  lista.forEach((c) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sw'; b.setAttribute('role', 'radio'); b.style.setProperty('--c', c); b.style.setProperty('--t', ES.textoSobre(c));
+    b.setAttribute('aria-checked', String(c === corSel)); b.setAttribute('aria-label', 'Cor ' + nomeCor(c));
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    b.onclick = () => { corSel = c; desenharCores(); };
+    box.append(b);
+  });
+  const pers = document.createElement('label'); pers.className = 'pers';
+  const noPreset = !lista.includes(corSel); pers.dataset.sel = noPreset ? '1' : '0';
+  pers.innerHTML = '<input type="color" aria-label="Escolher outra cor">Outra cor';
+  const inp = pers.querySelector('input'); inp.value = corSel;
+  inp.oninput = () => { corSel = inp.value; pers.dataset.sel = '1'; box.querySelectorAll('.sw').forEach((x) => x.setAttribute('aria-checked', 'false')); };
+  inp.onchange = () => { corSel = inp.value; desenharCores(); };
+  box.append(pers);
+}
+function abrirMat(m) { editMat = m; corSel = m ? ES.corMateria(m) : ES.CORES_MATERIA[E.materias.length % ES.CORES_MATERIA.length]; desenharCores(); $('m-nome').value = m ? m.nome : ''; $('m-prio').value = String(m ? m.prioridade : 2); $('m-meta').value = m ? m.meta_h : 0; $('m-apagar').hidden = !m; $('dlg-mat').showModal(); }
 $('m-cancelar').onclick = () => $('dlg-mat').close();
 $('m-apagar').onclick = async () => { if (!editMat || !confirm('Apagar esta matéria? Os blocos continuam, sem matéria.')) return; E.materias = E.materias.filter((y) => y.id !== editMat.id); $('dlg-mat').close(); await salvar(); };
-$('f-mat').addEventListener('submit', async (e) => { e.preventDefault(); const d = { nome: $('m-nome').value.trim(), prioridade: Number($('m-prio').value), meta_h: Number($('m-meta').value) || 0 }; if (editMat) Object.assign(editMat, d); else E.materias.push({ id: ES.novoId(E), cor: E.materias.length % ES.CORES_MATERIA.length, ...d }); $('dlg-mat').close(); await salvar(); });
+$('f-mat').addEventListener('submit', async (e) => { e.preventDefault(); const d = { nome: $('m-nome').value.trim(), prioridade: Number($('m-prio').value), meta_h: Number($('m-meta').value) || 0, cor: corSel }; if (editMat) Object.assign(editMat, d); else E.materias.push({ id: ES.novoId(E), ...d }); $('dlg-mat').close(); await salvar(); });
 
 function ligar(w) {
   w.querySelectorAll('[data-ir]').forEach((b) => { b.onclick = () => { aba = b.dataset.ir; desenhar(); }; });

@@ -331,7 +331,7 @@ async function salvarOrdem(lista, id, novo) {
   await carregar();
 }
 function recusar(item, c) {
-  aviso(c ? `Das ${item.hora}: não passa de ${c.hora} (${c.titulo}). Voltou ao lugar.` : 'Esse item não pode ficar aí.', true);
+  aviso(c ? `Para mudar a ordem, retire o horário (${item.hora}) deste item. Toque no lápis e deixe o horário em branco.` : 'Esse item não pode ficar aí.', true);
   if (navigator.vibrate) try { navigator.vibrate([30, 40, 30]); } catch (e) { /* sem vibração */ }
 }
 function ligarArrasto(alca, li, item, lista) {

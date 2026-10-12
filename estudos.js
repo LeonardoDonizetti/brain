@@ -10,6 +10,15 @@
   const ORDEM_SEMANA = [1, 2, 3, 4, 5, 6, 0];
   const INTERVALOS = [1, 7, 30, 90]; // revisão espaçada: 1 dia, 1 semana, 1 mês, 3 meses
   const MOTIVOS = { nao_sabia: 'Não sabia o conteúdo', distracao: 'Distração', calculo: 'Erro de cálculo', interpretacao: 'Interpretação da questão', tempo: 'Falta de tempo', chute: 'Chutei' };
+  const CORES_EXTRA = ['#e11d48', '#0d9488', '#4f46e5', '#65a30d'];
+  /** Cor da matéria: pode ser uma cor livre (#rrggbb) ou, nas matérias antigas, o número de uma cor da paleta. */
+  const corMateria = (m) => (m && typeof m.cor === 'string' && /^#[0-9a-fA-F]{6}$/.test(m.cor) ? m.cor.toLowerCase() : CORES_MATERIA[((Number(m && m.cor) || 0) % CORES_MATERIA.length + CORES_MATERIA.length) % CORES_MATERIA.length]);
+  /** Texto legível (branco ou escuro) sobre uma cor de fundo, pelo maior contraste (WCAG). */
+  function textoSobre(hex) {
+    const c = [1, 3, 5].map((i) => parseInt(String(hex).slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+    const L = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    return 1.05 / (L + 0.05) >= (L + 0.05) / 0.0674 ? '#ffffff' : '#1c2330';
+  }
   const CORES_MATERIA = ['#2f5fb3', '#2e7d57', '#b3402f', '#b0701c', '#7a4f9e', '#1f7f95', '#b03a6a', '#5f6b7a'];
 
   const pad = (n) => String(n).padStart(2, '0');
@@ -38,7 +47,7 @@
     const id = (x) => { let n = Number.isInteger(x) && x > 0 ? x : 0; if (!n || ids.has(n)) n = Math.max(maxId, ...ids, 0) + 1; ids.add(n); maxId = Math.max(maxId, n); return n; };
     for (const m of L(o.materias).slice(0, 40)) {
       if (!txt(m.nome).trim()) continue;
-      e.materias.push({ id: id(m.id), nome: txt(m.nome, 40).trim(), cor: Number.isInteger(m.cor) && m.cor >= 0 && m.cor < CORES_MATERIA.length ? m.cor : e.materias.length % CORES_MATERIA.length, prioridade: [1, 2, 3].includes(m.prioridade) ? m.prioridade : 2, meta_h: Math.max(0, Math.min(80, Number(m.meta_h) || 0)) });
+      e.materias.push({ id: id(m.id), nome: txt(m.nome, 40).trim(), cor: (typeof m.cor === 'string' && /^#[0-9a-fA-F]{6}$/.test(m.cor)) ? m.cor.toLowerCase() : Number.isInteger(m.cor) && m.cor >= 0 && m.cor < CORES_MATERIA.length ? m.cor : e.materias.length % CORES_MATERIA.length, prioridade: [1, 2, 3].includes(m.prioridade) ? m.prioridade : 2, meta_h: Math.max(0, Math.min(80, Number(m.meta_h) || 0)) });
     }
     const idsMat = new Set(e.materias.map((m) => m.id));
     for (const b of L(o.blocos).slice(0, 600)) {
@@ -426,6 +435,6 @@
     return formato === 'tsv' ? corpo : '﻿' + corpo;
   }
 
-  const api = { TIPOS, DIAS, DIAS_CURTO, ORDEM_SEMANA, INTERVALOS, MOTIVOS, CORES_MATERIA, DICA_ERRO, estadoVazio, sanitizar, novoId, lerTexto, agoraProximo, conflitos, gerarPlano, estatisticas, inicioSemana, fmtMin, criarRevisao, concluirRevisao, avaliarRevisao, revisoesDevidas, proximoVestibular, mensagens, responder, montarCronograma, grade, planilhaTexto, janelasLivres, MATERIAS_PADRAO, minutos, hhmm, somaDias, isoDe, norm };
+  const api = { TIPOS, DIAS, DIAS_CURTO, ORDEM_SEMANA, INTERVALOS, MOTIVOS, CORES_MATERIA, DICA_ERRO, estadoVazio, sanitizar, novoId, lerTexto, agoraProximo, conflitos, gerarPlano, estatisticas, inicioSemana, fmtMin, criarRevisao, concluirRevisao, avaliarRevisao, revisoesDevidas, proximoVestibular, mensagens, responder, montarCronograma, grade, planilhaTexto, janelasLivres, MATERIAS_PADRAO, corMateria, textoSobre, CORES_EXTRA, minutos, hhmm, somaDias, isoDe, norm };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.BrainEstudos = api;
 })(typeof window !== 'undefined' ? window : globalThis);

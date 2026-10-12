@@ -757,3 +757,14 @@ test('comprovante: interpreta a resposta da IA com validação', async () => {
   const reg = await ok('POST', '/api/financas/gastos', '', { tipo: 'despesa', item: { valor: 32.9, descricao: 'iFood', data: hoje() } });
   assert.strictEqual(reg.registrados[0].valor, 32.9);
 });
+
+test('estudos: cor livre da matéria e texto legível', () => {
+  const ES = require('../site/estudos.js');
+  const e = ES.sanitizar({ materias: [{ id: 1, nome: 'A', cor: '#E11D48' }, { id: 2, nome: 'B', cor: 3 }, { id: 3, nome: 'C', cor: 'vermelho' }] });
+  assert.strictEqual(ES.corMateria(e.materias[0]), '#e11d48');
+  assert.strictEqual(ES.corMateria(e.materias[1]), ES.CORES_MATERIA[3]);
+  assert.match(ES.corMateria(e.materias[2]), /^#[0-9a-f]{6}$/);
+  assert.strictEqual(ES.textoSobre('#ffffff'), '#1c2330');
+  assert.strictEqual(ES.textoSobre('#000000'), '#ffffff');
+  assert.strictEqual(ES.textoSobre('#2f5fb3'), '#ffffff');
+});
