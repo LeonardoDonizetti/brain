@@ -1194,7 +1194,7 @@ function fgReset() {
 $('foto-btn').onclick = () => { fgReset(); $('dlg-foto-g').showModal(); };
 $('fg-cancelar').onclick = () => $('dlg-foto-g').close();
 $('fg-chave').addEventListener('input', () => { try { localStorage.setItem('brain-gemini-key', $('fg-chave').value.trim()); localStorage.removeItem('brain-gemini-model'); } catch (e) { /* sem storage */ } });
-let fgIgn = 0, fgFalhas = []; // arquivos que a IA não conseguiu ler: { f, motivo }, para tentar de novo só eles
+let fgIgn = 0, fgUnidos = 0, fgFalhas = []; // arquivos que a IA não conseguiu ler: { f, motivo }, para tentar de novo só eles
 async function fgLerUm(f, chave, anx, pre, base, fatia) {
   anx.etapa(pre + 'Carregando o arquivo...', base + fatia * 0.1);
   await anx.arquivo(f);
@@ -1216,10 +1216,9 @@ async function fgArquivo(arquivos, retomar) {
   $('fg-escolha').hidden = true; $('fg-leitura').hidden = false; $('fg-previa').hidden = true; $('fg-ok').hidden = true;
   const anx = BrainAnexo.criar($('fg-leitura'));
   // retomar = tentar de novo só alguns arquivos: mantém o que já foi lido (e as suas edições)
-  const lidos = retomar ? fgItens.map((x) => ({ ...x })) : [], ignorados = [];
-  if (!retomar) { fgFalhas = []; fgIgn = 0; }
+  const lidos = retomar ? fgItens.map((x) => ({ ...x })) : [], listas = [], novosIgn = { n: 0 };
+  if (!retomar) { fgFalhas = []; fgIgn = 0; fgUnidos = 0; }
   else fgFalhas = fgFalhas.filter((x) => !fs.includes(x.f));
-  const novos = [];
   try {
     // cada arquivo é lido por vez (uma chamada por foto); um que falhe não derruba os outros
     for (let i = 0; i < fs.length; i++) {
@@ -1227,24 +1226,26 @@ async function fgArquivo(arquivos, retomar) {
       const base = (i / fs.length) * 85, fatia = 85 / fs.length;
       try {
         const r = await fgLerUm(f, chave, anx, pre, base, fatia);
-        novos.push(...r.itens); ignorados.push(...(r.ignorados || []));
+        listas.push(r.itens); novosIgn.n += Number(r.ignorados) || 0;
       } catch (err) { fgFalhas.push({ f, motivo: err.message || 'Não consegui ler.' }); }
       if (i < fs.length - 1) await new Promise((ok) => setTimeout(ok, 700)); // respeita o limite por minuto do plano grátis
     }
     anx.etapa('Conferindo com o que você já registrou...', 92);
     // compara com o que já está registrado (nos meses das datas lidas) para não repetir
-    const todos = lidos.concat(novos);
+    // fotos de extrato se sobrepõem: o mesmo lançamento em duas fotos entra uma vez só
+    const un = BrainLeitor.unirArquivos([lidos].concat(listas));
+    const todos = un.itens, novos = todos.slice(lidos.length);
     let existentes = [];
     try {
       const meses = [...new Set(todos.map((x) => (x.data || HOJE).slice(0, 7)))];
       for (const m of meses) existentes = existentes.concat((await api('/api/financas/gastos?mes=' + m)).gastos);
     } catch (e) { /* sem comparação; o servidor ainda barra repetidos */ }
-    const marcados = BrainLeitor.marcarDuplicados(novos, existentes.concat(lidos.map((x) => ({ valor: x.valor, data: x.data, tipo: x.tipo, descricao: x.descricao })))).map((x) => ({ ...x, on: !x.dup }));
-    fgItens = lidos.concat(marcados);
+    const marcados = BrainLeitor.marcarDuplicados(todos, existentes).map((x, k) => ({ ...x, on: k < lidos.length ? lidos[k].on !== false && !x.dup : !x.dup }));
+    fgItens = marcados; fgUnidos += un.unidos;
     const ok = fs.length - fgFalhas.filter((x) => fs.includes(x.f)).length;
     if (!ok) anx.erro(fs.length > 1 ? 'Não consegui ler nenhum desses arquivos. Veja abaixo o motivo e tente de novo.' : fgFalhas[fgFalhas.length - 1].motivo);
     else anx.pronto(`Pronto: ${novos.length} ${novos.length === 1 ? 'lançamento encontrado' : 'lançamentos encontrados'}${fs.length > 1 ? ` em ${ok} de ${fs.length} arquivos` : ''}.`);
-    fgIgn += ignorados.length; desenharPrevia(fgIgn);
+    fgIgn += novosIgn.n; desenharPrevia(fgIgn);
     $('fg-escolha').hidden = !!fgItens.length; // sem nenhum lançamento: deixa escolher outros arquivos
   } catch (err) { anx.erro(err.message || 'Não consegui ler agora.'); $('fg-escolha').hidden = false; }
 }
@@ -1289,7 +1290,7 @@ function desenharPrevia(ign) {
     box.append(d);
   });
   const nDup = fgItens.filter((x) => x.dup).length;
-  $('fg-res').textContent = (fgItens.length === 1 ? 'A IA leu 1 lançamento.' : `A IA leu ${fgItens.length} lançamentos.`) + (nDup ? ` ${nDup === 1 ? 'Um já estava registrado e ficou desmarcado' : nDup + ' já estavam registrados e ficaram desmarcados'}; marque se quiser repetir.` : '') + (ign ? ` ${ign} não deu para entender.` : '') + ' Confira os valores e corrija o que precisar.';
+  $('fg-res').textContent = (fgItens.length === 1 ? 'A IA leu 1 lançamento.' : `A IA leu ${fgItens.length} lançamentos.`) + (nDup ? ` ${nDup === 1 ? 'Um já estava registrado e ficou desmarcado' : nDup + ' já estavam registrados e ficaram desmarcados'}; marque se quiser repetir.` : '') + (fgUnidos ? ` ${fgUnidos === 1 ? '1 lançamento aparecia em duas fotos e foi contado uma vez só' : fgUnidos + ' lançamentos apareciam em mais de uma foto e foram contados uma vez só'}.` : '') + (ign ? ` ${ign} não deu para entender.` : '') + ' Confira os valores e corrija o que precisar.';
   $('fg-previa').hidden = false; $('fg-ok').hidden = !fgItens.length; $('fg-res').hidden = !fgItens.length; contarFg();
 }
 function contarFg() {

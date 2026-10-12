@@ -740,8 +740,8 @@ test('comprovante: interpreta a resposta da IA com validação', async () => {
   const r = L.interpretarComprovante('```json\n[{"valor":"R$ 1.234,56","descricao":"  Mercado   Bom Preço ","data":"2026-10-10","categoria":"Alimentação","tipo":"despesa"},{"valor":0,"descricao":"x"},{"valor":15,"descricao":"Uber","data":"2099-01-01","categoria":"Foo","tipo":"receita"},{"valor":"abc","descricao":"y"}]\n```', '2026-10-12');
   assert.strictEqual(r.itens.length, 2);
   assert.strictEqual(r.ignorados, 2);
-  assert.deepStrictEqual(r.itens[0], { valor: 1234.56, descricao: 'Mercado Bom Preço', data: '2026-10-10', categoria: 'Alimentação', tipo: 'despesa' });
-  assert.deepStrictEqual(r.itens[1], { valor: 15, descricao: 'Uber', data: '2026-10-12', categoria: '', tipo: 'receita' });
+  assert.deepStrictEqual(r.itens[0], { valor: 1234.56, descricao: 'Mercado Bom Preço', data: '2026-10-10', semData: false, categoria: 'Alimentação', tipo: 'despesa' });
+  assert.deepStrictEqual(r.itens[1], { valor: 15, descricao: 'Uber', data: '2026-10-12', semData: false, categoria: '', tipo: 'receita' });
   assert.ok(L.interpretarComprovante('não é json', '2026-10-12').erro);
   assert.deepStrictEqual(L.interpretarComprovante('[]', '2026-10-12').itens, []);
   assert.match(L.montarPromptComprovante('2026-10-12'), /VALOR TOTAL/);
@@ -870,4 +870,26 @@ test('leitor: erro 503 do Google tenta de novo uma vez antes de desistir', async
   n = 0; const sempre = async () => { n++; return { ok: false, status: 503, json: async () => ({}) }; };
   await assert.rejects(L.lerComprovante({ chave: 'AIza' + 'x'.repeat(30), imagem: 'data:image/jpeg;base64,AAAA', hoje: '2026-10-12', modelo: 'm', fetchFn: sempre, esperaMs: 1 }), /sobrecarregada/);
   assert.strictEqual(n, 2);
+});
+
+test('várias fotos de extrato que se sobrepõem: o mesmo lançamento conta uma vez só', () => {
+  const L = require('../site/leitor.js');
+  const d = (valor, descricao, data, extra) => Object.assign({ valor, descricao, data: data || '2026-10-12', semData: !data, categoria: '', tipo: 'despesa' }, extra);
+  const foto1 = [d(10, 'Sandro', '2026-10-11'), d(5.5, 'Ademedeiros', '2026-10-10'), d(30, 'Pavao Aricanduva Presesao', '2026-10-10'), d(9.6, 'Kalunga-aric', '2026-10-10')];
+  // 2ª foto começa cortada, sem o cabeçalho da data: repete Pavao e Kalunga sem data
+  const foto2 = [d(30, 'Pavao Aricanduva', null), d(9.6, 'Kalunga-aric*kalunga', null), d(144.15, 'Katia Donizetti Da Silva', '2026-10-09')];
+  const r = L.unirArquivos([foto1, foto2]);
+  assert.strictEqual(r.unidos, 2); assert.strictEqual(r.itens.length, 5);
+  assert.strictEqual(r.itens.filter((x) => x.valor === 30).length, 1);
+  // sem data na primeira cópia: fica a data da cópia que tem
+  const r2 = L.unirArquivos([[d(15, 'Promolivros', null)], [d(15, 'Promolivros', '2026-10-08')]]);
+  assert.strictEqual(r2.itens.length, 1); assert.strictEqual(r2.itens[0].data, '2026-10-08'); assert.strictEqual(r2.itens[0].semData, false);
+  // datas diferentes = compras distintas; repetidos dentro da mesma foto não são mexidos
+  assert.strictEqual(L.unirArquivos([[d(8.5, 'Gran Coffee', '2026-10-01')], [d(8.5, 'Gran Coffee', '2026-10-02')]]).itens.length, 2);
+  assert.strictEqual(L.unirArquivos([[d(8.5, 'Gran Coffee', '2026-10-01'), d(8.5, 'Gran Coffee', '2026-10-01')]]).itens.length, 2);
+  // entrada e saída de mesmo valor não se misturam
+  assert.strictEqual(L.unirArquivos([[d(6.2, '99 Tecnologia', '2026-10-03')], [d(6.2, '99 Tecnologia', '2026-10-03', { tipo: 'receita' })]]).itens.length, 2);
+  // a data ausente vem marcada na leitura
+  const lido = L.interpretarComprovante('[{"valor":30,"descricao":"Pavao"},{"valor":9,"descricao":"X","data":"2026-10-10"}]', '2026-10-12');
+  assert.strictEqual(lido.itens[0].semData, true); assert.strictEqual(lido.itens[1].semData, false);
 });

@@ -135,7 +135,7 @@ Regras: junte linhas consecutivas da mesma célula em UM bloco (ex.: uma célula
   function montarPromptComprovante(hoje) {
     return `Você lê a FOTO ou o PDF de um comprovante financeiro brasileiro (cupom ou nota fiscal, comprovante de Pix ou transferência, recibo, fatura, boleto, print de aplicativo de banco ou extrato) e devolve os lançamentos em JSON.
 Responda SOMENTE com um array JSON, sem texto extra. Cada item: {"valor": número em reais com ponto decimal (ex.: 32.9), "descricao": nome curto do estabelecimento ou do favorecido (máx. 40 caracteres), "data": "AAAA-MM-DD" se a data aparecer na imagem, senão omita, "categoria": uma de ${CATS.join('|')}, "tipo": "despesa" ou "receita"}.
-Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTAL pago (não liste cada produto). Um print de extrato com várias transações vira um item por transação. Pix ou transferência ENVIADA é despesa; dinheiro RECEBIDO (salário, Pix recebido) é receita. Use o valor realmente pago (total com descontos), nunca troco, saldo, limite ou juros informativos. Datas no formato dia/mês/ano brasileiro; hoje é ${hoje || 'desconhecido'}. Se a imagem não for um comprovante, devolva []. Não invente: se não conseguir ler o valor, não inclua o item.`;
+Regras: em print de extrato, a data aparece num cabeçalho ACIMA das transações do dia (ex.: "Qui, 08/10/2026"); cada transação usa a data do cabeçalho logo acima dela. Se o print começa cortado, sem o cabeçalho visível, deixe "data" vazio nessas transações (não chute). Um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTAL pago (não liste cada produto). Um print de extrato com várias transações vira um item por transação. Pix ou transferência ENVIADA é despesa; dinheiro RECEBIDO (salário, Pix recebido) é receita. Use o valor realmente pago (total com descontos), nunca troco, saldo, limite ou juros informativos. Datas no formato dia/mês/ano brasileiro; hoje é ${hoje || 'desconhecido'}. Se a imagem não for um comprovante, devolva []. Não invente: se não conseguir ler o valor, não inclua o item.`;
   }
   const paraNumero = (v) => {
     if (typeof v === 'number') return v;
@@ -158,7 +158,7 @@ Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTA
       const descricao = String((x && x.descricao) || '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Gasto';
       let data = /^\d{4}-\d{2}-\d{2}$/.test(String(x.data || '')) && !isNaN(new Date(x.data + 'T12:00:00')) ? x.data : '';
       if (data && hoje && data > hoje) data = hoje;
-      itens.push({ valor, descricao, data: data || hoje || '', categoria: CATS.includes(x.categoria) ? x.categoria : '', tipo: x.tipo === 'receita' ? 'receita' : 'despesa' });
+      itens.push({ valor, descricao, data: data || hoje || '', semData: !data, categoria: CATS.includes(x.categoria) ? x.categoria : '', tipo: x.tipo === 'receita' ? 'receita' : 'despesa' });
     }
     return { itens, ignorados };
   }
@@ -174,6 +174,28 @@ Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTA
       return Object.assign({}, x, ja ? { dup: ja.descricao || 'lançamento' } : rep ? { dup: 'repetido nesta foto' } : {});
     });
   }
+  /** Junta os lançamentos lidos em fotos diferentes (listas em ordem). Prints de extrato costumam se sobrepor:
+   *  o mesmo lançamento (tipo, valor e descrição parecida) em duas fotos conta uma vez só; se uma das cópias não tinha
+   *  data (print cortado), vale a que tem. Datas diferentes nas duas cópias = compras distintas, ficam as duas.
+   *  Repetidos dentro de uma mesma foto não são mexidos. Devolve { itens, unidos }. */
+  function unirArquivos(listas) {
+    const norm2 = (t) => norm(t).replace(/[^a-z0-9]+/g, ' ').trim();
+    const igualDesc = (a, b) => { const x = norm2(a), y = norm2(b); return x === y || (x.length >= 4 && y.length >= 4 && (x.includes(y) || y.includes(x))); };
+    const final = []; let unidos = 0;
+    listas.forEach((lista, li) => {
+      const anteriores = final.filter((f) => f.__lista < li), usados = new Set();
+      for (const x of lista) {
+        const par = anteriores.find((y) => !usados.has(y) && (y.tipo === 'receita') === (x.tipo === 'receita') && Math.round(y.valor * 100) === Math.round(x.valor * 100) && igualDesc(y.descricao, x.descricao) && (y.semData || x.semData || y.data === x.data));
+        if (par) {
+          usados.add(par); unidos++;
+          if (par.semData && !x.semData) { par.data = x.data; par.semData = false; }
+          continue;
+        }
+        final.push(Object.assign({}, x, { __lista: li }));
+      }
+    });
+    return { itens: final.map((f) => { const o = Object.assign({}, f); delete o.__lista; return o; }), unidos };
+  }
   async function lerComprovante({ chave, imagem, hoje, modelo, fetchFn, aoEnviar, esperaMs }) {
     const { resposta, modelo: usado } = await chamar({ chave, imagem, prompt: montarPromptComprovante(hoje), esquema: ESQUEMA_GASTO, modelo, fetchFn, aoEnviar, esperaMs });
     const r = interpretarComprovante(resposta, hoje);
@@ -181,6 +203,6 @@ Regras: um cupom ou nota com vários produtos vira UM item só, com o VALOR TOTA
     return { itens: r.itens, ignorados: r.ignorados, modelo: usado };
   }
 
-  const api = { montarPrompt, escolherModelo, interpretar, lerFoto, hora, ehPdf, lerPdf, montarPromptComprovante, interpretarComprovante, lerComprovante, marcarDuplicados, CATS };
+  const api = { montarPrompt, escolherModelo, interpretar, lerFoto, hora, ehPdf, lerPdf, montarPromptComprovante, interpretarComprovante, lerComprovante, marcarDuplicados, unirArquivos, CATS };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.BrainLeitor = api;
 })(typeof window !== 'undefined' ? window : globalThis);
